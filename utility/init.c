@@ -54,8 +54,12 @@ void brick_init(void) {
 
     led_init();
 	led_on(LED_STD_BLUE);
+#if LOGGING_LEVEL == LOGGING_NONE
 	led_off(LED_STD_RED);
-	logsi("leds initialized\n\r");
+#else
+	led_on(LED_STD_RED);
+#endif
+	logsi("LEDs initialized\n\r");
 
 	com_brick_uid = uid_get_uid64();
 
