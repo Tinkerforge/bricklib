@@ -47,7 +47,7 @@ extern uint64_t com_brick_uid;
 void brick_init(void) {
 	// Wait 5ms so everything can power up
 	SLEEP_MS(5);
-	//logging_init();
+	logging_init();
 
 	logsi("Booting %s (%s)\n\r", BOARD_NAME, BOARD_VERSION);
 	logsi("Compiled on %s %s\n\r", __DATE__, __TIME__);

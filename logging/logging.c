@@ -131,5 +131,8 @@ void logging_init(void) {
 	LCDD_On();
 	logging_redraw();
 #endif
+#ifdef LOGGING_SERIAL
+    UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
+#endif
 }
 

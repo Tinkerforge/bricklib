@@ -40,7 +40,7 @@
 #include "uart_console.h"
 #include "config.h"
 
-#if LOGGING_LEVEL <= LOGGING_FATAL
+#ifdef LOGGING_SERIAL
 
 #include <pio/pio.h>
 
@@ -52,7 +52,6 @@
  *----------------------------------------------------------------------------*/
 
 /** Is Console Initialized. */
-static uint8_t _ucIsConsoleInitialized=0 ;
 
 /**
  * \brief Configures an USART peripheral with the specified parameters.
@@ -80,7 +79,6 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
     USART1->US_IDR = 0xFFFFFFFF ;
 
     NVIC_EnableIRQ( USART1_IRQn ) ;
-    _ucIsConsoleInitialized=1 ;
     USART_SetTransmitterEnabled( USART1, 1 ) ;
 #else
     const Pin pPins[] = CONSOLE_PINS;
@@ -108,8 +106,6 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
 
     /* Enable receiver and transmitter */
     pUart->UART_CR = UART_CR_RXEN | UART_CR_TXEN;
-
-    _ucIsConsoleInitialized=1 ;
 #endif
 }
 
@@ -122,11 +118,6 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
 extern void UART_PutChar( uint8_t c )
 {
     Uart *pUart=CONSOLE_USART ;
-
-    if ( !_ucIsConsoleInitialized )
-    {
-        UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
-    }
 
     /* Wait for the transmitter to be ready */
     while ( (pUart->UART_SR & UART_SR_TXEMPTY) == 0 );
@@ -146,11 +137,6 @@ extern uint32_t UART_GetChar( void )
 {
     Uart *pUart=CONSOLE_USART ;
 
-    if ( !_ucIsConsoleInitialized )
-    {
-        UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
-    }
-
     while ( (pUart->UART_SR & UART_SR_RXRDY) == 0 ) ;
 
     return pUart->UART_RHR ;
@@ -164,11 +150,6 @@ extern uint32_t UART_GetChar( void )
 extern uint32_t UART_IsRxReady( void )
 {
     Uart *pUart=CONSOLE_USART ;
-
-    if ( !_ucIsConsoleInitialized )
-    {
-        UART_Configure( CONSOLE_BAUDRATE, BOARD_MCK ) ;
-    }
 
     return (pUart->UART_SR & UART_SR_RXRDY) > 0 ;
 }
