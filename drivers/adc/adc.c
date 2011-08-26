@@ -88,29 +88,7 @@ void adc_init(void) {
 }
 
 void adc_start_periodic_conversion(void) {
-	// Use TC channel 2 as adc trigger
-	ADC->ADC_MR |= ((ADC_TC_CHANNEL_NUM+1) << ADC_MR_TRGSEL_Pos) | ADC_MR_TRGEN;
-
-    PMC->PMC_PCER0 = 1 << ID_TC2;
-
-    // Configure and enable TC interrupts
-	NVIC_DisableIRQ(TC2_IRQn);
-	NVIC_ClearPendingIRQ(TC2_IRQn);
-	NVIC_SetPriority(TC2_IRQn, PRIORITY_PERIODIC_ADC_TC2);
-	NVIC_EnableIRQ(TC2_IRQn);
-
-	tc_channel_init(&ADC_TC_CHANNEL,
-	                TC_CMR_ACPC_TOGGLE   |
-	                TC_CMR_WAVE          |
-	                TC_CMR_WAVSEL_UP_RC  |
-	                TC_CMR_TCCLKS_TIMER_CLOCK5);  // Use slow clock
-
-	// = 32768/2 hz -> ~16khz
-	// max possible is 28khz (see above), so there is enough reserve
-	ADC_TC_CHANNEL.TC_RC = 1;
-
-	// Start TC
-	tc_channel_start(&ADC_TC_CHANNEL);
+	ADC->ADC_MR |= ADC_MR_FREERUN_ON;
 }
 
 void adc_read_calibration_from_flash(void) {
