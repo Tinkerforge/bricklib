@@ -35,6 +35,7 @@
 #include "bricklib/logging/logging.h"
 #include "bricklib/utility/led.h"
 #include "bricklib/utility/mutex.h"
+#include "bricklib/utility/util_definitions.h"
 #include "bricklib/logging/logging.h"
 #include "bricklib/bricklet/bricklet_init.h"
 
@@ -44,6 +45,8 @@ extern ComType com_current;
 extern uint64_t com_brick_uid;
 
 void brick_init(void) {
+	// Wait 5ms so everything can power up
+	SLEEP_MS(5);
 	//logging_init();
 
 	logsi("Booting %s (%s)\n\r", BOARD_NAME, BOARD_VERSION);
