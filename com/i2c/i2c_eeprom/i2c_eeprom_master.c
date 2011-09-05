@@ -30,6 +30,7 @@
 #include <stdbool.h>
 
 #include "bricklib/drivers/uid/uid.h"
+#include "bricklib/utility/mutex.h"
 #include "bricklib/com/i2c/i2c_eeprom/i2c_eeprom_common.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/bricklet/bricklet_communication.h"
@@ -38,6 +39,7 @@
 
 uint8_t bricklet_eeprom_address;
 
+extern Mutex mutex_twi_bricklet;
 extern Twid twid;
 
 void TWI0_IrqHandler(void) {
@@ -73,6 +75,8 @@ bool i2c_eeprom_master_read(Twi *twi,
                             const uint16_t length) {
 	uint32_t timeout;
 
+	mutex_take(mutex_twi_bricklet, MUTEX_BLOCKING);
+
 	// Start read
 	TWI_StartRead(twi,
 	              bricklet_eeprom_address,
@@ -91,6 +95,7 @@ bool i2c_eeprom_master_read(Twi *twi,
 
 		if(timeout == I2C_EEPROM_TIMEOUT) {
 			logieew("read timeout (nothing received)\n\r");
+			mutex_give(mutex_twi_bricklet);
 			return false;
 		}
 
@@ -102,9 +107,11 @@ bool i2c_eeprom_master_read(Twi *twi,
 	while(!TWI_TransferComplete(twi) && (++timeout < I2C_EEPROM_TIMEOUT));
 	if (timeout == I2C_EEPROM_TIMEOUT) {
 		logieew("read timeout (transfer incomplete)\n\r");
+		mutex_give(mutex_twi_bricklet);
 		return false;
 	}
 
+	mutex_give(mutex_twi_bricklet);
     return true;
 }
 
@@ -113,6 +120,8 @@ bool i2c_eeprom_master_write(Twi *twi,
                              const char *data,
                              const uint16_t length) {
 	uint32_t timeout;
+
+	mutex_take(mutex_twi_bricklet, MUTEX_BLOCKING);
 
     // Start write
 	TWI_StartWrite(twi,
@@ -127,6 +136,7 @@ bool i2c_eeprom_master_write(Twi *twi,
         while(!TWI_ByteSent(twi) && (++timeout < I2C_EEPROM_TIMEOUT));
 		if(timeout == I2C_EEPROM_TIMEOUT) {
 			logieew("write timeout (nothing sent)\n\r");
+			mutex_give(mutex_twi_bricklet);
 			return false;
 		}
         TWI_WriteByte(twi, data[i]);
@@ -140,12 +150,14 @@ bool i2c_eeprom_master_write(Twi *twi,
     while(!TWI_TransferComplete(twi) && (++timeout < I2C_EEPROM_TIMEOUT));
 	if (timeout == I2C_EEPROM_TIMEOUT) {
 		logieew("write timeout (transfer incomplete)\n\r");
+		mutex_give(mutex_twi_bricklet);
 		return false;
 	}
 
 	// Wait at least 5ms between writes (see m24128-bw.pdf)
 	SLEEP_MS(5);
 
+	mutex_give(mutex_twi_bricklet);
 	return true;
 }
 
