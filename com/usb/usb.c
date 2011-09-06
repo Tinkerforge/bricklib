@@ -52,9 +52,6 @@
 
 extern const USBDDriverDescriptors driver_descriptors;
 
-
-extern uint32_t led_rxtx;
-
 extern uint8_t master_routing_table[];
 extern uint8_t com_last_spi_stack_id;
 extern uint8_t com_last_stack_address;
@@ -103,7 +100,6 @@ inline uint16_t usb_send(const void *data, const uint16_t length) {
 			send_status &= ~USB_IN_FUNCTION;
 			return 0;
 		}
-		led_rxtx++;
 	} else {
 		return 0;
 	}
@@ -142,6 +138,7 @@ inline uint16_t usb_recv(void *data, const uint16_t length) {
 	usb_set_read_endpoint_state_to_receiving();
 	uint16_t tmp = usb_recv_transferred;
 	usb_recv_transferred = 0;
+
 	return tmp;
 }
 

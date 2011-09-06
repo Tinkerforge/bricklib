@@ -26,8 +26,8 @@
 #include <stdint.h>
 
 // Blink for 30ms and next blinking after at least 100ms
-#define LED_RXTX_OFF     30
-#define LED_RXTX_RESTART 100
+#define LED_RXTX_OFF     35
+#define LED_RXTX_RESTART 200
 
 // Num rx or tx messages before blinking
 #define LED_RXTX_NUM     20

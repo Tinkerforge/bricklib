@@ -43,6 +43,7 @@ uint16_t send_blocking_with_timeout(const void *data,
 		taskYIELD();
 	}
 
+	led_rxtx++;
 	return bytes_send;
 }
 
@@ -90,5 +91,7 @@ void com_message_loop(void *parameters) {
 			}
 			mlp->return_func(long_data, message_length);
 		}
+
+		led_rxtx++;
 	}
 }

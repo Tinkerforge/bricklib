@@ -86,7 +86,6 @@ void led_blink(const uint8_t led_num, const uint32_t cycles) {
 
 // If standard blue led is present, use it for rxtx signaling
 void led_tick_task(void) {
-	return;
 #ifdef LED_STD_BLUE
 	if(led_counter > 0) {
 		led_counter++;
