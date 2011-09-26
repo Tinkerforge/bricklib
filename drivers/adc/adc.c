@@ -32,41 +32,36 @@
 int16_t adc_offset = 0;
 int16_t adc_gain = ADC_MAX_VALUE;
 
-#define ADC_TC_CHANNEL_NUM 2
-#define ADC_TC_CHANNEL  TC0->TC_CHANNEL[ADC_TC_CHANNEL_NUM]
-
 // sam3s adc characteristics: 41.7 (1058ff)
 // max adc frequency: 20mhz
 // max startup(standby -> normal mode): 12us
 // track and holding time (min): 160ns
 // settling: 200ns
 
-// 20mhz maximal adc clock frequency ->
-// prescaler 0 not possible (32mhz) ->
-// use 16mhz adc frequency with prescaler 1
-#define ADC_PRESCALER 1
+// We try to satisfy these boundaries with a factor of at least 10
 
-// 16mhz takes 192 clock cycles for 12 us ->
-// smallest possible value is 512 (32us)
+// use 0.125mhz adc frequency with prescaler 255
+// 1 clock cycle is 8us
+#define ADC_PRESCALER 255
+
+// 512 clock cycle startup time
 #define ADC_STARTUP   ADC_MR_STARTUP_SUT512
 
-// 16mhz takes 2.56 clock cycles for 160ns ->
 // Tracking Time = (TRACKTIM + 1) * ADCClock periods ->
-// smallest possible value is 2 (187.5ns)
+// 3*8us
 #define ADC_TRACKTIM 2
 
-// 16mhz takes 3.2 clock cycles for 200ns ->
-// smallest possible value is 5 (312.5ns)
+// smallest possible value is 5 ->
+// 5*8us
 #define ADC_SETTLING 1
 
-// I can't find anything about the minimum transfer period...
-// Transfer Period = (TRANSFER * 2 + 3) ADCClock periods.
-// Transfer Period of 1 -> 312.5ns
+// Transfer Period = (TRANSFER * 2 + 3) ADCClock periods ->
+// 5*8us
 #define ADC_TRANSFER 1
 
-// Alltogether, when 8 adc channels are used:
-// 32us + 8*187.5ns + 312.5*8ns = 36us
-// Maximum allowed trigger frequency is 28khz
+// All together, when 8 adc channels are used:
+// 8*(3+5+5)*8us = 832us
+// Maximum trigger frequency is 1.202kHz
 
 void adc_init(void) {
 	adc_read_calibration_from_flash();
