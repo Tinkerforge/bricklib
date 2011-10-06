@@ -132,6 +132,8 @@ typedef struct {
 	uint8_t type;
 	uint16_t length;
 	uint64_t device_uid;
+	uint8_t device_firmware_version[3];
+	char device_name[MAX_LENGTH_NAME];
 	uint8_t device_stack_id;
 } __attribute__((__packed__)) GetStackIDReturn;
 

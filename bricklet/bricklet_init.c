@@ -21,6 +21,7 @@
 
 #include "bricklet_init.h"
 
+#include <string.h>
 #include <flash/flashd.h>
 #include <FreeRTOS.h>
 #include <task.h>
@@ -122,7 +123,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_A_PIN_SELECT,
 		  BRICKLET_A_ADC_CHANNEL,
 		  &baddr[0],
-		  0, 0, ""}
+		  0, 0, {0, 0, 0}, ""}
 	#endif
 	#if BRICKLET_NUM > 1
 		,{'b',
@@ -134,7 +135,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_B_PIN_SELECT,
 		  BRICKLET_B_ADC_CHANNEL,
 		  &baddr[1],
-		  0, 0, ""}
+		  0, 0, {0, 0, 0}, ""}
 	#endif
 	#if BRICKLET_NUM > 2
 		,{'c',
@@ -146,7 +147,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_C_PIN_SELECT,
 		  BRICKLET_C_ADC_CHANNEL,
 		  &baddr[2],
-		  0, 0, ""}
+		  0, 0, {0, 0, 0}, ""}
 	#endif
 	#if BRICKLET_NUM > 3
 		,{'d',
@@ -158,7 +159,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_D_PIN_SELECT,
 		  BRICKLET_D_ADC_CHANNEL,
 		  &baddr[3],
-		  0, 0, ""}
+		  0, 0, {0, 0, 0}, ""}
 	#endif
 };
 
@@ -276,16 +277,22 @@ void bricklet_try_connection(const uint8_t bricklet) {
 		return;
 	}
 
-	bricklet_select(bricklet);
-	i2c_eeprom_master_read_name(TWI_BRICKLET, bs[bricklet].name);
-	bricklet_deselect(bricklet);
-
 	logbleti("Bricklet %c connected\n\r", 'a' + bricklet);
 
 	if(!bricklet_init_plugin(bricklet)) {
 		logbletw("Could not init Bricklet %c\n\r", 'a' + bricklet);
 		return;
 	}
+
+	BrickletInfo bi;
+	baddr[bricklet].entry(BRICKLET_TYPE_INFO,
+	                      0,
+	                      (uint8_t*)&bi);
+
+	bs[bricklet].firmware_version[0] = bi.firmware_version[0];
+	bs[bricklet].firmware_version[1] = bi.firmware_version[1];
+	bs[bricklet].firmware_version[2] = bi.firmware_version[2];
+	strncpy(bs[bricklet].name, bi.name, MAX_LENGTH_NAME);
 
 	bs[bricklet].uid = uid;
 

@@ -38,6 +38,11 @@
 typedef int (*BrickletEntryFunction)(uint8_t, uint8_t, uint8_t*);
 
 typedef struct {
+	uint8_t firmware_version[3];
+	char name[40];
+} BrickletInfo;
+
+typedef struct {
 	uint8_t stack_id;
 	uint64_t uid;
 	char name[40];
@@ -105,6 +110,7 @@ typedef struct {
 	const BrickletAddress *baddr;
 	uint8_t stack_id;
 	uint64_t uid;
+	uint8_t firmware_version[3];
 	char name[40];
 } BrickletSettings;
 
@@ -151,6 +157,7 @@ typedef struct {
 #define BRICKLET_TYPE_CONSTRUCTOR 2
 #define BRICKLET_TYPE_DESTRUCTOR 4
 #define BRICKLET_TYPE_TICK 8
+#define BRICKLET_TYPE_INFO 16
 
 #if(DEBUG_BRICKLET)
 #define logbletd(str, ...) do{logd("blet: " str, ##__VA_ARGS__);}while(0)

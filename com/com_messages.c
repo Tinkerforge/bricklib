@@ -31,19 +31,20 @@
 #include "bricklib/drivers/adc/adc.h"
 #include "bricklib/bricklet/bricklet_communication.h"
 #include "bricklib/bricklet/bricklet_config.h"
+#include "bricklib/bricklet/bricklet_init.h"
 
 #include "com_common.h"
 #include "config.h"
 
 extern int16_t adc_offset;
 extern int16_t adc_gain;
-extern BrickletSettings bs[];
 
 extern uint8_t com_stack_id;
 extern uint64_t com_brick_uid;
 extern uint8_t com_last_stack_address;
 extern ComType com_current;
 extern BrickletSettings bs[];
+extern const BrickletAddress baddr[];
 
 #ifdef BRICK_CAN_BE_MASTER
 extern uint8_t master_routing_table[];
@@ -153,7 +154,7 @@ void enumerate(uint8_t com, const Enumerate *data) {
 		TYPE_ENUMERATE_CALLBACK,
 		sizeof(EnumerateCallback),
 		com_brick_uid,
-		BOARD_NAME " " BOARD_VERSION,
+		BRICK_HARDWARE_NAME,
 		com_stack_id,
 		true
 	};
@@ -215,10 +216,14 @@ void get_stack_id(uint8_t com, const GetStackID *data) {
 	gsidr.length          = sizeof(GetStackIDReturn);
 	gsidr.device_uid      = data->uid;
 
-	//printf("%d %d %d %d\n\r", data->uid, com_brick_uid, bs[0].uid, bs[1].uid);
 	// Check own Stack ID
 	if(data->uid == com_brick_uid) {
 		gsidr.device_stack_id = com_stack_id;
+		gsidr.device_firmware_version[0] = BRICK_FIRMWARE_VERSION_MAJOR;
+		gsidr.device_firmware_version[1] = BRICK_FIRMWARE_VERSION_MINOR;
+		gsidr.device_firmware_version[2] = BRICK_FIRMWARE_VERSION_REVISION;
+		memset(gsidr.device_name, 0, MAX_LENGTH_NAME);
+		strcpy(gsidr.device_name, BRICK_HARDWARE_NAME);
 		send_blocking_with_timeout(&gsidr, sizeof(GetStackIDReturn), com);
 		return;
 	// Check Bricklet Stack ID
@@ -226,6 +231,11 @@ void get_stack_id(uint8_t com, const GetStackID *data) {
 		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 			if(data->uid == bs[i].uid) {
 				gsidr.device_stack_id = bs[i].stack_id;
+				gsidr.device_firmware_version[0] = bs[i].firmware_version[0];
+				gsidr.device_firmware_version[1] = bs[i].firmware_version[1];
+				gsidr.device_firmware_version[2] = bs[i].firmware_version[2];
+				strncpy(gsidr.device_name, bs[i].name, MAX_LENGTH_NAME);
+
 				send_blocking_with_timeout(&gsidr,
 				                           sizeof(GetStackIDReturn),
 				                           com);

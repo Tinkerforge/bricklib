@@ -49,7 +49,7 @@ void brick_init(void) {
 	SLEEP_MS(5);
 	logging_init();
 
-	logsi("Booting %s (%s)\n\r", BOARD_NAME, BOARD_VERSION);
+	logsi("Booting %s\n\r", BRICK_HARDWARE_NAME);
 	logsi("Compiled on %s %s\n\r", __DATE__, __TIME__);
 
     led_init();
