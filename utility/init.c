@@ -73,7 +73,7 @@ void brick_init(void) {
     logsi("Watchdog disabled\n\r");
 
     mutex_init();
-    logsi("Mutexes initialized");
+    logsi("Mutexes initialized\n\r");
 
 	// Disable JTAG (Pins are needed for i2c)
 #ifdef DISABLE_JTAG_ON_STARTUP
