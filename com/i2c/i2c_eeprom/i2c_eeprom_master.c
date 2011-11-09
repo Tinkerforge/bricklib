@@ -63,7 +63,6 @@ void i2c_eeprom_master_init(Twi *twi) {
 
     // Configure TWI as master
     TWI_ConfigureMaster(twi, I2C_EEPROM_CLOCK, BOARD_MCK);
-    //TWI_ConfigureMaster(twi, 100000, BOARD_MCK);
 }
 
 // i2c_eeprom_master_read/write are based on twid.c from atmels at91lib and
