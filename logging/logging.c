@@ -22,6 +22,8 @@
 #include "logging.h"
 #include "config.h"
 
+#include "bricklib/drivers/pio/pio.h"
+
 #if defined(LOGGING_LCD) || defined(LOGGING_SERIAL)
 #include <string.h>
 #include <stdio.h>
@@ -133,6 +135,11 @@ void logging_init(void) {
 #endif
 #ifdef LOGGING_SERIAL
     UART_Configure(CONSOLE_BAUDRATE, BOARD_MCK);
+#else
+    Pin console_pins[] = CONSOLE_PINS;
+    console_pins[0].type = PIO_INPUT;
+    console_pins[1].type = PIO_INPUT;
+    PIO_Configure(console_pins, PIO_LISTSIZE(console_pins));
 #endif
 }
 
