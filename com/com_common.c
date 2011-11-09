@@ -38,7 +38,7 @@ uint16_t send_blocking_with_timeout(const void *data,
 	uint16_t bytes_send = 0;
 	uint32_t trials = SEND_BLOCKING_TRIALS;
 
-	while(length - bytes_send != 0 /*&& trials--*/) {
+	while(length - bytes_send != 0 && trials--) {
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com);
 		taskYIELD();
 	}
