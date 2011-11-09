@@ -57,7 +57,7 @@ void read_bricklet_name(uint8_t com, const ReadBrickletName *data) {
 	}
 
 	ReadBrickletNameReturn rbnr;
-	rbnr.stack_address = data->stack_address;
+	rbnr.stack_id = data->stack_id;
 	rbnr.type = TYPE_READ_BRICKLET_NAME;
 	rbnr.length = sizeof(ReadBrickletNameReturn);
 
@@ -102,7 +102,7 @@ void read_bricklet_plugin(uint8_t com, const ReadBrickletPlugin *data) {
 	}
 
 	ReadBrickletPluginReturn rbpr;
-	rbpr.stack_address = data->stack_address;
+	rbpr.stack_id = data->stack_id;
 	rbpr.type = TYPE_READ_BRICKLET_PLUGIN;
 	rbpr.length = sizeof(ReadBrickletPluginReturn);
 
@@ -148,7 +148,7 @@ void read_bricklet_uid(uint8_t com, const ReadBrickletUID *data) {
 
 	ReadBrickletUIDReturn rbuidr;
 
-	rbuidr.stack_address = data->stack_address;
+	rbuidr.stack_id = data->stack_id;
 	rbuidr.type = TYPE_READ_BRICKLET_UID;
 	rbuidr.length = sizeof(ReadBrickletUIDReturn);
 	bricklet_select(port);

@@ -43,7 +43,7 @@
 	{TYPE_READ_BRICKLET_UID, (message_handler_func_t)read_bricklet_uid},
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	char port;
@@ -51,21 +51,21 @@ typedef struct {
 } __attribute__((__packed__)) WriteBrickletName;
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	char port;
 } __attribute__((__packed__)) ReadBrickletName;
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	char name[MAX_LENGTH_NAME];
 } __attribute__((__packed__)) ReadBrickletNameReturn;
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	char port;
@@ -74,7 +74,7 @@ typedef struct {
 } __attribute__((__packed__)) WriteBrickletPlugin;
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	char port;
@@ -82,14 +82,14 @@ typedef struct {
 } __attribute__((__packed__)) ReadBrickletPlugin;
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	char plugin[PLUGIN_CHUNK_SIZE];
 } __attribute__((__packed__)) ReadBrickletPluginReturn;
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	char port;
@@ -97,14 +97,14 @@ typedef struct {
 } __attribute__((__packed__)) WriteBrickletUID;
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	char port;
 } __attribute__((__packed__)) ReadBrickletUID;
 
 typedef struct {
-	uint8_t stack_address;
+	uint8_t stack_id;
 	uint8_t type;
 	uint16_t length;
 	uint64_t uid;
