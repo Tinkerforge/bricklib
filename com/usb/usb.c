@@ -52,8 +52,10 @@
 
 extern const USBDDriverDescriptors driver_descriptors;
 
+extern ComType com_ext[];
 extern uint8_t master_routing_table[];
 extern uint8_t com_last_spi_stack_id;
+extern uint8_t com_last_ext_id[];
 extern uint8_t com_last_stack_address;
 extern uint8_t com_stack_id;
 extern const BrickletAddress baddr[];
@@ -111,7 +113,6 @@ inline uint16_t usb_send(const void *data, const uint16_t length) {
 		// USBD_Write does not always call callback when USBD_STATUS_SUCCESS
 		// Wait for NUM_RECEIVE_TRIES
 		if(num_tries > NUM_SEND_TRIES) {
-			//printf("USB SEND TIMEOUT\n\r");
 			send_status = 0;
 			return 0;
 		}
@@ -176,6 +177,7 @@ bool usb_init() {
         USBD_Connect();
     } else {
         USBD_Disconnect();
+        return false;
     }
 
 	return true;
@@ -184,7 +186,6 @@ bool usb_init() {
 void usb_message_loop_return(char *data, uint16_t length) {
 	const uint8_t stack_id = get_stack_id_from_data(data);
 
-	//printf("umlr %d: %d %d %d %d %d\n\r", stack_id, bs[0].stack_id, bs[1].stack_id, bs[2].stack_id, bs[3].stack_id, com_last_spi_stack_id);
 	if(stack_id == com_stack_id || stack_id == 0) {
 		const ComMessage *com_message = get_com_from_data(data);
 		if(com_message->reply_func != NULL) {
@@ -201,6 +202,11 @@ void usb_message_loop_return(char *data, uint16_t length) {
 
 	if(stack_id <= com_last_spi_stack_id) {
 		send_blocking_with_timeout(data, length, COM_SPI_STACK);
+		return;
+	}
+
+	if(stack_id <= com_last_ext_id[0]) {
+		send_blocking_with_timeout(data, length, com_ext[0]);
 		return;
 	}
 }

@@ -30,7 +30,8 @@ typedef enum {
 	COM_NONE      = 0,
 	COM_USB       = 1,
 	COM_SPI_STACK = 2,
-	COM_CHIBI     = 3
+	COM_CHIBI     = 3,
+	COM_RS485     = 4
 } ComType;
 
 #define SEND_BLOCKING_TRIALS 1000000

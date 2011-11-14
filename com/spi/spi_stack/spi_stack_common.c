@@ -66,6 +66,7 @@ uint16_t spi_stack_recv(void *data, const uint16_t length) {
 	if(spi_stack_buffer_size_recv == 0) {
 		return 0;
 	}
+
 	led_rxtx++;
 
 	static uint16_t recv_pointer = 0;

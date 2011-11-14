@@ -32,7 +32,9 @@
 
 uint8_t com_last_stack_address = 0;
 uint8_t com_last_spi_stack_id = 1;
+uint8_t com_last_ext_id[2] = {1, 1};
 ComType com_current = COM_NONE;
+ComType com_ext[2] = {COM_NONE, COM_NONE};
 uint8_t com_stack_id = 1;
 uint64_t com_brick_uid = 62;
 
@@ -40,5 +42,5 @@ Com com_list[] = {
 	{COM_NONE, no_init, no_send, no_recv},
 	{COM_USB, usb_init, usb_send, usb_recv},
 	{COM_SPI_STACK, NULL, spi_stack_send, spi_stack_recv},
-	//COM_EXTENSIONS
+	COM_EXTENSIONS
 };

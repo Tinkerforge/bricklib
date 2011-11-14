@@ -39,10 +39,18 @@
 extern int16_t adc_offset;
 extern int16_t adc_gain;
 
+extern uint8_t master_mode;
+
+extern uint8_t chibi_address;
+extern uint8_t chibi_receiver_address;
+
+extern uint8_t com_last_ext_id[];
+extern uint8_t com_last_spi_stack_id;
 extern uint8_t com_stack_id;
 extern uint64_t com_brick_uid;
 extern uint8_t com_last_stack_address;
 extern ComType com_current;
+extern ComType com_ext[];
 extern BrickletSettings bs[];
 extern const BrickletAddress baddr[];
 
@@ -89,12 +97,6 @@ inline uint8_t get_type_from_data(const char *data) {
 	return data[1];
 }
 
-/*
-void get_logging(uint8_t com, const GetLogging *data, uint16_t msg_length) {
-	send_blocking_with_timeout(data, sizeof(GetLogging) + msg_length, com);
-}
-*/
-
 void get_adc_calibration(uint8_t com, const GetADCCalibration *data) {
 	GetADCCalibrationReturn gadccr = {
 		com_stack_id,
@@ -123,6 +125,7 @@ void com_adc_calibrate(uint8_t com, const ADCCalibrate *data) {
 
 void stack_enumerate(uint8_t com, const StackEnumerate *data) {
 	com_stack_id = data->stack_id_start;
+
 	uint8_t stack_id_upto = com_stack_id;
 
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
@@ -133,6 +136,67 @@ void stack_enumerate(uint8_t com, const StackEnumerate *data) {
 	}
 
 	com_current = com;
+
+#ifdef BRICK_CAN_BE_MASTER
+	if(master_mode & MASTER_MODE_MASTER) {
+		// make new routing table
+
+		int16_t id_diff = 0;
+		for(uint16_t i = 0; i <= com_last_spi_stack_id; i++) {
+			if(master_routing_table[i] != 0) {
+				id_diff = stack_id_upto + 1 - i;
+				break;
+			}
+		}
+
+		if(id_diff != 0) {
+			for(uint16_t i = 0; i <= com_last_spi_stack_id; i++) {
+				uint8_t sa = 0;
+
+				if(master_routing_table[i] != sa) {
+					sa++;
+
+					StackEnumerate se = {
+						i,
+						TYPE_STACK_ENUMERATE,
+						sizeof(StackEnumerate),
+						i + id_diff
+					};
+
+					send_blocking_with_timeout(&se,
+											   sizeof(StackEnumerate),
+											   COM_SPI_STACK);
+
+					if(i + id_diff > stack_id_upto) {
+						stack_id_upto = i + id_diff;
+					}
+				}
+			}
+
+			if(id_diff > 0) {
+				for(int16_t i = MAX_STACK_IDS - 1; i >= id_diff; i--) {
+					master_routing_table[i] = master_routing_table[i - id_diff];
+				}
+				for(int16_t i = 0; i < id_diff; i++) {
+					master_routing_table[i] = 0;
+				}
+			} else {
+				for(int16_t i = 0; i < MAX_STACK_IDS + id_diff; i++) {
+					master_routing_table[i] = master_routing_table[i - id_diff];
+				}
+				for(int16_t i = MAX_STACK_IDS + id_diff; i < MAX_STACK_IDS; i++) {
+					master_routing_table[i] = 0;
+				}
+			}
+			com_last_spi_stack_id = stack_id_upto;
+		} else {
+			if(com_last_spi_stack_id > stack_id_upto) {
+				stack_id_upto = com_last_spi_stack_id;
+			}
+		}
+
+	}
+#endif
 
 	StackEnumerateReturn ser = {
 		data->stack_id,
@@ -146,7 +210,7 @@ void stack_enumerate(uint8_t com, const StackEnumerate *data) {
 }
 
 void enumerate(uint8_t com, const Enumerate *data) {
-	logd("Returning Enumeration for Brick\n\r");
+	logd("Returning Enumeration for Brick: %d\n\r", com);
 
 	// Enumerate Brick
 	EnumerateCallback ec = {
@@ -190,8 +254,8 @@ void enumerate(uint8_t com, const Enumerate *data) {
 #ifdef BRICK_CAN_BE_MASTER
 	// Enumerate Stack
 	for(uint8_t i = 1; i <= com_last_stack_address; i++) {
-		uint8_t id;
-		for(id = 0; id < MAX_STACK_IDS; id++) {
+		uint16_t id;
+		for(id = 0; id <= com_last_spi_stack_id; id++) {
 			if(master_routing_table[id] == i) {
 				break;
 			}
@@ -203,6 +267,26 @@ void enumerate(uint8_t com, const Enumerate *data) {
 			sizeof(Enumerate),
 		};
 		send_blocking_with_timeout(&e, sizeof(Enumerate), COM_SPI_STACK);
+	}
+
+	for(uint8_t com_num = 0; com_num < 2; com_num++) {
+		if(com_ext[com_num] != COM_NONE) {
+			uint16_t id;
+			for(id = com_last_spi_stack_id+1; id <= com_last_ext_id[com_num]; id++) {
+				if(master_routing_table[id] == chibi_receiver_address) {
+					break;
+				}
+			}
+
+			if(id != com_last_ext_id[com_num]+1) {
+				Enumerate e = {
+					id,
+					TYPE_ENUMERATE,
+					sizeof(Enumerate),
+				};
+				send_blocking_with_timeout(&e, sizeof(Enumerate), com_ext[com_num]);
+			}
+		}
 	}
 #endif
 }
@@ -262,6 +346,27 @@ void get_stack_id(uint8_t com, const GetStackID *data) {
 			data->uid
 		};
 		send_blocking_with_timeout(&gsid, sizeof(GetStackID), COM_SPI_STACK);
+	}
+
+	for(uint8_t com_num = 0; com_num < 2; com_num++) {
+		if(com_ext[com_num] != COM_NONE) {
+			uint16_t id;
+			for(id = com_last_spi_stack_id+1; id <= com_last_ext_id[com_num]; id++) {
+				if(master_routing_table[id] == chibi_receiver_address) {
+					break;
+				}
+			}
+
+			if(id != MAX_STACK_IDS) {
+				GetStackID gsid = {
+					id,
+					TYPE_GET_STACK_ID,
+					sizeof(GetStackID),
+					data->uid
+				};
+				send_blocking_with_timeout(&gsid, sizeof(GetStackID), com_ext[com_num]);
+			}
+		}
 	}
 #endif
 }
