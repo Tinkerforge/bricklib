@@ -31,12 +31,13 @@
 #include "bricklib/utility/led.h"
 
 extern uint32_t led_rxtx;
+extern uint32_t com_blocking_trials[];
 
 uint16_t send_blocking_with_timeout(const void *data,
                                     const uint16_t length,
                                     ComType com) {
 	uint16_t bytes_send = 0;
-	uint32_t trials = SEND_BLOCKING_TRIALS;
+	uint32_t trials = com_blocking_trials[com];
 
 	while(length - bytes_send != 0 && trials--) {
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com);

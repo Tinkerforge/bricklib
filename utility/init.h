@@ -22,6 +22,9 @@
 #ifndef INIT_H
 #define INIT_H
 
+#define TICK_TASK_TYPE_MESSAGE 1
+#define TICK_TASK_TYPE_CALCULATION 2
+
 void brick_init(void);
 void brick_init_new_connection(void);
 void brick_tick_task(void *parameters);

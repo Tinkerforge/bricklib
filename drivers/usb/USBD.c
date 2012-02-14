@@ -196,6 +196,7 @@ uint8_t USBD_Write( uint8_t          bEndpoint,
 	if(USBD_HAL_SetTransferCallback(bEndpoint, fCallback, pArgument) == USBD_STATUS_LOCKED) {
     	return USBD_STATUS_LOCKED;
     }
+
     return USBD_HAL_Write(bEndpoint, pData, dLength);
 }
 /**

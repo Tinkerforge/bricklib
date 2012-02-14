@@ -150,11 +150,11 @@ void TWID_Handler( Twid *pTwid )
 
         TWI_DisableIt(pTwi, TWI_IDR_TXCOMP);
         pTransfer->status = 0;
+        pTwid->pTransfer = 0;
         if (pTransfer->callback) {
 
             pTransfer->callback((Async *) pTransfer);
         }
-        pTwid->pTransfer = 0;
     }
 }
 
@@ -193,7 +193,6 @@ uint8_t TWID_Read(
 
     /* Check that no transfer is already pending*/
     if (pTransfer) {
-
         TRACE_ERROR("TWID_Read: A transfer is already pending\n\r");
         return TWID_ERROR_BUSY;
     }
@@ -206,7 +205,6 @@ uint8_t TWID_Read(
 
     /* Asynchronous transfer*/
     if (pAsync) {
-
         /* Update the transfer descriptor */
         pTwid->pTransfer = pAsync;
         pTransfer = (AsyncTwi *) pAsync;

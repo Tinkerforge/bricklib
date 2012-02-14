@@ -44,3 +44,12 @@ Com com_list[] = {
 	{COM_SPI_STACK, NULL, spi_stack_send, spi_stack_recv},
 	COM_EXTENSIONS
 };
+
+
+uint32_t com_blocking_trials[] = {
+	SEND_BLOCKING_TRIALS_NONE,
+	SEND_BLOCKING_TRIALS_USB,
+	SEND_BLOCKING_TRIALS_SPI_STACK,
+	SEND_BLOCKING_TRIALS_CHIBI,
+	SEND_BLOCKING_TRIALS_RS485
+};

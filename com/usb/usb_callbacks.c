@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include <cmsis/core_cm3.h>
+#include "bricklib/logging/logging.h"
 
 // Invoked after the USB driver has been initialized.
 // Configures the UDP/UDPHS interrupt.
@@ -31,7 +32,9 @@ void USBDCallbacks_Initialized(void) {
 }
 
 void USBDCallbacks_Resumed(void) {
+	logi("UDP_ENDPOINT_IDLE\n\r");
 }
 
 void USBDCallbacks_Suspended(void) {
+	logi("USBDCallbacks_Suspended\n\r");
 }

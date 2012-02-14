@@ -44,6 +44,9 @@
 extern ComType com_current;
 extern uint64_t com_brick_uid;
 
+static uint8_t type_calculation = TICK_TASK_TYPE_CALCULATION;
+static uint8_t type_message = TICK_TASK_TYPE_MESSAGE;
+
 void brick_init(void) {
 	// Wait 5ms so everything can power up
 	SLEEP_MS(5);
@@ -85,10 +88,7 @@ void brick_init(void) {
 	logsi("JTAG disabled\n\r");
 #endif
 
-
-
     com_current = COM_NONE;
-    // Turn off all interrupts
     PIO_InitializeInterrupts(0);
 
     bricklet_clear_eeproms();
@@ -108,21 +108,30 @@ void brick_init(void) {
 
 void brick_init_start_tick_task(void) {
 	logsi("Add tick_task\n\r");
+
 	xTaskCreate(brick_tick_task,
-				(signed char *)"btt",
-				1000,
-				NULL,
+				(signed char *)"bmt",
+				700,
+				&type_message,
+				1,
+				(xTaskHandle *)NULL);
+
+	xTaskCreate(brick_tick_task,
+				(signed char *)"bct",
+				700,
+				&type_calculation,
 				1,
 				(xTaskHandle *)NULL);
 }
 
 void brick_tick_task(void *parameters) {
+	const uint8_t tick_type = *((uint8_t*)parameters);
 	unsigned long last_wake_time = xTaskGetTickCount();
 	while(true) {
-		tick_task();
+		tick_task(tick_type);
 		taskYIELD();
-		bricklet_tick_task();
-		led_tick_task();
+		bricklet_tick_task(tick_type);
+		led_tick_task(tick_type);
 
 		// 1ms resolution
 		vTaskDelayUntil(&last_wake_time, 1);

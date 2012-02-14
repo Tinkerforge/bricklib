@@ -34,7 +34,16 @@ typedef enum {
 	COM_RS485     = 4
 } ComType;
 
-#define SEND_BLOCKING_TRIALS 1000000
+#define SEND_BLOCKING_TRIALS            1000000
+
+#define SEND_BLOCKING_TRIALS_NONE       1
+#define SEND_BLOCKING_TRIALS_USB        SEND_BLOCKING_TRIALS
+#define SEND_BLOCKING_TRIALS_SPI_STACK  SEND_BLOCKING_TRIALS
+#define SEND_BLOCKING_TRIALS_RS485      SEND_BLOCKING_TRIALS
+
+// Not beeing able to send over chibi is expected (communication partner out
+// of range). Thus we don't want to wait too long.
+#define SEND_BLOCKING_TRIALS_CHIBI      10000
 
 typedef struct Com Com;
 

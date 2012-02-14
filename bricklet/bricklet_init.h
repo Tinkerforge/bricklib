@@ -36,6 +36,6 @@ void bricklet_deselect(const uint8_t bricklet);
 void bricklet_init(void);
 void bricklet_clear_eeproms(void);
 void bricklet_try_connection(const uint8_t bricklet);
-void bricklet_tick_task(void);
+void bricklet_tick_task(uint8_t tick_type);
 
 #endif

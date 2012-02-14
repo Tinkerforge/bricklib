@@ -196,11 +196,11 @@ void bricklet_write_asc_to_flash(const uint8_t bricklet) {
 
 	// Write api address to flash
 	int adr = (int)&ba;
-	FLASHD_Write(baddr[bricklet].api, &adr, sizeof(BrickletAPI*));
+	FLASHD_Write(baddr[bricklet].api, &adr, sizeof(int*));
 
 	// Write settings address to flash
 	adr = (int)&bs[bricklet];
-	FLASHD_Write(baddr[bricklet].settings, &adr, sizeof(BrickletSettings*));
+	FLASHD_Write(baddr[bricklet].settings, &adr, sizeof(int*));
 
 	// Write context address to flash
 	adr = (int)&bc[bricklet];
@@ -299,10 +299,10 @@ void bricklet_try_connection(const uint8_t bricklet) {
 	logbleti("Bricklet %c configured\n\r", 'a' + bricklet);
 }
 
-void bricklet_tick_task(void) {
+void bricklet_tick_task(uint8_t tick_type) {
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		if(bricklet_attached[i]) {
-			baddr[i].entry(BRICKLET_TYPE_TICK, 0, NULL);
+			baddr[i].entry(BRICKLET_TYPE_TICK, 0, &tick_type);
 		}
 	}
 }

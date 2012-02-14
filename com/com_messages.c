@@ -33,6 +33,10 @@
 #include "bricklib/bricklet/bricklet_config.h"
 #include "bricklib/bricklet/bricklet_init.h"
 
+#ifdef BRICK_CAN_BE_MASTER
+#include "extensions/extension_init.h"
+#endif
+
 #include "com_common.h"
 #include "config.h"
 
@@ -41,10 +45,8 @@ extern int16_t adc_gain;
 
 extern uint8_t master_mode;
 
-extern uint8_t chibi_address;
-extern uint8_t chibi_receiver_address;
-
 extern uint8_t com_last_ext_id[];
+extern uint8_t master_routing_table[];
 extern uint8_t com_last_spi_stack_id;
 extern uint8_t com_stack_id;
 extern uint64_t com_brick_uid;
@@ -53,10 +55,6 @@ extern ComType com_current;
 extern ComType com_ext[];
 extern BrickletSettings bs[];
 extern const BrickletAddress baddr[];
-
-#ifdef BRICK_CAN_BE_MASTER
-extern uint8_t master_routing_table[];
-#endif
 
 #ifndef COM_MESSAGES_USER
 #define COM_MESSAGES_USER
@@ -111,7 +109,7 @@ void get_adc_calibration(uint8_t com, const GetADCCalibration *data) {
 }
 
 void com_adc_calibrate(uint8_t com, const ADCCalibrate *data) {
-	uint8_t port = tolower(data->bricklet_port) - 'a';
+	uint8_t port = (uint8_t)(tolower(data->bricklet_port) - 'a');
 	if(port >= BRICKLET_NUM) {
 		// TODO: Error?
 		logblete("Bricklet Port %d does not exist (adc calibrate)\n\r", port);
@@ -135,6 +133,7 @@ void stack_enumerate(uint8_t com, const StackEnumerate *data) {
 		}
 	}
 
+
 	com_current = com;
 
 #ifdef BRICK_CAN_BE_MASTER
@@ -150,8 +149,8 @@ void stack_enumerate(uint8_t com, const StackEnumerate *data) {
 		}
 
 		if(id_diff != 0) {
+			uint8_t sa = 0;
 			for(uint16_t i = 0; i <= com_last_spi_stack_id; i++) {
-				uint8_t sa = 0;
 
 				if(master_routing_table[i] != sa) {
 					sa++;
@@ -167,11 +166,10 @@ void stack_enumerate(uint8_t com, const StackEnumerate *data) {
 											   sizeof(StackEnumerate),
 											   COM_SPI_STACK);
 
-					if(i + id_diff > stack_id_upto) {
-						stack_id_upto = i + id_diff;
-					}
 				}
 			}
+
+			com_last_spi_stack_id += id_diff;
 
 			if(id_diff > 0) {
 				for(int16_t i = MAX_STACK_IDS - 1; i >= id_diff; i--) {
@@ -188,11 +186,10 @@ void stack_enumerate(uint8_t com, const StackEnumerate *data) {
 					master_routing_table[i] = 0;
 				}
 			}
-			com_last_spi_stack_id = stack_id_upto;
-		} else {
-			if(com_last_spi_stack_id > stack_id_upto) {
-				stack_id_upto = com_last_spi_stack_id;
-			}
+		}
+
+		if(com_last_spi_stack_id > stack_id_upto) {
+			stack_id_upto = com_last_spi_stack_id;
 		}
 
 	}
@@ -252,41 +249,25 @@ void enumerate(uint8_t com, const Enumerate *data) {
 	com_current = com;
 
 #ifdef BRICK_CAN_BE_MASTER
-	// Enumerate Stack
-	for(uint8_t i = 1; i <= com_last_stack_address; i++) {
-		uint16_t id;
-		for(id = 0; id <= com_last_spi_stack_id; id++) {
-			if(master_routing_table[id] == i) {
-				break;
-			}
-		}
-
-		Enumerate e = {
-			id,
-			TYPE_ENUMERATE,
-			sizeof(Enumerate),
-		};
-		send_blocking_with_timeout(&e, sizeof(Enumerate), COM_SPI_STACK);
-	}
-
-	for(uint8_t com_num = 0; com_num < 2; com_num++) {
-		if(com_ext[com_num] != COM_NONE) {
+	if(master_mode & MASTER_MODE_MASTER) {
+		// Enumerate Stack
+		for(uint8_t i = 1; i <= com_last_stack_address; i++) {
 			uint16_t id;
-			for(id = com_last_spi_stack_id+1; id <= com_last_ext_id[com_num]; id++) {
-				if(master_routing_table[id] == chibi_receiver_address) {
+			for(id = 0; id <= com_last_spi_stack_id; id++) {
+				if(master_routing_table[id] == i) {
 					break;
 				}
 			}
 
-			if(id != com_last_ext_id[com_num]+1) {
-				Enumerate e = {
-					id,
-					TYPE_ENUMERATE,
-					sizeof(Enumerate),
-				};
-				send_blocking_with_timeout(&e, sizeof(Enumerate), com_ext[com_num]);
-			}
+			Enumerate e = {
+				id,
+				TYPE_ENUMERATE,
+				sizeof(Enumerate),
+			};
+			send_blocking_with_timeout(&e, sizeof(Enumerate), COM_SPI_STACK);
 		}
+
+		extension_enumerate(com, data);
 	}
 #endif
 }
@@ -329,44 +310,26 @@ void get_stack_id(uint8_t com, const GetStackID *data) {
 	}
 
 #ifdef BRICK_CAN_BE_MASTER
-	// Check Stack Stack IDs
-
-	for(uint8_t i = 1; i <= com_last_stack_address; i++) {
-		uint8_t id;
-		for(id = 0; id < MAX_STACK_IDS; id++) {
-			if(master_routing_table[id] == i) {
-				break;
-			}
-		}
-
-		GetStackID gsid = {
-			id,
-			TYPE_GET_STACK_ID,
-			sizeof(GetStackID),
-			data->uid
-		};
-		send_blocking_with_timeout(&gsid, sizeof(GetStackID), COM_SPI_STACK);
-	}
-
-	for(uint8_t com_num = 0; com_num < 2; com_num++) {
-		if(com_ext[com_num] != COM_NONE) {
-			uint16_t id;
-			for(id = com_last_spi_stack_id+1; id <= com_last_ext_id[com_num]; id++) {
-				if(master_routing_table[id] == chibi_receiver_address) {
+	if(master_mode & MASTER_MODE_MASTER) {
+		// Check Stack Stack IDs
+		for(uint8_t i = 1; i <= com_last_stack_address; i++) {
+			uint8_t id;
+			for(id = 0; id < MAX_STACK_IDS; id++) {
+				if(master_routing_table[id] == i) {
 					break;
 				}
 			}
 
-			if(id != MAX_STACK_IDS) {
-				GetStackID gsid = {
-					id,
-					TYPE_GET_STACK_ID,
-					sizeof(GetStackID),
-					data->uid
-				};
-				send_blocking_with_timeout(&gsid, sizeof(GetStackID), com_ext[com_num]);
-			}
+			GetStackID gsid = {
+				id,
+				TYPE_GET_STACK_ID,
+				sizeof(GetStackID),
+				data->uid
+			};
+			send_blocking_with_timeout(&gsid, sizeof(GetStackID), COM_SPI_STACK);
 		}
+
+		extension_stack_id(com, data);
 	}
 #endif
 }
