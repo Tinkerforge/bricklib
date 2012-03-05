@@ -32,7 +32,7 @@
 #include "bricklib/com/com_common.h"
 
 #define NUM_RECEIVE_TRIES 10000
-#define NUM_SEND_TRIES 10000
+#define NUM_SEND_TRIES 100000
 #define NUM_CALLBACK_TRIES 10000
 
 

@@ -111,7 +111,7 @@ inline uint16_t usb_send(const void *data, const uint16_t length) {
 		taskYIELD();
 		num_tries++;
 		// USBD_Write does not always call callback when USBD_STATUS_SUCCESS
-		// Wait for NUM_RECEIVE_TRIES
+		// Wait for NUM_SEND_TRIES
 		if(num_tries > NUM_SEND_TRIES) {
 			send_status = 0;
 			return 0;
