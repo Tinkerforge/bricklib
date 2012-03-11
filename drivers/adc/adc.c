@@ -102,7 +102,7 @@ void adc_read_calibration_from_flash(void) {
 }
 
 void adc_write_calibration_to_flash(void) {
-	uint32_t data = adc_offset | (adc_gain << 16);
+	uint32_t data = ((uint16_t)adc_offset) | (((uint16_t)adc_gain) << 16);
 
 	// Disable all irqs before plugin is written to flash.
 	// While writing to flash there can't be any other access to the flash
