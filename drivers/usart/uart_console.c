@@ -47,6 +47,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
+//#undef CONSOLE_USART
+//#define CONSOLE_USART UART1
+
 /*----------------------------------------------------------------------------
  *        Variables
  *----------------------------------------------------------------------------*/
@@ -84,11 +87,14 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
     const Pin pPins[] = CONSOLE_PINS;
     Uart *pUart = CONSOLE_USART;
 
+//    const Pin pPins[] = {{1 << 3, PIOB, ID_PIOB, PIO_PERIPH_A, PIO_DEFAULT}};
+//    Uart *pUart = CONSOLE_USART;
     /* Configure PIO */
     PIO_Configure(pPins, PIO_LISTSIZE(pPins));
 
     /* Configure PMC */
     PMC->PMC_PCER0 = 1 << CONSOLE_ID;
+    //PMC->PMC_PCER0 = 1 << ID_UART1;
 
     /* Reset and disable receiver & transmitter */
     pUart->UART_CR = UART_CR_RSTRX | UART_CR_RSTTX
@@ -382,4 +388,3 @@ extern WEAK signed int putchar( signed int c )
 
 #endif
 #endif // defined __ICCARM__
-
