@@ -69,7 +69,6 @@ unsigned int usb_recv_transferred = 0;
 
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
-static bool usb_request_received;
 
 char usb_recv_buffer[DEFAULT_EP_SIZE];
 char usb_send_buffer[DEFAULT_EP_SIZE];
@@ -155,10 +154,6 @@ void usb_isr_vbus(const Pin *pin) {
 
 bool usb_is_connected(void) {
 	return PIO_Get(&pin_usb_detect);
-}
-
-bool usb_request_is_received(void) {
-	return usb_request_received;
 }
 
 void usb_detect_configure(void) {
@@ -252,8 +247,5 @@ void usb_configure_clock_48mhz(void) {
 
 
 void USBDCallbacks_RequestReceived(const USBGenericRequest *request) {
-	// As soon as we get some kind of request it meens we are connected by USB
-	usb_request_received = true;
-
     USBDDriver_RequestHandler(&usbd_driver, request);
 }

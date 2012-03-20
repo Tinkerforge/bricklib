@@ -70,6 +70,7 @@ bool spi_stack_master_transceive(void) {
 
 	volatile uint8_t dummy = 0;
 
+	__disable_irq();
 	SPI->SPI_SR;
 	SPI->SPI_RDR;
 
@@ -86,6 +87,7 @@ bool spi_stack_master_transceive(void) {
 
 	if(timeout == 0) {
 		logspise("Timeout, did not receive 0xFF from Slave\n\r");
+		__enable_irq();
 		return false;
 	}
 
@@ -110,6 +112,7 @@ bool spi_stack_master_transceive(void) {
         while((SPI->SPI_SR & SPI_SR_RDRF) == 0);
         dummy = SPI->SPI_RDR;
 
+		__enable_irq();
         return true;
     }
 
@@ -172,9 +175,11 @@ bool spi_stack_master_transceive(void) {
     	if(!slave_ack) {
     		logspisw("Checksum: Received NACK from Slave\n\r");
     	}
+		__enable_irq();
     	return false;
     }
 
+    __enable_irq();
     return true;
 }
 
