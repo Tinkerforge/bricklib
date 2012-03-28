@@ -134,6 +134,11 @@ void brick_tick_task(void *parameters) {
 		led_tick_task(tick_type);
 
 		// 1ms resolution
+		unsigned long tick_count = xTaskGetTickCount();
+		if(tick_count > last_wake_time + 2) {
+			last_wake_time = tick_count - 1;
+		}
+
 		vTaskDelayUntil(&last_wake_time, 1);
 	}
 }
