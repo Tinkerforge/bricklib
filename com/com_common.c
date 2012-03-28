@@ -40,6 +40,7 @@ uint16_t send_blocking_with_timeout(const void *data,
 	uint32_t trials = com_blocking_trials[com];
 
 	while(length - bytes_send != 0 && trials--) {
+		//printf("trials (%d): %d\n\r", com, trials);
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com);
 		taskYIELD();
 	}

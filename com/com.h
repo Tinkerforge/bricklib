@@ -43,7 +43,7 @@ typedef enum {
 
 // Not beeing able to send over chibi is expected (communication partner out
 // of range). Thus we don't want to wait too long.
-#define SEND_BLOCKING_TRIALS_CHIBI      10000
+#define SEND_BLOCKING_TRIALS_CHIBI      100000
 
 typedef struct Com Com;
 

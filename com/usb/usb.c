@@ -86,12 +86,6 @@ void usb_send_callback(void *arg,
 }
 
 inline uint16_t usb_send(const void *data, const uint16_t length) {
-/*	if(USBD_HAL_Write(ep, data, length) != USBD_STATUS_SUCCESS) {
-		return 0;
-	}
-
-	return length;*/
-
 	if((send_status & (USB_IN_FUNCTION))) {
 		return 0;
 	}
