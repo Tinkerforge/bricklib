@@ -50,15 +50,15 @@ typedef void( *IntFunc )( void );
 
 extern void IrqHandlerNotUsed(void);
 
-extern __attribute__ ((weak)) void NMI_Handler( void );
-extern __attribute__ ((weak)) void HardFault_Handler( void );
-extern __attribute__ ((weak)) void MemManage_Handler( void );
-extern __attribute__ ((weak)) void BusFault_Handler( void );
-extern __attribute__ ((weak)) void UsageFault_Handler( void );
-extern __attribute__ ((weak)) void SVC_Handler( void );
-extern __attribute__ ((weak)) void DebugMon_Handler( void );
-extern __attribute__ ((weak)) void PendSV_Handler( void );
-extern __attribute__ ((weak)) void SysTick_Handler( void );
+extern __attribute__ ((weak)) void NMI_Handler(void);
+extern __attribute__ ((weak)) void HardFault_Handler(void);
+extern __attribute__ ((weak)) void MemManage_Handler(void);
+extern __attribute__ ((weak)) void BusFault_Handler(void);
+extern __attribute__ ((weak)) void UsageFault_Handler(void);
+extern __attribute__ ((weak)) void SVC_Handler(void);
+extern __attribute__ ((weak)) void DebugMon_Handler(void);
+extern __attribute__ ((weak)) void PendSV_Handler(void);
+extern __attribute__ ((weak)) void SysTick_Handler(void);
 
 extern __attribute__ ((weak)) void SUPC_IrqHandler(void);
 extern __attribute__ ((weak)) void RSTC_IrqHandler(void);

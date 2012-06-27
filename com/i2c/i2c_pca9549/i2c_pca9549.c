@@ -28,7 +28,6 @@
 #include <twi/twi.h>
 
 bool i2c_pca9549_write(uint8_t address, uint8_t data) {
-	//printf("write %d %d\n\r", address, data);
 	// Set address
 	// No internal address for bus switch PCA9549
     TWI_BRICKLET->TWI_MMR = 0;
@@ -40,7 +39,6 @@ bool i2c_pca9549_write(uint8_t address, uint8_t data) {
     while(!TWI_ByteSent(TWI_BRICKLET) &&
           (++timeout < BUS_SWITCH_MAX_TIMEOUT));
     if(timeout == BUS_SWITCH_MAX_TIMEOUT) {
-    	//printf("SPI stack write timeout bs\n\r");
     	return false;
     }
 
@@ -50,7 +48,6 @@ bool i2c_pca9549_write(uint8_t address, uint8_t data) {
     while(!TWI_TransferComplete(TWI_BRICKLET) &&
           (++timeout < BUS_SWITCH_MAX_TIMEOUT));
     if(timeout == BUS_SWITCH_MAX_TIMEOUT) {
-    	//printf("SPI stack write timeout tc\n\r");
     	return false;
     }
 
@@ -73,7 +70,6 @@ bool i2c_pca9549_read(uint8_t address, uint8_t *data) {
     while(!TWI_ByteReceived(TWI_BRICKLET) &&
           (++timeout < BUS_SWITCH_MAX_TIMEOUT));
     if(timeout == BUS_SWITCH_MAX_TIMEOUT) {
-    	//printf("SPI stack read timeout br\n\r");
     	return false;
     }
 	*data = TWI_ReadByte(TWI_BRICKLET);
@@ -82,7 +78,6 @@ bool i2c_pca9549_read(uint8_t address, uint8_t *data) {
     while(!TWI_TransferComplete(TWI_BRICKLET) &&
           (++timeout < BUS_SWITCH_MAX_TIMEOUT));
     if(timeout == BUS_SWITCH_MAX_TIMEOUT) {
-    	//printf("SPI stack read timeout tc\n\r");
     	return false;
     }
 

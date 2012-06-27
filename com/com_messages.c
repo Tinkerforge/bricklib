@@ -273,7 +273,7 @@ void enumerate(uint8_t com, const Enumerate *data) {
 }
 
 void get_stack_id(uint8_t com, const GetStackID *data) {
-	logd("Get UID: %d\n\r", data->uid);
+	logd("Get stack id to UID: %d\n\r", data->uid);
 	GetStackIDReturn gsidr;
 
 	gsidr.stack_id        = 0;

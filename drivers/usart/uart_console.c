@@ -40,6 +40,9 @@
 #include "uart_console.h"
 #include "config.h"
 
+
+//#define CONSOLE_USART_USE_UART1
+
 #ifdef LOGGING_SERIAL
 
 #include <pio/pio.h>
@@ -47,8 +50,10 @@
 #include <stdio.h>
 #include <stdint.h>
 
-//#undef CONSOLE_USART
-//#define CONSOLE_USART UART1
+#ifdef CONSOLE_USART_USE_UART1
+#undef CONSOLE_USART
+#define CONSOLE_USART UART1
+#endif
 
 /*----------------------------------------------------------------------------
  *        Variables
@@ -84,17 +89,23 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
     NVIC_EnableIRQ( USART1_IRQn ) ;
     USART_SetTransmitterEnabled( USART1, 1 ) ;
 #else
+
+#ifdef CONSOLE_USART_USE_UART1
+    const Pin pPins[] = {{1 << 3, PIOB, ID_PIOB, PIO_PERIPH_A, PIO_DEFAULT}};
+    Uart *pUart = CONSOLE_USART;
+#else
     const Pin pPins[] = CONSOLE_PINS;
     Uart *pUart = CONSOLE_USART;
-
-//    const Pin pPins[] = {{1 << 3, PIOB, ID_PIOB, PIO_PERIPH_A, PIO_DEFAULT}};
-//    Uart *pUart = CONSOLE_USART;
+#endif
     /* Configure PIO */
     PIO_Configure(pPins, PIO_LISTSIZE(pPins));
 
     /* Configure PMC */
+#ifdef CONSOLE_USART_USE_UART1
+    PMC->PMC_PCER0 = 1 << ID_UART1;
+#else
     PMC->PMC_PCER0 = 1 << CONSOLE_ID;
-    //PMC->PMC_PCER0 = 1 << ID_UART1;
+#endif
 
     /* Reset and disable receiver & transmitter */
     pUart->UART_CR = UART_CR_RSTRX | UART_CR_RSTTX

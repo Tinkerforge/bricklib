@@ -72,7 +72,57 @@ __attribute__ ((weak)) void NMI_Handler(void)
  */
 __attribute__ ((weak)) void HardFault_Handler(void)
 {
-	logf("HFSR: %d\n\r", SCB->HFSR);
+
+	__asm("MOVS   R0, #4  \n"
+	      "MOV    R1, LR  \n"
+	      "TST    R0, R1  \n"
+	      "BEQ    _MSP    \n"
+	      "MRS    R0, PSP \n"
+	      "B      HardFault_HandlerC      \n"
+	      "_MSP:  \n"
+	      "MRS    R0, MSP \n"
+	      "B      HardFault_HandlerC      \n");
+}
+
+__attribute__ ((weak)) void HardFault_HandlerC(uint32_t * hardfault_args)
+{
+	uint32_t stacked_r0;
+	uint32_t stacked_r1;
+	uint32_t stacked_r2;
+	uint32_t stacked_r3;
+	uint32_t stacked_r12;
+	uint32_t stacked_lr;
+	uint32_t stacked_pc;
+	uint32_t stacked_psr;
+
+	stacked_r0 = ((uint32_t) hardfault_args[0]);
+	stacked_r1 = ((uint32_t) hardfault_args[1]);
+	stacked_r2 = ((uint32_t) hardfault_args[2]);
+	stacked_r3 = ((uint32_t) hardfault_args[3]);
+
+	stacked_r12 = ((uint32_t) hardfault_args[4]);
+	stacked_lr = ((uint32_t) hardfault_args[5]);
+	stacked_pc = ((uint32_t) hardfault_args[6]);
+	stacked_psr = ((uint32_t) hardfault_args[7]);
+
+	uint32_t *pc = (uint32_t*)stacked_pc;
+
+	logf("\n\n[Hard fault handler]\n\r");
+	logf("R0 = %x\n\r", stacked_r0);
+	logf("R1 = %x\n\r", stacked_r1);
+	logf("R2 = %x\n\r", stacked_r2);
+	logf("R3 = %x\n\r", stacked_r3);
+	logf("R12 = %x\n\r", stacked_r12);
+	logf("LR [R14] = %x  subroutine call return address\n\r", stacked_lr);
+	logf("PC [R15] = %x (%d)  program counter\n\r", stacked_pc, *pc);
+	logf("PSR = %x\n\r", stacked_psr);
+	logf("BFAR = %x\n\r", (*((volatile uint32_t *)(0xE000ED38))));
+	logf("CFSR = %x\n\r", (*((volatile uint32_t *)(0xE000ED28))));
+	logf("HFSR = %x\n\r", (*((volatile uint32_t *)(0xE000ED2C))));
+	logf("DFSR = %x\n\r", (*((volatile uint32_t *)(0xE000ED30))));
+	logf("AFSR = %x\n\r", (*((volatile uint32_t *)(0xE000ED3C))));
+	logf("SCB_SHCSR = %x\n\r", SCB->SHCSR);
+
     while(1);
 }
 
