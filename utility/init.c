@@ -98,12 +98,24 @@ void brick_init(void) {
 	usb_detect_configure();
 
 	adc_init();
+	adc_enable_temperature_sensor();
 #ifndef NO_PERIODIC_ADC_CONVERISION
 	adc_start_periodic_conversion();
 #endif
     logsi("A/D converter initialized\n\r");
 
 	bricklet_init();
+}
+
+void brick_reset(void) {
+	RSTC->RSTC_MR = RSTC_MR_URSTEN |
+	                (10 << RSTC_MR_ERSTL_Pos) |
+	                RSTC_MR_KEY(0xA5);
+
+	RSTC->RSTC_CR = RSTC_CR_EXTRST |
+	                RSTC_CR_PERRST |
+	                RSTC_CR_PROCRST |
+	                RSTC_CR_KEY(0xA5);
 }
 
 void brick_init_start_tick_task(void) {

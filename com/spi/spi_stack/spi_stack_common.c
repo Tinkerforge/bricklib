@@ -52,6 +52,7 @@ uint16_t spi_stack_send(const void *data, const uint16_t length) {
 	if(spi_stack_buffer_size_send > 0) {
 		return 0;
 	}
+
 	led_rxtx++;
 
 	uint16_t send_length = MIN(length, SPI_STACK_BUFFER_SIZE);

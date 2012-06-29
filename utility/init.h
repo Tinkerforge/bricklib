@@ -29,5 +29,6 @@ void brick_init(void);
 void brick_init_new_connection(void);
 void brick_tick_task(void *parameters);
 void brick_init_start_tick_task(void);
+void brick_reset(void);
 
 #endif

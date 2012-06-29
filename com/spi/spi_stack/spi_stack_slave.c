@@ -56,10 +56,6 @@ extern const BrickletAddress baddr[];
 static const Pin spi_slave_pins[] = {PINS_SPI, PIN_SPI_SELECT_SLAVE};
 
 void SPI_IrqHandler(void) {
-	/*if(SERVO_COUNTER < 250*8) {
-		return;
-	}*/
-
 	if(spi_stack_buffer_size_recv != 0) {
 		return;
 	}

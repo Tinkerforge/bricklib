@@ -167,3 +167,8 @@ void adc_calibrate(uint8_t c) {
 	}
 
 }
+
+void adc_enable_temperature_sensor(void) {
+	ADC->ADC_ACR |= ADC_ACR_TSON;
+	adc_channel_enable(ADC_CHANNEL_TEMPERATURE_SENSOR);
+}

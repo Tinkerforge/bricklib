@@ -63,6 +63,8 @@ extern const BrickletAddress baddr[];
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
+	{TYPE_GET_CHIP_TEMPERATURE, (message_handler_func_t)get_chip_temperature},
+	{TYPE_RESET, (message_handler_func_t)reset},
 	COM_MESSAGES_BRICKLET
 	{TYPE_GET_ADC_CALIBRATION, (message_handler_func_t)get_adc_calibration},
 	{TYPE_ADC_CALIBRATE, (message_handler_func_t)com_adc_calibrate},
@@ -93,6 +95,21 @@ inline uint8_t get_stack_id_from_data(const char *data) {
 
 inline uint8_t get_type_from_data(const char *data) {
 	return data[1];
+}
+
+void reset(uint8_t com, const Reset *data) {
+	brick_reset();
+}
+
+void get_chip_temperature(uint8_t com, const GetChipTemperature *data) {
+	GetChipTemperatureReturn gctr;
+
+	gctr.stack_id        = data->stack_id;
+	gctr.type            = data->type;
+	gctr.length          = sizeof(GetChipTemperatureReturn);
+	gctr.temperature     = adc_get_temperature();
+
+	send_blocking_with_timeout(&gctr, sizeof(GetChipTemperatureReturn), com);
 }
 
 void get_adc_calibration(uint8_t com, const GetADCCalibration *data) {
@@ -273,7 +290,7 @@ void enumerate(uint8_t com, const Enumerate *data) {
 }
 
 void get_stack_id(uint8_t com, const GetStackID *data) {
-	logd("Get stack id to UID: %d\n\r", data->uid);
+	logd("Get stack id to UID: %d\n\r", (uint32_t)(data->uid >> 32));
 	GetStackIDReturn gsidr;
 
 	gsidr.stack_id        = 0;

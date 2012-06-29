@@ -35,6 +35,9 @@
 
 #define SIZE_OF_MESSAGE_TYPE 4
 
+#define TYPE_GET_CHIP_TEMPERATURE 242
+#define TYPE_RESET 243
+
 #define TYPE_GET_ADC_CALIBRATION 250
 #define TYPE_ADC_CALIBRATE 251
 #define TYPE_STACK_ENUMERATE 252
@@ -68,6 +71,25 @@ typedef struct {
 	char file_and_message[];
 } GetLogging;
 */
+
+typedef struct {
+	uint8_t stack_id;
+	uint8_t type;
+	uint16_t length;
+} __attribute__((__packed__)) GetChipTemperature;
+
+typedef struct {
+	uint8_t stack_id;
+	uint8_t type;
+	uint16_t length;
+	int16_t temperature;
+} __attribute__((__packed__)) GetChipTemperatureReturn;
+
+typedef struct {
+	uint8_t stack_id;
+	uint8_t type;
+	uint16_t length;
+} __attribute__((__packed__)) Reset;
 
 typedef struct {
 	uint8_t stack_id;
@@ -142,6 +164,8 @@ uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
 
+void reset(uint8_t com, const Reset *data);
+void get_chip_temperature(uint8_t com, const GetChipTemperature *data);
 void get_adc_calibration(uint8_t com, const GetADCCalibration *data);
 void com_adc_calibrate(uint8_t com, const ADCCalibrate *data);
 void stack_enumerate(uint8_t com, const StackEnumerate *data);
