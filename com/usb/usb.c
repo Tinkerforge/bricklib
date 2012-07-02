@@ -35,6 +35,7 @@
 
 #include "bricklib/com/com_messages.h"
 #include "bricklib/com/com.h"
+#include "bricklib/utility/init.h"
 #include "bricklib/com/com_common.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/logging/logging.h"
@@ -138,12 +139,7 @@ inline uint16_t usb_recv(void *data, const uint16_t length) {
 }
 
 void usb_isr_vbus(const Pin *pin) {
-    // Check current level on VBus
-    if (PIO_Get(&pin_usb_detect)) {
-        USBD_Connect();
-    } else {
-        USBD_Disconnect();
-    }
+	brick_reset();
 }
 
 bool usb_is_connected(void) {
