@@ -130,7 +130,12 @@ void adc_write_calibration_to_flash(void) {
 }
 
 uint16_t adc_channel_get_data(uint8_t c) {
+	if(ADC_MAX_VALUE*ADC->ADC_CDR[c]/adc_gain < -adc_offset) {
+	    return 0;
+	}
+
 	uint16_t value = ADC_MAX_VALUE*ADC->ADC_CDR[c]/adc_gain + adc_offset;
+
 	if(value > ADC_MAX_VALUE) {
 		return ADC_MAX_VALUE;
 	}
