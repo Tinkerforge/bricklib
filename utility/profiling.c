@@ -26,9 +26,12 @@
 
 #ifdef PROFILING
 #include <stdio.h>
-#include <tc/tc.h>
 #include <FreeRTOS.h>
 #include <task.h>
+
+#include "bricklib/drivers/tc/tc.h"
+#include "bricklib/logging/logging.h"
+
 volatile unsigned long ulHighFrequencyTimerTicks = 0UL;
 
 void profiling_init(void) {
@@ -38,8 +41,28 @@ void profiling_init(void) {
     // Configure TC for PROFILING_FREQUENCY frequency and trigger on RC compare.
     uint32_t div;
     uint32_t tcclks;
-    TC_FindMckDivisor(PROFILING_FREQUENCY, BOARD_MCK, &div, &tcclks, BOARD_MCK);
-    TC_Configure(TC0, 0, tcclks | TC_CMR_CPCTRG);
+
+    const uint32_t divisors[5] = {2, 8, 32, 128,BOARD_MCK / 32768};
+
+    uint32_t index = 0;
+
+    // Satisfy lower bound
+    while(PROFILING_FREQUENCY < ((BOARD_MCK / divisors[index]) / 65536)) {
+        index++;
+    }
+
+    // Try to maximize DIV while satisfying upper bound
+    while(index < 4) {
+        if (PROFILING_FREQUENCY > (BOARD_MCK / divisors[index + 1])) {
+            break;
+        }
+        index++;
+    }
+
+    div = divisors[index];
+    tcclks = index;
+
+    tc_channel_init(&TC0->TC_CHANNEL[0], tcclks | TC_CMR_CPCTRG);
     TC0->TC_CHANNEL[0].TC_RC = (BOARD_MCK / div) / PROFILING_FREQUENCY;
 
     // Configure and enable interrupt on RC compare
@@ -50,7 +73,7 @@ void profiling_init(void) {
     NVIC_SetPriority(TC0_IRQn, PRIORITY_PROFILING_TC0);
     NVIC_EnableIRQ(TC0_IRQn);
 
-    TC_Start(TC0, 0);
+    tc_channel_start(&TC0->TC_CHANNEL[0]);
 }
 
 void TC0_IrqHandler(void) {
@@ -59,7 +82,7 @@ void TC0_IrqHandler(void) {
 	ulHighFrequencyTimerTicks++;
 	if(ulHighFrequencyTimerTicks == PROFILING_FREQUENCY*PROFILING_TIME) {
 		signed char stats[1000];
-		vTaskGetRunTimeStats(&stats);
+		vTaskGetRunTimeStats(stats);
 		logi("%s", stats);
 	}
 }
