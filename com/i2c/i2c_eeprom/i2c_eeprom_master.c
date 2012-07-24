@@ -227,13 +227,14 @@ bool i2c_eeprom_master_write_uid(Twi *twi, uint64_t uid) {
 
 bool i2c_eeprom_master_read_plugin(Twi *twi,
                                    char *plugin,
-                                   const uint8_t position) {
-	uint16_t add = PLUGIN_CHUNK_SIZE*position;
+                                   const uint8_t position,
+                                   const uint16_t chunk_size) {
+	uint16_t add = chunk_size*position;
 
 	if(i2c_eeprom_master_read(twi,
 	                          I2C_EEPROM_INTERNAL_ADDRESS_PLUGIN + add,
 	                          plugin,
-	                          PLUGIN_CHUNK_SIZE)) {
+	                          chunk_size)) {
 		logieei("read plugin [%d %d %d %d %d %d...]\n\r", plugin[0],
 		                                                  plugin[1],
 		                                                  plugin[2],

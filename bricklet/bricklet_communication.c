@@ -109,7 +109,8 @@ void read_bricklet_plugin(uint8_t com, const ReadBrickletPlugin *data) {
 	bricklet_select(port);
 	i2c_eeprom_master_read_plugin(TWI_BRICKLET,
 	                              rbpr.plugin,
-	                              data->position);
+	                              data->position,
+	                              PLUGIN_CHUNK_SIZE);
 	bricklet_deselect(port);
 
 	send_blocking_with_timeout(&rbpr, sizeof(ReadBrickletPluginReturn), com);

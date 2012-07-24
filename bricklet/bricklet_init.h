@@ -29,7 +29,8 @@
 void bricklet_write_asc_to_flash(const uint8_t bricklet);
 void bricklet_write_plugin_to_flash(const char *plugin,
                                     const uint8_t position,
-                                    const uint8_t bricklet);
+                                    const uint8_t bricklet,
+                                    const uint8_t chunk_size);
 bool bricklet_init_plugin(const uint8_t bricklet);
 void bricklet_select(const uint8_t bricklet);
 void bricklet_deselect(const uint8_t bricklet);

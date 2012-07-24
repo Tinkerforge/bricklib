@@ -188,12 +188,6 @@ void bricklet_write_asc_to_flash(const uint8_t bricklet) {
 	DISABLE_RESET_BUTTON();
 	__disable_irq();
 
-	// Unlock flash region
-	FLASHD_Unlock(baddr[bricklet].plugin,
-				  baddr[bricklet].plugin + BRICKLET_PLUGIN_MAX_SIZE,
-				  0,
-				  0);
-
 	// Write api address to flash
 	int adr = (int)&ba;
 	FLASHD_Write(baddr[bricklet].api, &adr, sizeof(int*));
@@ -206,24 +200,38 @@ void bricklet_write_asc_to_flash(const uint8_t bricklet) {
 	adr = (int)&bc[bricklet];
 	FLASHD_Write(baddr[bricklet].context, &adr, sizeof(int*));
 
-	// Lock flash and enable irqs again
-	FLASHD_Lock(baddr[bricklet].plugin,
-				baddr[bricklet].plugin + BRICKLET_PLUGIN_MAX_SIZE,
-				0,
-				0);
-
 	__enable_irq();
     ENABLE_RESET_BUTTON();
 }
 
 void bricklet_write_plugin_to_flash(const char *plugin,
 	                                const uint8_t position,
-	                                const uint8_t bricklet) {
+	                                const uint8_t bricklet,
+	                                const uint8_t chunk_size) {
 	// Disable all irqs before plugin is written to flash.
 	// While writing to flash there can't be any other access to the flash
 	// (e.g. via interrupts).
 	DISABLE_RESET_BUTTON();
 	__disable_irq();
+
+    // Write plugin to flash
+    uint16_t add = position*chunk_size;
+    FLASHD_Write(baddr[bricklet].plugin + add, plugin, chunk_size);
+
+
+
+    __enable_irq();
+    ENABLE_RESET_BUTTON();
+}
+
+bool bricklet_init_plugin(const uint8_t bricklet) {
+	FLASHD_Initialize(BOARD_MCK, true);
+
+	bricklet_select(bricklet);
+
+	char plugin[PLUGIN_CHUNK_SIZE_STARTUP];
+
+	const uint16_t end = BRICKLET_PLUGIN_MAX_SIZE/PLUGIN_CHUNK_SIZE_STARTUP - 1;
 
 	// Unlock flash region
     FLASHD_Unlock(baddr[bricklet].plugin,
@@ -231,34 +239,19 @@ void bricklet_write_plugin_to_flash(const char *plugin,
 				  0,
 				  0);
 
-    // Write plugin to flash
-    uint16_t add = position*PLUGIN_CHUNK_SIZE;
-    FLASHD_Write(baddr[bricklet].plugin + add, plugin, PLUGIN_CHUNK_SIZE);
+	for(int position = 0; position < end; position++) {
+		i2c_eeprom_master_read_plugin(TWI_BRICKLET, plugin, position, PLUGIN_CHUNK_SIZE_STARTUP);
+		bricklet_write_plugin_to_flash(plugin, position, bricklet, PLUGIN_CHUNK_SIZE_STARTUP);
+	}
+
+	bricklet_deselect(bricklet);
+	bricklet_write_asc_to_flash(bricklet);
 
     // Lock flash and enable irqs again
     FLASHD_Lock(baddr[bricklet].plugin,
                 baddr[bricklet].plugin + BRICKLET_PLUGIN_MAX_SIZE,
 				0,
 				0);
-
-    __enable_irq();
-    ENABLE_RESET_BUTTON();
-}
-
-bool bricklet_init_plugin(const uint8_t bricklet) {
-	bricklet_select(bricklet);
-
-	char plugin[PLUGIN_CHUNK_SIZE];
-
-	const uint16_t end = BRICKLET_PLUGIN_MAX_SIZE/PLUGIN_CHUNK_SIZE - 1;
-
-	for(int position = 0; position < end; position++) {
-		i2c_eeprom_master_read_plugin(TWI_BRICKLET, plugin, position);
-		bricklet_write_plugin_to_flash(plugin, position, bricklet);
-	}
-
-	bricklet_deselect(bricklet);
-	bricklet_write_asc_to_flash(bricklet);
 
 	logbleti("Calling constructor for bricklet %c\n\r", 'a' + bricklet);
 	baddr[bricklet].entry(BRICKLET_TYPE_CONSTRUCTOR, 0, NULL);
@@ -322,6 +315,7 @@ void bricklet_clear_eeproms(void) {
 }
 
 void bricklet_init(void) {
+
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		if(bs[i].pin_select.pio != NULL) {
 			PIO_Configure(&(bs[i].pin_select), 1);

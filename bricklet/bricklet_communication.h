@@ -26,6 +26,7 @@
 #include "bricklib/com/com_messages.h"
 
 #define PLUGIN_CHUNK_SIZE 32
+#define PLUGIN_CHUNK_SIZE_STARTUP 128
 
 #define TYPE_WRITE_BRICKLET_NAME 244
 #define TYPE_READ_BRICKLET_NAME 245
