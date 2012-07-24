@@ -31,7 +31,8 @@ typedef enum {
 	COM_USB       = 1,
 	COM_SPI_STACK = 2,
 	COM_CHIBI     = 3,
-	COM_RS485     = 4
+	COM_RS485     = 4,
+	COM_WIFI      = 5
 } ComType;
 
 #define SEND_BLOCKING_TRIALS            1000000
@@ -40,6 +41,7 @@ typedef enum {
 #define SEND_BLOCKING_TRIALS_USB        SEND_BLOCKING_TRIALS
 #define SEND_BLOCKING_TRIALS_SPI_STACK  SEND_BLOCKING_TRIALS
 #define SEND_BLOCKING_TRIALS_RS485      SEND_BLOCKING_TRIALS
+#define SEND_BLOCKING_TRIALS_WIFI       SEND_BLOCKING_TRIALS
 
 // Not beeing able to send over chibi is expected (communication partner out
 // of range). Thus we don't want to wait too long.
