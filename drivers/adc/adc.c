@@ -40,9 +40,9 @@ int16_t adc_gain = ADC_MAX_VALUE;
 
 // We try to satisfy these boundaries with a factor of at least 10
 
-// use 0.125mhz adc frequency with prescaler 255
+// use 0.25mhz adc frequency with prescaler 128
 // 1 clock cycle is 8us
-#define ADC_PRESCALER 255
+#define ADC_PRESCALER 128
 
 // 512 clock cycle startup time
 #define ADC_STARTUP   ADC_MR_STARTUP_SUT512
@@ -60,8 +60,8 @@ int16_t adc_gain = ADC_MAX_VALUE;
 #define ADC_TRANSFER 1
 
 // All together, when 8 adc channels are used:
-// 8*(3+5+5)*8us = 832us
-// Maximum trigger frequency is 1.202kHz
+// 4*(3+5+5)*8us = 416us
+// Maximum trigger frequency is 2.404kHz
 
 void adc_init(void) {
 	adc_read_calibration_from_flash();
