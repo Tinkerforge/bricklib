@@ -38,6 +38,7 @@
 #define adc_channel_get_data_unfiltered(c) (ADC->ADC_CDR[(c)])
 #define adc_get_temperature() (((((int32_t)adc_channel_get_data(ADC_CHANNEL_TEMPERATURE_SENSOR))*3300/4095)-800)*1000/265 + 270)
 
+void adc_enable_temperature_sensor(void);
 void adc_init(void);
 void adc_start_periodic_conversion(void);
 uint16_t adc_channel_get_data(uint8_t c);

@@ -224,7 +224,7 @@ void stack_enumerate(uint8_t com, const StackEnumerate *data) {
 }
 
 void enumerate(uint8_t com, const Enumerate *data) {
-	logd("Returning Enumeration for Brick: %d\n\r", com);
+	logd("Returning Enumeration for Brick: %d, stack id: %d\n\r", com, com_stack_id);
 
 	// Enumerate Brick
 	EnumerateCallback ec = {

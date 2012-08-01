@@ -28,6 +28,8 @@
 
 #include "com_messages.h"
 
+#define MESSAGE_LOOP_SIZE 550
+
 typedef void (*function_message_loop_return_t)(char *, uint16_t);
 
 typedef struct {

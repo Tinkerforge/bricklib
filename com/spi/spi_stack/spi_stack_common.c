@@ -47,7 +47,6 @@ uint8_t spi_stack_buffer_send[SPI_STACK_BUFFER_SIZE] = {0};
 uint16_t spi_stack_buffer_size_send = 0;
 uint16_t spi_stack_buffer_size_recv = 0;
 
-
 uint16_t spi_stack_send(const void *data, const uint16_t length) {
 	if(spi_stack_buffer_size_send > 0) {
 		return 0;

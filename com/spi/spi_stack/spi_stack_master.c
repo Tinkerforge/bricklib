@@ -39,6 +39,7 @@
 #include "bricklib/com/spi/spi_common.h"
 #include "bricklib/com/i2c/i2c_eeprom/i2c_eeprom_master.h"
 #include "bricklib/drivers/uid/uid.h"
+#include "extensions/rs485/rs485_low_level.h"
 
 #include "spi_stack_select.h"
 #include "spi_stack_common.h"
@@ -57,6 +58,8 @@ extern uint8_t com_last_stack_address;
 extern uint8_t spi_stack_select_last_num;
 extern uint8_t spi_stack_buffer_recv[SPI_STACK_BUFFER_SIZE];
 extern uint8_t spi_stack_buffer_send[SPI_STACK_BUFFER_SIZE];
+
+extern uint8_t rs485_state;
 
 // Recv and send buffer size for SPI stack (written by spi_stack_send/recv)
 extern uint16_t spi_stack_buffer_size_send;

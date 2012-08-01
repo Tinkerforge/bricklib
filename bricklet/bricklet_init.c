@@ -225,8 +225,6 @@ void bricklet_write_plugin_to_flash(const char *plugin,
 }
 
 bool bricklet_init_plugin(const uint8_t bricklet) {
-	FLASHD_Initialize(BOARD_MCK, true);
-
 	bricklet_select(bricklet);
 
 	char plugin[PLUGIN_CHUNK_SIZE_STARTUP];

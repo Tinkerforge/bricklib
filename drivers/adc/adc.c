@@ -40,9 +40,9 @@ int16_t adc_gain = ADC_MAX_VALUE;
 
 // We try to satisfy these boundaries with a factor of at least 10
 
-// use 0.25mhz adc frequency with prescaler 128
+// use 0.25mhz adc frequency with prescaler 127
 // 1 clock cycle is 8us
-#define ADC_PRESCALER 128
+#define ADC_PRESCALER 127
 
 // 512 clock cycle startup time
 #define ADC_STARTUP   ADC_MR_STARTUP_SUT512

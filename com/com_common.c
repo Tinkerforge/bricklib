@@ -33,6 +33,8 @@
 extern uint32_t led_rxtx;
 extern uint32_t com_blocking_trials[];
 
+extern uint8_t rs485_state;
+
 uint16_t send_blocking_with_timeout(const void *data,
                                     const uint16_t length,
                                     ComType com) {

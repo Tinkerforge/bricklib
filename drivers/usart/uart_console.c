@@ -40,9 +40,6 @@
 #include "uart_console.h"
 #include "config.h"
 
-
-//#define CONSOLE_USART_USE_UART1
-
 #ifdef LOGGING_SERIAL
 
 #include <pio/pio.h>

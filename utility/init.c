@@ -123,14 +123,14 @@ void brick_init_start_tick_task(void) {
 
 	xTaskCreate(brick_tick_task,
 				(signed char *)"bmt",
-				700,
+				500,
 				&type_message,
 				1,
 				(xTaskHandle *)NULL);
 
 	xTaskCreate(brick_tick_task,
 				(signed char *)"bct",
-				700,
+				500,
 				&type_calculation,
 				1,
 				(xTaskHandle *)NULL);
