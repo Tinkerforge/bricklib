@@ -29,23 +29,44 @@
 
 #define SLEEP_NS(x) \
 	do { \
-		for(uint32_t i = 0; i < (((BOARD_MCK)/1000000)*(x))/1000; i++) { \
-			__NOP(); \
-		} \
+		uint32_t i = (((BOARD_MCK)/1000000)*(x))/3000; \
+		__ASM volatile ( \
+			"PUSH {R0}\n" \
+			"MOV R0, %0\n" \
+			"1:\n" \
+			"SUBS R0, #1\n" \
+			"BNE.N 1b\n" \
+			"POP {R0}\n" \
+			:: "r" (i) \
+		); \
 	} while(0)
 
 #define SLEEP_US(x) \
 	do { \
-		for(uint32_t i = 0; i < (((BOARD_MCK)/1000000)*(x)); i++) { \
-			__NOP(); \
-		} \
+		uint32_t i = ((BOARD_MCK)/1000000)*(x)/3; \
+		__ASM volatile ( \
+			"PUSH {R0}\n" \
+			"MOV R0, %0\n" \
+			"1:\n" \
+			"SUBS R0, #1\n" \
+			"BNE.N 1b\n" \
+			"POP {R0}\n" \
+			:: "r" (i) \
+		); \
 	} while(0)
 
 #define SLEEP_MS(x) \
 	do { \
-		for(uint32_t i = 0; i < (((BOARD_MCK)/1000)*(x)); i++) { \
-			__NOP(); \
-		} \
+		uint32_t i = ((BOARD_MCK)/1000)*(x)/3; \
+		__ASM volatile ( \
+			"PUSH {R0}\n" \
+			"MOV R0, %0\n" \
+			"1:\n" \
+			"SUBS R0, #1\n" \
+			"BNE.N 1b\n" \
+			"POP {R0}\n" \
+			:: "r" (i) \
+		); \
 	} while(0)
 
 #ifndef ABS
