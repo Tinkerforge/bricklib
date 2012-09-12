@@ -28,6 +28,8 @@
 
 #include <pio/pio.h>
 
+#include "bricklib/utility/util_definitions.h"
+
 uint32_t led_rxtx = 0;
 uint8_t led_counter = 0;
 
@@ -74,12 +76,10 @@ bool led_is_on(const uint8_t led_num) {
 #endif
 }
 
-void led_blink(const uint8_t led_num, const uint32_t cycles) {
+void led_blink(const uint8_t led_num, const uint32_t delay) {
 #ifdef PINS_LED
     led_on(led_num);
-    for(uint32_t i = 0; i < cycles; i++) {
-    	__NOP();
-    }
+    SLEEP_MS(delay);
     led_off(led_num);
 #endif
 }

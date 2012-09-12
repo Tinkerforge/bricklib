@@ -37,7 +37,7 @@ void led_on(const uint8_t led_num);
 void led_off(const uint8_t led_num);
 void led_toggle(const uint8_t led_num);
 bool led_is_on(const uint8_t led_num);
-void led_blink(const uint8_t led_num, const uint32_t cycles);
+void led_blink(const uint8_t led_num, const uint32_t delay);
 void led_tick_task(uint8_t tick_type);
 
 #endif
