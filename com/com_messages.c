@@ -293,6 +293,8 @@ void get_stack_id(uint8_t com, const GetStackID *data) {
 	logd("Get stack id to UID: %d\n\r", (uint32_t)(data->uid >> 32));
 	GetStackIDReturn gsidr;
 
+	com_current = com;
+
 	gsidr.stack_id        = 0;
 	gsidr.type            = data->type;
 	gsidr.length          = sizeof(GetStackIDReturn);
