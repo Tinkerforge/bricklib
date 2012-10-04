@@ -2,7 +2,7 @@ Brick Library
 =============
 
 This repository contains the generic source code that is used by all Bricks
-(Master, Stepper, Servo, DC, IMU, etc)
+(Master, Stepper, Servo, DC, IMU, etc.)
 
 Usage
 -----
