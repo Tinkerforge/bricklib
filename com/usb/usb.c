@@ -33,6 +33,8 @@
 #include <usb/USBD.h>
 #include <usb/USBD_HAL.h>
 
+#include "bricklib/drivers/adc/adc.h"
+
 #include "bricklib/com/com_messages.h"
 #include "bricklib/com/com.h"
 #include "bricklib/utility/init.h"
@@ -61,6 +63,10 @@ extern uint8_t com_last_stack_address;
 extern uint8_t com_stack_id;
 extern const BrickletAddress baddr[];
 extern BrickletSettings bs[];
+
+#ifdef BRICK_CAN_BE_MASTER
+extern bool master_startup_usb_connected;
+#endif
 
 static USBDDriver usbd_driver;
 static const Pin pin_usb_detect = PIN_USB_DETECT;
@@ -143,20 +149,33 @@ void usb_isr_vbus(const Pin *pin) {
 }
 
 bool usb_is_connected(void) {
+#ifdef BRICK_CAN_BE_MASTER
+	return adc_channel_get_data(USB_VOLTAGE_CHANNEL) > USB_VOLTAGE_REFERENCE/2;
+#else
 	return PIO_Get(&pin_usb_detect);
+#endif
 }
 
 void usb_detect_configure(void) {
+#ifndef BRICK_CAN_BE_MASTER
     // Configure PIO
     PIO_Configure(&pin_usb_detect, 1);
     PIO_ConfigureIt(&pin_usb_detect, usb_isr_vbus);
     PIO_EnableIt(&pin_usb_detect);
+#endif
 }
 
 bool usb_init() {
     if(!usb_is_connected()) {
+#ifdef BRICK_CAN_BE_MASTER
+    	master_startup_usb_connected = false;
+#endif
     	return false;
     }
+#ifdef BRICK_CAN_BE_MASTER
+    master_startup_usb_connected = true;
+#endif
+
 	send_status = 0;
 	receive_status = 0;
 
