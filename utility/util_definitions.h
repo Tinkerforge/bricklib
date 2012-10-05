@@ -70,7 +70,7 @@
 	} while(0)
 
 #ifndef ABS
-	#define ABS(a) ((a) < 0) ? (-(a)) : (a)
+	#define ABS(a) (((a) < 0) ? (-(a)) : (a))
 #endif
 #ifndef MIN
 	#define MIN(a,b) ((a) < (b) ? (a) : (b))
