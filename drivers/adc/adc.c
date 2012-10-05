@@ -29,8 +29,9 @@
 #include "bricklib/drivers/tc/tc.h"
 #include "bricklib/drivers/flash/flashd.h"
 
-int16_t adc_offset = 0;
-int16_t adc_gain = ADC_MAX_VALUE;
+int32_t adc_offset = 0;
+uint32_t adc_gain_mul = ADC_MAX_VALUE;
+uint32_t adc_gain_div = ADC_MAX_VALUE;
 
 // sam3s adc characteristics: 41.7 (1058ff)
 // max adc frequency: 20mhz
@@ -87,6 +88,12 @@ void adc_start_periodic_conversion(void) {
 }
 
 void adc_read_calibration_from_flash(void) {
+	// If adc values are set before this is called we don't read values
+	if(adc_offset != 0 ||
+	   adc_gain_mul != ADC_MAX_VALUE ||
+	   adc_gain_div != ADC_MAX_VALUE) {
+		return;
+	}
 	uint32_t *data = (uint32_t*)ADC_CALIBRATION_ADDRESS;
 	int16_t offset = *data & 0xFFFF;
 	int16_t gain = *data >> 16;
@@ -98,11 +105,11 @@ void adc_read_calibration_from_flash(void) {
 	}
 
 	adc_offset = offset;
-	adc_gain = gain;
+	adc_gain_div = gain;
 }
 
 void adc_write_calibration_to_flash(void) {
-	uint32_t data = ((uint16_t)adc_offset) | (((uint16_t)adc_gain) << 16);
+	uint32_t data = ((uint16_t)adc_offset) | (((uint16_t)adc_gain_div) << 16);
 
 	// Disable all irqs before plugin is written to flash.
 	// While writing to flash there can't be any other access to the flash
@@ -130,17 +137,39 @@ void adc_write_calibration_to_flash(void) {
 }
 
 uint16_t adc_channel_get_data(uint8_t c) {
-	if(ADC_MAX_VALUE*ADC->ADC_CDR[c]/adc_gain < -adc_offset) {
-	    return 0;
+#ifdef BRICK_CAN_BE_MASTER
+	int32_t value;
+
+	uint32_t orig_value = ADC->ADC_CDR[c]*10;
+	if(orig_value == ADC_MAX_VALUE*10) {
+		return ADC_MAX_VALUE;
+	} else if(orig_value == 0) {
+		return 0;
 	}
 
-	uint16_t value = ADC_MAX_VALUE*ADC->ADC_CDR[c]/adc_gain + adc_offset;
+	if(adc_gain_div > ADC_MAX_VALUE) {
+		value = ((int32_t)(adc_gain_mul*orig_value/adc_gain_div) + adc_offset + 5)/10;
+	} else {
+		value = adc_gain_mul*ADC->ADC_CDR[c]/adc_gain_div + adc_offset;
+	}
+#else
+	value = adc_gain_mul*ADC->ADC_CDR[c]/adc_gain_div + adc_offset;
+#endif
 
+	if(value < 0) {
+		return 0;
+	}
 	if(value > ADC_MAX_VALUE) {
 		return ADC_MAX_VALUE;
 	}
 
-	return value;
+	return (uint16_t)value;
+}
+
+void adc_set_calibration(int32_t offset, uint32_t gain_mul, uint32_t gain_div) {
+	adc_offset = offset;
+	adc_gain_mul = gain_mul;
+	adc_gain_div = gain_div;
 }
 
 void adc_calibrate(uint8_t c) {
@@ -164,7 +193,7 @@ void adc_calibrate(uint8_t c) {
 	if(value < ADC_MAX_VALUE/2) {
 		adc_offset = -value;
 	} else {
-		adc_gain = value;
+		adc_gain_div = value;
 	}
 
 	if(!was_enabled) {

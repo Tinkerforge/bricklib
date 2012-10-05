@@ -22,6 +22,8 @@
 #ifndef INIT_H
 #define INIT_H
 
+#include <stdint.h>
+
 #define TICK_TASK_TYPE_MESSAGE 1
 #define TICK_TASK_TYPE_CALCULATION 2
 

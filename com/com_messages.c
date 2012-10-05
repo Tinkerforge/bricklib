@@ -40,8 +40,8 @@
 #include "com_common.h"
 #include "config.h"
 
-extern int16_t adc_offset;
-extern int16_t adc_gain;
+extern int32_t adc_offset;
+extern int32_t adc_gain_div;
 
 extern uint8_t master_mode;
 
@@ -55,6 +55,7 @@ extern ComType com_current;
 extern ComType com_ext[];
 extern BrickletSettings bs[];
 extern const BrickletAddress baddr[];
+extern char brick_hardware_name[];
 
 #ifndef COM_MESSAGES_USER
 #define COM_MESSAGES_USER
@@ -118,11 +119,11 @@ void get_adc_calibration(uint8_t com, const GetADCCalibration *data) {
 		TYPE_GET_ADC_CALIBRATION,
 		sizeof(GetADCCalibrationReturn),
 		adc_offset,
-		adc_gain
+		adc_gain_div
 	};
 
 	send_blocking_with_timeout(&gadccr, sizeof(GetADCCalibrationReturn), com);
-	logd("Get ADC Calibration (offset, gain): %d %d\n\r", adc_offset, adc_gain);
+	logd("Get ADC Calibration (offset, gain): %d %d\n\r", adc_offset, adc_gain_div);
 }
 
 void com_adc_calibrate(uint8_t com, const ADCCalibrate *data) {
@@ -232,10 +233,12 @@ void enumerate(uint8_t com, const Enumerate *data) {
 		TYPE_ENUMERATE_CALLBACK,
 		sizeof(EnumerateCallback),
 		com_brick_uid,
-		BRICK_HARDWARE_NAME,
+		"",
 		com_stack_id,
 		true
 	};
+
+	strcpy(ec.device_name, brick_hardware_name);
 
 	send_blocking_with_timeout(&ec, sizeof(EnumerateCallback), com);
 
@@ -307,7 +310,7 @@ void get_stack_id(uint8_t com, const GetStackID *data) {
 		gsidr.device_firmware_version[1] = BRICK_FIRMWARE_VERSION_MINOR;
 		gsidr.device_firmware_version[2] = BRICK_FIRMWARE_VERSION_REVISION;
 		memset(gsidr.device_name, 0, MAX_LENGTH_NAME);
-		strcpy(gsidr.device_name, BRICK_HARDWARE_NAME);
+		strcpy(gsidr.device_name, brick_hardware_name);
 		send_blocking_with_timeout(&gsidr, sizeof(GetStackIDReturn), com);
 		return;
 	// Check Bricklet Stack ID

@@ -47,12 +47,14 @@ extern uint64_t com_brick_uid;
 static uint8_t type_calculation = TICK_TASK_TYPE_CALCULATION;
 static uint8_t type_message = TICK_TASK_TYPE_MESSAGE;
 
+static char brick_hardware_name[];
+
 void brick_init(void) {
 	// Wait 5ms so everything can power up
 	SLEEP_MS(5);
 	logging_init();
 
-	logsi("Booting %s\n\r", BRICK_HARDWARE_NAME);
+	logsi("Booting %s\n\r", brick_hardware_name);
 	logsi("Compiled on %s %s\n\r", __DATE__, __TIME__);
 
     led_init();

@@ -48,7 +48,6 @@
 #define SPI_DLYBCS(delay, mc) ((uint32_t)((mc/1000000) * delay) << 24)
 #define SPI_STACK_MASTER_TIMEOUT 10000
 
-static const Pin spi_master_pins[] = {PINS_SPI, PINS_SPI_SELECT_MASTER};
 static bool recv_long_message = false;
 static bool send_long_message = false;
 static bool find_new_stack_participant = false;
@@ -65,6 +64,8 @@ extern uint8_t rs485_state;
 extern uint16_t spi_stack_buffer_size_send;
 extern uint16_t spi_stack_buffer_size_recv;
 extern uint8_t master_routing_table[];
+
+extern Pin spi_select_master[];
 
 bool spi_stack_master_transceive(void) {
 	uint8_t master_checksum = 0;
@@ -187,7 +188,21 @@ bool spi_stack_master_transceive(void) {
 }
 
 void spi_stack_master_init(void) {
+	Pin spi_master_pins[] = {PINS_SPI};
 	PIO_Configure(spi_master_pins, PIO_LISTSIZE(spi_master_pins));
+#ifndef CONSOLE_USART_USE_UART1
+	if(master_get_hardware_version() > 10) {
+		Pin spi_select_7_20 = PIN_SPI_SELECT_MASTER_7_20;
+		memcpy(&spi_select_master[7], &spi_select_7_20, sizeof(Pin));
+	} else {
+		Pin spi_select_7_10 = PIN_SPI_SELECT_MASTER_7_10;
+		memcpy(&spi_select_master[7], &spi_select_7_10, sizeof(Pin));
+	}
+
+	PIO_Configure(spi_select_master, 8);
+#else
+	PIO_Configure(spi_select_master, 7);
+#endif
 
     // Master mode configuration
     SPI_Configure(SPI,

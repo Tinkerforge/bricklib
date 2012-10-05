@@ -42,6 +42,7 @@ void adc_enable_temperature_sensor(void);
 void adc_init(void);
 void adc_start_periodic_conversion(void);
 uint16_t adc_channel_get_data(uint8_t c);
+void adc_set_calibration(int32_t offset, uint32_t gain_mul, uint32_t gain_div);
 void adc_calibrate(uint8_t c);
 void adc_read_calibration_from_flash(void);
 void adc_write_calibration_to_flash(void);
