@@ -26,7 +26,6 @@
 
 #include "bricklib/utility/init.h"
 #include "bricklib/logging/logging.h"
-#include "bricklib/drivers/board/cpu.h"
 #include "bricklib/drivers/pio/pio.h"
 #include "bricklib/drivers/adc/adc.h"
 #include "bricklib/bricklet/bricklet_communication.h"

@@ -137,9 +137,8 @@ void adc_write_calibration_to_flash(void) {
 }
 
 uint16_t adc_channel_get_data(uint8_t c) {
-#ifdef BRICK_CAN_BE_MASTER
 	int32_t value;
-
+#ifdef BRICK_CAN_BE_MASTER
 	uint32_t orig_value = ADC->ADC_CDR[c]*10;
 	if(orig_value == ADC_MAX_VALUE*10) {
 		return ADC_MAX_VALUE;
