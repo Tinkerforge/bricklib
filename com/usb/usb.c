@@ -221,6 +221,11 @@ void usb_message_loop_return(char *data, uint16_t length) {
 		send_blocking_with_timeout(data, length, com_ext[0]);
 		return;
 	}
+
+	if(stack_id <= com_last_ext_id[1]) {
+		send_blocking_with_timeout(data, length, com_ext[1]);
+		return;
+	}
 }
 
 void usb_message_loop(void *parameters) {
