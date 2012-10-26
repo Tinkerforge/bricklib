@@ -23,6 +23,7 @@
 #define LOGGING_H
 
 #include "config.h"
+#include <stdio.h>
 
 #define LOGGING_DEBUG    0
 #define LOGGING_INFO     1

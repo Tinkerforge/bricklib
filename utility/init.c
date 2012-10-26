@@ -125,14 +125,22 @@ void brick_init_start_tick_task(void) {
 
 	xTaskCreate(brick_tick_task,
 				(signed char *)"bmt",
+#ifdef BRICK_CAN_BE_MASTER
+				800,
+#else
 				600,
+#endif
 				&type_message,
 				1,
 				(xTaskHandle *)NULL);
 
 	xTaskCreate(brick_tick_task,
 				(signed char *)"bct",
+#ifdef BRICK_CAN_BE_MASTER
+				800,
+#else
 				600,
+#endif
 				&type_calculation,
 				1,
 				(xTaskHandle *)NULL);

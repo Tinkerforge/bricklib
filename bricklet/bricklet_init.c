@@ -164,7 +164,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 };
 
 // Declare bricklet context (bc)
-uint8_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE] = {{0}};
+uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4] = {{0}};
 
 static bool bricklet_attached[4] = {false, false, false, false};
 
