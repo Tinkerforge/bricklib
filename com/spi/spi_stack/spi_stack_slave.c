@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * spi_stack_slave.c: SPI stack slave functionality
  *
@@ -201,7 +201,7 @@ void spi_stack_slave_message_loop_return(char *data, uint16_t length) {
 		SPI_EnableIt(SPI, SPI_IER_RDRF);
 	}
 
-	const uint8_t stack_id = get_stack_id_from_data(data);
+/*	const uint8_t stack_id = get_stack_id_from_data(data);
 	if(stack_id == com_stack_id || stack_id == 0) {
 		const ComMessage *com_message = get_com_from_data(data);
 		if(com_message->reply_func != NULL) {
@@ -215,7 +215,7 @@ void spi_stack_slave_message_loop_return(char *data, uint16_t length) {
 			baddr[i].entry(BRICKLET_TYPE_INVOCATION, COM_SPI_STACK, (void*)data);
 			return;
 		}
-	}
+	}*/
 }
 
 void spi_stack_slave_message_loop(void *parameters) {

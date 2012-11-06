@@ -7,8 +7,8 @@
 #define UID_LENGTH 11
 
 __attribute__ ((section (".ramfunc")))
-uint64_t uid_get_uid64(void);
+uint32_t uid_get_uid32(void);
 
 char uid_get_serial_char_from_num(uint8_t num);
-void uid_to_serial_number(uint64_t value, char *str);
+void uid_to_serial_number(uint32_t value, char *str);
 #endif

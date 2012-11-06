@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * usb.c: Communication interface implementation for USB
  *
@@ -36,6 +36,7 @@
 #include "bricklib/drivers/adc/adc.h"
 
 #include "bricklib/com/com_messages.h"
+#include "bricklib/com/com_common.h"
 #include "bricklib/com/com.h"
 #include "bricklib/utility/init.h"
 #include "bricklib/com/com_common.h"
@@ -48,29 +49,13 @@
 #include "usb_descriptors.h"
 #include "config.h"
 
-#define MAX_USB_MESSAGE_SIZE 64
+#define MAX_USB_MESSAGE_SIZE 80
 
 #define USB_IN_FUNCTION 1
 #define USB_CALLBACK 2
 
 extern const USBDDriverDescriptors driver_descriptors;
-
-extern ComType com_ext[];
-extern uint8_t master_routing_table[];
-extern uint8_t com_last_spi_stack_id;
-extern uint8_t com_last_ext_id[];
-extern uint8_t com_last_stack_address;
-extern uint8_t com_stack_id;
-extern const BrickletAddress baddr[];
-extern BrickletSettings bs[];
-
-#ifdef BRICK_CAN_BE_MASTER
-extern bool master_startup_usb_connected;
-#endif
-
 static USBDDriver usbd_driver;
-static const Pin pin_usb_detect = PIN_USB_DETECT;
-
 static unsigned int usb_send_transferred = 0;
 unsigned int usb_recv_transferred = 0;
 
@@ -79,6 +64,12 @@ static uint8_t send_status = 0;
 
 char usb_recv_buffer[DEFAULT_EP_SIZE];
 char usb_send_buffer[DEFAULT_EP_SIZE];
+
+#ifdef BRICK_CAN_BE_MASTER
+extern bool master_startup_usb_connected;
+#else
+static const Pin pin_usb_detect = PIN_USB_DETECT;
+#endif
 
 void usb_send_callback(void *arg,
                        uint8_t status,
@@ -196,22 +187,10 @@ bool usb_init() {
 }
 
 void usb_message_loop_return(char *data, uint16_t length) {
-	const uint8_t stack_id = get_stack_id_from_data(data);
+	com_route_message_from_pc(data, length, COM_USB);
 
-	if(stack_id == com_stack_id || stack_id == 0) {
-		const ComMessage *com_message = get_com_from_data(data);
-		if(com_message->reply_func != NULL) {
-			com_message->reply_func(COM_USB, (void*)data);
-			return;
-		}
-	}
-	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		if(bs[i].stack_id == stack_id) {
-			baddr[i].entry(BRICKLET_TYPE_INVOCATION, COM_USB, (void*)data);
-			return;
-		}
-	}
-
+	// TODO
+	/*
 	if(stack_id <= com_last_spi_stack_id) {
 		send_blocking_with_timeout(data, length, COM_SPI_STACK);
 		return;
@@ -225,7 +204,7 @@ void usb_message_loop_return(char *data, uint16_t length) {
 	if(stack_id <= com_last_ext_id[1]) {
 		send_blocking_with_timeout(data, length, com_ext[1]);
 		return;
-	}
+	}*/
 }
 
 void usb_message_loop(void *parameters) {

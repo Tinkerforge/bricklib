@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * bricklet_init.c: functions for bricklet initialization
  *
@@ -62,7 +62,6 @@ Twid twid = {TWI_BRICKLET, NULL};
 const BrickletAPI ba = {
 	&com_current,
 	printf,
-	get_com_from_data,
 	send_blocking_with_timeout,
 	bricklet_select,
 	bricklet_deselect,
@@ -77,7 +76,10 @@ const BrickletAPI ba = {
 	i2c_eeprom_master_read,
 	i2c_eeprom_master_write,
 	&twid,
-	&mutex_twi_bricklet
+	&mutex_twi_bricklet,
+	&com_return_error,
+	&com_return_setter,
+	&com_make_default_header
 };
 
 const BrickletAddress baddr[BRICKLET_NUM] = {
@@ -123,7 +125,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_A_PIN_SELECT,
 		  BRICKLET_A_ADC_CHANNEL,
 		  &baddr[0],
-		  0, 0, {0, 0, 0}, ""}
+		  0, {0, 0, 0}, {0, 0, 0}, 0}
 	#endif
 	#if BRICKLET_NUM > 1
 		,{'b',
@@ -135,7 +137,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_B_PIN_SELECT,
 		  BRICKLET_B_ADC_CHANNEL,
 		  &baddr[1],
-		  0, 0, {0, 0, 0}, ""}
+		  0, {0, 0, 0}, {0, 0, 0}, 0}
 	#endif
 	#if BRICKLET_NUM > 2
 		,{'c',
@@ -147,7 +149,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_C_PIN_SELECT,
 		  BRICKLET_C_ADC_CHANNEL,
 		  &baddr[2],
-		  0, 0, {0, 0, 0}, ""}
+		  0, {0, 0, 0}, {0, 0, 0}, 0}
 	#endif
 	#if BRICKLET_NUM > 3
 		,{'d',
@@ -159,7 +161,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_D_PIN_SELECT,
 		  BRICKLET_D_ADC_CHANNEL,
 		  &baddr[3],
-		  0, 0, {0, 0, 0}, ""}
+		  0, {0, 0, 0}, {0, 0, 0}, 0}
 	#endif
 };
 
@@ -260,7 +262,7 @@ bool bricklet_init_plugin(const uint8_t bricklet) {
 
 void bricklet_try_connection(const uint8_t bricklet) {
 	bricklet_select(bricklet);
-	uint64_t uid = i2c_eeprom_master_read_uid(TWI_BRICKLET);
+	uint32_t uid = i2c_eeprom_master_read_uid(TWI_BRICKLET);
 	bricklet_deselect(bricklet);
 
 	if(uid == 0) {
@@ -275,19 +277,13 @@ void bricklet_try_connection(const uint8_t bricklet) {
 		return;
 	}
 
-	BrickletInfo bi;
 	baddr[bricklet].entry(BRICKLET_TYPE_INFO,
 	                      0,
-	                      (uint8_t*)&bi);
-
-	bs[bricklet].firmware_version[0] = bi.firmware_version[0];
-	bs[bricklet].firmware_version[1] = bi.firmware_version[1];
-	bs[bricklet].firmware_version[2] = bi.firmware_version[2];
-	strncpy(bs[bricklet].name, bi.name, MAX_LENGTH_NAME);
+	                      (uint8_t*)&bs[bricklet]);
 
 	bs[bricklet].uid = uid;
 
-	logbleti("Bricklet %c configured\n\r", 'a' + bricklet);
+	logbleti("Bricklet %c configured (UID %u)\n\r", 'a' + bricklet, uid);
 }
 
 void bricklet_tick_task(uint8_t tick_type) {
@@ -313,7 +309,6 @@ void bricklet_clear_eeproms(void) {
 }
 
 void bricklet_init(void) {
-
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		if(bs[i].pin_select.pio != NULL) {
 			PIO_Configure(&(bs[i].pin_select), 1);
@@ -321,13 +316,7 @@ void bricklet_init(void) {
 		bricklet_attached[i] = false;
 	}
 
-	uint8_t bricklet_stack_id = com_stack_id;
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		bricklet_try_connection(i);
-		if(bs[i].uid != 0) {
-			bricklet_stack_id++;
-			bs[i].stack_id = bricklet_stack_id;
-		}
 	}
-	com_last_spi_stack_id = bricklet_stack_id;
 }

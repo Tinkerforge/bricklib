@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * usb_descriptors.h: USB descriptor definitions
  *
@@ -25,7 +25,7 @@
 #include <usb/USBDescriptors.h>
 #include <stdint.h>
 
-#define DEFAULT_EP_SIZE 64
+#define DEFAULT_EP_SIZE 80
 
 #define IN_EP     4
 #define OUT_EP    5

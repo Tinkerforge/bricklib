@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * init.c: Implementation of initialization valid for all bricks
  *
@@ -42,7 +42,7 @@
 #include "config.h"
 
 extern ComType com_current;
-extern uint64_t com_brick_uid;
+extern uint32_t com_brick_uid;
 
 static uint8_t type_calculation = TICK_TASK_TYPE_CALCULATION;
 static uint8_t type_message = TICK_TASK_TYPE_MESSAGE;
@@ -66,13 +66,13 @@ void brick_init(void) {
 #endif
 	logsi("LEDs initialized\n\r");
 
-	com_brick_uid = uid_get_uid64();
+	com_brick_uid = uid_get_uid32();
 
 	// Add 0 at end for printing
     char sn[12] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0};
     uid_to_serial_number(com_brick_uid, sn);
     set_serial_number_descriptor(sn, 11);
-    logsi("Unique ID %s\n\r\n\r", sn);
+    logsi("Unique ID %s (%u)\n\r\n\r", sn, com_brick_uid);
 
     WDT_Disable(WDT);
     logsi("Watchdog disabled\n\r");

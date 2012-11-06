@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * com_common.h: functions common to all communication protocols
  *
@@ -22,13 +22,14 @@
 #ifndef COM_COMMON_H
 #define COM_COMMON_H
 
-#include <pio/pio.h>
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "com_messages.h"
+#include "com.h"
 
 #define MESSAGE_LOOP_SIZE 550
+
+#define MESSAGE_EMPTY_INITIALIZER {{0}}
 
 typedef void (*function_message_loop_return_t)(char *, uint16_t);
 
@@ -38,9 +39,36 @@ typedef struct {
 	function_message_loop_return_t return_func;
 } MessageLoopParameter;
 
+typedef struct {
+	uint32_t uid;
+	uint8_t length;
+	uint8_t fid;
+	uint8_t sequence_num:4,
+	        return_expected:1,
+	        authentication:1,
+	        other_options:2;
+	uint8_t error:1,
+	        future_use:7;
+} __attribute__((__packed__)) MessageHeader;
+
+typedef struct {
+	uint32_t uid;
+	uint32_t data;
+} __attribute__((__packed__)) MessageHeaderSimple;
+
+void com_handle_setter(uint8_t com, void *message);
 void com_message_loop(void *parameters);
+void com_make_default_header(void *message,
+                             uint32_t uid,
+                             uint8_t length,
+                             uint8_t fid);
 uint16_t send_blocking_with_timeout(const void *data,
                                     const uint16_t length,
                                     ComType com);
+bool com_route_message_brick(char *data, uint16_t length, ComType com);
+void com_route_message_from_pc(char *data, uint16_t length, ComType com);
+void com_return_error(const void *data, const uint8_t ret_length, ComType com);
+void com_return_setter(ComType com, const void *data);
+void com_debug_message(MessageHeader *header);
 
 #endif

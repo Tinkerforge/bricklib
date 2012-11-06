@@ -10,15 +10,15 @@ const char BASE58_STR[] = \
 	"123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
 
 __attribute__ ((section (".ramfunc")))
-uint64_t uid_get_uid64(void) {
+uint32_t uid_get_uid32(void) {
     // Write "Start Read" unique identifier command (STUI)
 	EFC->EEFC_FCR = (0x5A << 24) | EFC_FCMD_STUI;
 	 // If STUI is performed, FRDY is cleared
 	while ((EFC->EEFC_FSR & EEFC_FSR_FRDY) == EEFC_FSR_FRDY);
 
     // The Unique Identifier has 128 bits.
-	// We only use the last 64 bits.
-    uint64_t uid = *(((uint64_t *)IFLASH_ADDR) + 1);
+	// We only use the second last 32 bits.
+    uint32_t uid = *(((uint32_t *)IFLASH_ADDR) + 2);
 
     // Write "Stop Read" unique identifier command (SPUI)
     EFC->EEFC_FCR = (0x5A << 24) | EFC_FCMD_SPUI;
@@ -40,7 +40,7 @@ char uid_get_serial_char_from_num(uint8_t num) {
 	return '?';
 }
 
-void uid_to_serial_number(uint64_t value, char *str) {
+void uid_to_serial_number(uint32_t value, char *str) {
 	char reverse_str[MAX_BASE58_STR_SIZE] = {0};
 	int i = 0;
 	while(value >= 58) {

@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * com_messages.h: Implementation of general brick messages
  *
@@ -23,6 +23,7 @@
 #define COM_MESSAGES_H
 
 #include "com.h"
+#include "com_common.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -33,25 +34,37 @@
 #include "bricklib/com/usb/usb_descriptors.h"
 #include "bricklib/drivers/uid/uid.h"
 
-#define SIZE_OF_MESSAGE_TYPE 4
+#define SIZE_OF_MESSAGE_HEADER 8
 
-#define TYPE_GET_CHIP_TEMPERATURE 242
-#define TYPE_RESET 243
+#define FID_CALLBACK_AUTHENTICATION_ERROR 241
+#define FID_GET_CHIP_TEMPERATURE 242
+#define FID_RESET 243
 
-#define TYPE_GET_ADC_CALIBRATION 250
-#define TYPE_ADC_CALIBRATE 251
-#define TYPE_STACK_ENUMERATE 252
-#define TYPE_ENUMERATE_CALLBACK 253
-#define TYPE_ENUMERATE 254
-#define TYPE_GET_STACK_ID 255
+#define FID_GET_ADC_CALIBRATION 250
+#define FID_ADC_CALIBRATE 251
+#define FID_STACK_ENUMERATE 252
+#define FID_ENUMERATE_CALLBACK 253
+#define FID_ENUMERATE 254
+#define FID_GET_IDENTITY 255
 
-#define COM_GENERAL_TYPE_MAX 200
+#define COM_GENERAL_FID_MAX 200
 #define MAX_LENGTH_NAME 40
 
 #define COM_NO_MESSAGE {0, NULL}
 
 #define STACK_PARTICIPANT_PLUG 1
 #define STACK_PARTICIPANT_UNPLUG 2
+
+#define STACK_ENUMERATE_MAX_UIDS 16
+
+#define ENUMERATE_TYPE_AVAILABLE 0
+#define ENUMERATE_TYPE_ADDED     1
+#define ENUMERATE_TYPE_REMOVED   2
+
+#define NO_CONNECTED_UID_STR         "0\0\0\0\0\0\0\0"
+#define NO_CONNECTED_UID_STR_LENGTH  sizeof(NO_CONNECTED_UID_STR)
+
+#define UID_STR_MAX_LENGTH 8
 
 typedef void (*message_handler_func_t)(uint8_t, const void*);
 
@@ -60,106 +73,73 @@ typedef struct {
 	message_handler_func_t reply_func;
 } ComMessage;
 
-/*
 typedef struct {
-	uint8_t stack_address;
-	uint8_t type;
-	uint8_t priority;
-	uint16_t line;
-	uint16_t file_length;
-	uint16_t message_length;
-	char file_and_message[];
-} GetLogging;
-*/
-
-typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 } __attribute__((__packed__)) GetChipTemperature;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 	int16_t temperature;
 } __attribute__((__packed__)) GetChipTemperatureReturn;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 } __attribute__((__packed__)) Reset;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 } __attribute__((packed)) GetADCCalibration;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 	int16_t offset;
 	int16_t gain;
 } __attribute__((packed)) GetADCCalibrationReturn;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 	char bricklet_port;
 } __attribute__((packed)) ADCCalibrate;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	uint8_t stack_id_upto;
+	MessageHeader header;
+	uint32_t uids[STACK_ENUMERATE_MAX_UIDS];
 } __attribute__((packed)) StackEnumerateReturn;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	uint8_t stack_id_start;
+	MessageHeader header;
 } __attribute__((packed)) StackEnumerate;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	uint64_t device_uid;
-	char device_name[MAX_LENGTH_NAME];
-	uint8_t device_stack_id;
-	bool new;
+	MessageHeader header;
+	char uid[UID_STR_MAX_LENGTH];
+	char connected_uid[UID_STR_MAX_LENGTH];
+	char position;
+	uint8_t version_hw[3];
+	uint8_t version_fw[3];
+	uint16_t device_identifier;
+	uint8_t enumeration_type;
 } __attribute__((__packed__)) EnumerateCallback;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 } __attribute__((__packed__)) Enumerate;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	uint64_t uid;
-} __attribute__((__packed__)) GetStackID;
+	MessageHeader header;
+} __attribute__((__packed__)) GetIdentity;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	uint64_t device_uid;
-	uint8_t device_firmware_version[3];
-	char device_name[MAX_LENGTH_NAME];
-	uint8_t device_stack_id;
-} __attribute__((__packed__)) GetStackIDReturn;
+	MessageHeader header;
+	char uid[8];
+	char connected_uid[8];
+	char position;
+	uint8_t version_hw[3];
+	uint8_t version_fw[3];
+	uint16_t device_identifier;
+} __attribute__((__packed__)) GetIdentityReturn;
 
-const ComMessage* get_com_from_data(const char *data);
+const ComMessage* get_com_from_header(const MessageHeader *header);
 uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
@@ -170,7 +150,7 @@ void get_adc_calibration(uint8_t com, const GetADCCalibration *data);
 void com_adc_calibrate(uint8_t com, const ADCCalibrate *data);
 void stack_enumerate(uint8_t com, const StackEnumerate *data);
 void enumerate(uint8_t com, const Enumerate *data);
-void get_stack_id(uint8_t com, const GetStackID *data);
+void get_identity(uint8_t com, const GetIdentity *data);
 
 
 #endif

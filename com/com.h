@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * com.h: Definition of communication interfaces
  *

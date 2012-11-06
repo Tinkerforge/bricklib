@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * com_messages.c: Implementation of general brick messages
  *
@@ -42,19 +42,10 @@
 extern int32_t adc_offset;
 extern int32_t adc_gain_div;
 
-extern uint8_t master_mode;
-
-extern uint8_t com_last_ext_id[];
-extern uint8_t master_routing_table[];
-extern uint8_t com_last_spi_stack_id;
 extern uint8_t com_stack_id;
-extern uint64_t com_brick_uid;
-extern uint8_t com_last_stack_address;
+extern uint32_t com_brick_uid;
 extern ComType com_current;
-extern ComType com_ext[];
 extern BrickletSettings bs[];
-extern const BrickletAddress baddr[];
-extern char brick_hardware_name[];
 
 #ifndef COM_MESSAGES_USER
 #define COM_MESSAGES_USER
@@ -63,181 +54,118 @@ extern char brick_hardware_name[];
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
-	{TYPE_GET_CHIP_TEMPERATURE, (message_handler_func_t)get_chip_temperature},
-	{TYPE_RESET, (message_handler_func_t)reset},
+	{FID_CALLBACK_AUTHENTICATION_ERROR, (message_handler_func_t)NULL},
+	{FID_GET_CHIP_TEMPERATURE, (message_handler_func_t)get_chip_temperature},
+	{FID_RESET, (message_handler_func_t)reset},
 	COM_MESSAGES_BRICKLET
-	{TYPE_GET_ADC_CALIBRATION, (message_handler_func_t)get_adc_calibration},
-	{TYPE_ADC_CALIBRATE, (message_handler_func_t)com_adc_calibrate},
-	{TYPE_STACK_ENUMERATE, (message_handler_func_t)stack_enumerate},
-	{TYPE_ENUMERATE_CALLBACK, (message_handler_func_t)NULL},
-	{TYPE_ENUMERATE, (message_handler_func_t)enumerate},
-	{TYPE_GET_STACK_ID, (message_handler_func_t)get_stack_id}
+	{FID_GET_ADC_CALIBRATION, (message_handler_func_t)get_adc_calibration},
+	{FID_ADC_CALIBRATE, (message_handler_func_t)com_adc_calibrate},
+	{FID_STACK_ENUMERATE, (message_handler_func_t)stack_enumerate},
+	{FID_ENUMERATE_CALLBACK, (message_handler_func_t)NULL},
+	{FID_ENUMERATE, (message_handler_func_t)enumerate},
+	{FID_GET_IDENTITY, (message_handler_func_t)get_identity}
 };
 
 const uint8_t COM_MESSAGES_NUM = (sizeof(com_messages) / sizeof(ComMessage));
 
-const ComMessage* get_com_from_data(const char *data) {
-	const uint8_t type = get_type_from_data(data);
-	if(type < COM_GENERAL_TYPE_MAX) {
-		return &com_messages[type];
+const ComMessage* get_com_from_header(const MessageHeader *header) {
+	uint8_t fid = 0;
+	if(header->fid < COM_GENERAL_FID_MAX) {
+		fid = header->fid;
 	} else {
-		return &com_messages[COM_MESSAGES_NUM - 1 - 255 + type];
+		fid = COM_MESSAGES_NUM - 1 - 255 + header->fid;
 	}
-}
 
-inline uint16_t get_length_from_data(const char *data) {
-	return *((uint16_t *)(data + 2));
-}
+	if(fid > COM_MESSAGES_NUM) {
+		return NULL;
+	}
 
-inline uint8_t get_stack_id_from_data(const char *data) {
-	return data[0];
-}
-
-inline uint8_t get_type_from_data(const char *data) {
-	return data[1];
+	return &com_messages[fid];
 }
 
 void reset(uint8_t com, const Reset *data) {
+	com_return_setter(com, data);
+
+	// TODO: Protocol V2.0 -> wait until msg is send?
+
 	brick_reset();
 }
 
 void get_chip_temperature(uint8_t com, const GetChipTemperature *data) {
 	GetChipTemperatureReturn gctr;
 
-	gctr.stack_id        = data->stack_id;
-	gctr.type            = data->type;
-	gctr.length          = sizeof(GetChipTemperatureReturn);
+	gctr.header          = data->header;
+	gctr.header.length   = sizeof(GetChipTemperatureReturn);
 	gctr.temperature     = adc_get_temperature();
 
 	send_blocking_with_timeout(&gctr, sizeof(GetChipTemperatureReturn), com);
 }
 
 void get_adc_calibration(uint8_t com, const GetADCCalibration *data) {
-	GetADCCalibrationReturn gadccr = {
-		com_stack_id,
-		TYPE_GET_ADC_CALIBRATION,
-		sizeof(GetADCCalibrationReturn),
-		adc_offset,
-		adc_gain_div
-	};
+	GetADCCalibrationReturn gadccr;
+	gadccr.header        = data->header;
+	gadccr.header.length = sizeof(GetADCCalibrationReturn);
+	gadccr.offset        = adc_offset;
+	gadccr.gain          = adc_gain_div;
 
 	send_blocking_with_timeout(&gadccr, sizeof(GetADCCalibrationReturn), com);
 	logd("Get ADC Calibration (offset, gain): %d %d\n\r", adc_offset, adc_gain_div);
 }
 
 void com_adc_calibrate(uint8_t com, const ADCCalibrate *data) {
-	uint8_t port = (uint8_t)(tolower(data->bricklet_port) - 'a');
+	uint8_t port = (uint8_t)(tolower((uint8_t)data->bricklet_port) - 'a');
 	if(port >= BRICKLET_NUM) {
-		// TODO: Error?
+		com_return_error(data, sizeof(MessageHeader), com);
 		logblete("Bricklet Port %d does not exist (adc calibrate)\n\r", port);
 		return;
 	}
 
 	adc_calibrate(bs[port].adc_channel);
 	adc_write_calibration_to_flash();
+
+	com_return_setter(com, data);
 	logd("ADC Calibrate (port %c)\n\r", data->bricklet_port);
 }
 
 void stack_enumerate(uint8_t com, const StackEnumerate *data) {
-	com_stack_id = data->stack_id_start;
+	StackEnumerateReturn ser = MESSAGE_EMPTY_INITIALIZER;
+	ser.header               = data->header;
+	ser.header.length        = sizeof(StackEnumerateReturn);
+	ser.uids[0]              = com_brick_uid;
 
-	uint8_t stack_id_upto = com_stack_id;
-
-	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		if(bs[i].uid != 0) {
-			stack_id_upto++;
-			bs[i].stack_id = stack_id_upto;
+	uint8_t i = 1;
+	for(uint8_t j = 0; j < BRICKLET_NUM; j++) {
+		if(bs[j].uid != 0) {
+			ser.uids[i]      = bs[j].uid;
+			i++;
 		}
 	}
-
 
 	com_current = com;
 
-#ifdef BRICK_CAN_BE_MASTER
-	if(master_mode & MASTER_MODE_MASTER) {
-		// make new routing table
-
-		int16_t id_diff = 0;
-		for(uint16_t i = 0; i <= com_last_spi_stack_id; i++) {
-			if(master_routing_table[i] != 0) {
-				id_diff = stack_id_upto + 1 - i;
-				break;
-			}
-		}
-
-		if(id_diff != 0) {
-			uint8_t sa = 0;
-			for(uint16_t i = 0; i <= com_last_spi_stack_id; i++) {
-
-				if(master_routing_table[i] != sa) {
-					sa++;
-
-					StackEnumerate se = {
-						i,
-						TYPE_STACK_ENUMERATE,
-						sizeof(StackEnumerate),
-						i + id_diff
-					};
-
-					send_blocking_with_timeout(&se,
-											   sizeof(StackEnumerate),
-											   COM_SPI_STACK);
-
-				}
-			}
-
-			com_last_spi_stack_id += id_diff;
-
-			if(id_diff > 0) {
-				for(int16_t i = MAX_STACK_IDS - 1; i >= id_diff; i--) {
-					master_routing_table[i] = master_routing_table[i - id_diff];
-				}
-				for(int16_t i = 0; i < id_diff; i++) {
-					master_routing_table[i] = 0;
-				}
-			} else {
-				for(int16_t i = 0; i < MAX_STACK_IDS + id_diff; i++) {
-					master_routing_table[i] = master_routing_table[i - id_diff];
-				}
-				for(int16_t i = MAX_STACK_IDS + id_diff; i < MAX_STACK_IDS; i++) {
-					master_routing_table[i] = 0;
-				}
-			}
-		}
-
-		if(com_last_spi_stack_id > stack_id_upto) {
-			stack_id_upto = com_last_spi_stack_id;
-		}
-
-	}
-#endif
-
-	StackEnumerateReturn ser = {
-		data->stack_id,
-		TYPE_STACK_ENUMERATE,
-		sizeof(StackEnumerateReturn),
-		stack_id_upto,
-	};
-
 	send_blocking_with_timeout(&ser, sizeof(StackEnumerateReturn), com);
-	logd("Stack Enumerate: %d to %d\n\r", com_stack_id, stack_id_upto);
+	logd("Stack Enumerate: %d %d %d %d %d\n\r", ser.uids[0], ser.uids[1], ser.uids[2], ser.uids[3], ser.uids[4]);
 }
 
 void enumerate(uint8_t com, const Enumerate *data) {
-	logd("Returning Enumeration for Brick: %d, stack id: %d\n\r", com, com_stack_id);
+	logd("Returning Enumeration for Brick: %d\n\r", com);
 
 	// Enumerate Brick
-	EnumerateCallback ec = {
-		0,
-		TYPE_ENUMERATE_CALLBACK,
-		sizeof(EnumerateCallback),
-		com_brick_uid,
-		"",
-		com_stack_id,
-		true
-	};
+	EnumerateCallback ec = MESSAGE_EMPTY_INITIALIZER;
+	com_make_default_header(&ec, com_brick_uid, sizeof(EnumerateCallback), FID_ENUMERATE_CALLBACK);
 
-	strcpy(ec.device_name, brick_hardware_name);
+	memset(ec.uid, '\0', UID_STR_MAX_LENGTH);
+	uid_to_serial_number(com_brick_uid, ec.uid);
+	strncpy(ec.connected_uid, NO_CONNECTED_UID_STR, NO_CONNECTED_UID_STR_LENGTH);
+	ec.position = '0';
+	ec.version_fw[0] = BRICK_FIRMWARE_VERSION_MAJOR;
+	ec.version_fw[1] = BRICK_FIRMWARE_VERSION_MINOR;
+	ec.version_fw[2] = BRICK_FIRMWARE_VERSION_REVISION;
+	ec.version_hw[0] = BRICK_HARDWARE_VERSION_MAJOR;
+	ec.version_hw[1] = BRICK_HARDWARE_VERSION_MINOR;
+	ec.version_hw[2] = BRICK_HARDWARE_VERSION_REVISION;
+	ec.device_identifier = BRICK_DEVICE_IDENTIFIER;
+	ec.enumeration_type = ENUMERATE_TYPE_AVAILABLE;
 
 	send_blocking_with_timeout(&ec, sizeof(EnumerateCallback), com);
 
@@ -249,108 +177,71 @@ void enumerate(uint8_t com, const Enumerate *data) {
 
 		logd("Returning Enumeration for Bricklet %c\n\r", 'a' + i);
 
-		EnumerateCallback ec = {
-			0,
-			TYPE_ENUMERATE_CALLBACK,
-			sizeof(EnumerateCallback),
-			bs[i].uid,
-			"",
-			bs[i].stack_id,
-			true
-		};
+		EnumerateCallback ec = MESSAGE_EMPTY_INITIALIZER;
+		com_make_default_header(&ec, bs[i].uid, sizeof(EnumerateCallback), FID_ENUMERATE_CALLBACK);
 
-		strncpy(ec.device_name,
-		        bs[i].name,
-		        MAX_LENGTH_NAME);
+		memset(ec.uid, '\0', UID_STR_MAX_LENGTH);
+		uid_to_serial_number(bs[i].uid, ec.uid);
+
+		memset(ec.connected_uid, '\0', UID_STR_MAX_LENGTH);
+		uid_to_serial_number(com_brick_uid, ec.connected_uid);
+		ec.position = 'a' + i;
+		ec.version_fw[0] = bs[i].firmware_version[0];
+		ec.version_fw[1] = bs[i].firmware_version[1];
+		ec.version_fw[2] = bs[i].firmware_version[2];
+		ec.version_hw[0] = bs[i].hardware_version[0];
+		ec.version_hw[1] = bs[i].hardware_version[1];
+		ec.version_hw[2] = bs[i].hardware_version[2];
+		ec.device_identifier = bs[i].device_identifier;
+		ec.enumeration_type = ENUMERATE_TYPE_AVAILABLE;
 
 		send_blocking_with_timeout(&ec, sizeof(EnumerateCallback), com);
 	}
+
 	com_current = com;
-
-#ifdef BRICK_CAN_BE_MASTER
-	if(master_mode & MASTER_MODE_MASTER) {
-		// Enumerate Stack
-		for(uint8_t i = 1; i <= com_last_stack_address; i++) {
-			uint16_t id;
-			for(id = 0; id <= com_last_spi_stack_id; id++) {
-				if(master_routing_table[id] == i) {
-					break;
-				}
-			}
-
-			Enumerate e = {
-				id,
-				TYPE_ENUMERATE,
-				sizeof(Enumerate),
-			};
-			send_blocking_with_timeout(&e, sizeof(Enumerate), COM_SPI_STACK);
-		}
-
-		extension_enumerate(com, data);
-	}
-#endif
 }
 
-void get_stack_id(uint8_t com, const GetStackID *data) {
-	logd("Get stack id to UID: %d\n\r", (uint32_t)(data->uid >> 32));
-	GetStackIDReturn gsidr;
+void get_identity(uint8_t com, const GetIdentity *data) {
+	logd("GetIdentitiy for %u\n\r", data->header.uid);
+	GetIdentityReturn gir = MESSAGE_EMPTY_INITIALIZER;
+	gir.header        = data->header;
+	gir.header.length = sizeof(GetIdentityReturn);
 
-	com_current = com;
-
-	gsidr.stack_id        = 0;
-	gsidr.type            = data->type;
-	gsidr.length          = sizeof(GetStackIDReturn);
-	gsidr.device_uid      = data->uid;
-
-	// Check own Stack ID
-	if(data->uid == com_brick_uid) {
-		gsidr.device_stack_id = com_stack_id;
-		gsidr.device_firmware_version[0] = BRICK_FIRMWARE_VERSION_MAJOR;
-		gsidr.device_firmware_version[1] = BRICK_FIRMWARE_VERSION_MINOR;
-		gsidr.device_firmware_version[2] = BRICK_FIRMWARE_VERSION_REVISION;
-		memset(gsidr.device_name, 0, MAX_LENGTH_NAME);
-		strcpy(gsidr.device_name, brick_hardware_name);
-		send_blocking_with_timeout(&gsidr, sizeof(GetStackIDReturn), com);
-		return;
-	// Check Bricklet Stack ID
+	if(data->header.uid == com_brick_uid) {
+		memset(gir.uid, '\0', UID_STR_MAX_LENGTH);
+		uid_to_serial_number(com_brick_uid, gir.uid);
+		strncpy(gir.connected_uid, NO_CONNECTED_UID_STR, NO_CONNECTED_UID_STR_LENGTH);
+		gir.position = '0';
+		gir.version_fw[0] = BRICK_FIRMWARE_VERSION_MAJOR;
+		gir.version_fw[1] = BRICK_FIRMWARE_VERSION_MINOR;
+		gir.version_fw[2] = BRICK_FIRMWARE_VERSION_REVISION;
+		gir.version_hw[0] = BRICK_HARDWARE_VERSION_MAJOR;
+		gir.version_hw[1] = BRICK_HARDWARE_VERSION_MINOR;
+		gir.version_hw[2] = BRICK_HARDWARE_VERSION_REVISION;
+		gir.device_identifier = BRICK_DEVICE_IDENTIFIER;
 	} else {
 		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-			if(data->uid == bs[i].uid) {
-				gsidr.device_stack_id = bs[i].stack_id;
-				gsidr.device_firmware_version[0] = bs[i].firmware_version[0];
-				gsidr.device_firmware_version[1] = bs[i].firmware_version[1];
-				gsidr.device_firmware_version[2] = bs[i].firmware_version[2];
-				strncpy(gsidr.device_name, bs[i].name, MAX_LENGTH_NAME);
+			if(bs[i].uid == data->header.uid) {
+				memset(gir.uid, '\0', UID_STR_MAX_LENGTH);
+				uid_to_serial_number(bs[i].uid, gir.uid);
 
-				send_blocking_with_timeout(&gsidr,
-				                           sizeof(GetStackIDReturn),
-				                           com);
-				return;
+				memset(gir.connected_uid, '\0', UID_STR_MAX_LENGTH);
+				uid_to_serial_number(com_brick_uid, gir.connected_uid);
+				gir.position = 'a' + i;
+				gir.version_fw[0] = bs[i].firmware_version[0];
+				gir.version_fw[1] = bs[i].firmware_version[1];
+				gir.version_fw[2] = bs[i].firmware_version[2];
+				gir.version_hw[0] = bs[i].hardware_version[0];
+				gir.version_hw[1] = bs[i].hardware_version[1];
+				gir.version_hw[2] = bs[i].hardware_version[2];
+				gir.device_identifier = bs[i].device_identifier;
+
+				break;
 			}
 		}
 	}
 
-#ifdef BRICK_CAN_BE_MASTER
-	if(master_mode & MASTER_MODE_MASTER) {
-		// Check Stack Stack IDs
-		for(uint8_t i = 1; i <= com_last_stack_address; i++) {
-			uint8_t id;
-			for(id = 0; id < MAX_STACK_IDS; id++) {
-				if(master_routing_table[id] == i) {
-					break;
-				}
-			}
-
-			GetStackID gsid = {
-				id,
-				TYPE_GET_STACK_ID,
-				sizeof(GetStackID),
-				data->uid
-			};
-			send_blocking_with_timeout(&gsid, sizeof(GetStackID), COM_SPI_STACK);
-		}
-
-		extension_stack_id(com, data);
+	if(gir.device_identifier != 0) {
+		send_blocking_with_timeout(&gir, sizeof(GetIdentityReturn), com);
 	}
-#endif
 }

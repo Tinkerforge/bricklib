@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * bricklet_config.h: configurations for bricklets
  *
@@ -51,7 +51,6 @@ typedef struct {
 typedef struct {
 	ComType *com_current;
 	signed int (*printf)(const char *, ...);
-	const ComMessage* (*get_com_from_data)(const char*);
 	uint16_t (*send_blocking_with_timeout)(const void*,
 	                                       const uint16_t,
 	                                       uint8_t);
@@ -88,6 +87,9 @@ typedef struct {
 	                                const uint16_t length);
 	Twid *twid;
 	Mutex *mutex_twi_bricklet;
+	void (*com_return_error)(const void *data, const uint8_t ret_length, ComType com);
+	void (*com_return_setter)(ComType com, const void *data);
+	void (*com_make_default_header)(void *message, uint32_t uid, uint8_t length, uint8_t fid);
 } BrickletAPI;
 
 typedef struct {
@@ -108,10 +110,10 @@ typedef struct {
 	Pin pin_select;
 	uint8_t adc_channel;
 	const BrickletAddress *baddr;
-	uint8_t stack_id;
-	uint64_t uid;
+	uint32_t uid;
 	uint8_t firmware_version[3];
-	char name[40];
+	uint8_t hardware_version[3];
+	uint16_t device_identifier;
 } BrickletSettings;
 
 

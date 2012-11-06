@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * i2c_eeprom_master.c: i2c eeprom master functionality (for M24C64)
  *
@@ -199,13 +199,13 @@ bool i2c_eeprom_master_write_name(Twi *twi, const char *name) {
 	return false;
 }
 
-uint64_t i2c_eeprom_master_read_uid(Twi *twi) {
+uint32_t i2c_eeprom_master_read_uid(Twi *twi) {
 	uint64_t uid;
 	if(i2c_eeprom_master_read(twi,
 	                          I2C_EEPROM_INTERNAL_ADDRESS_UID,
 	                          (char*)&uid,
 	                          I2C_EEPROM_UID_LENGTH)) {
-		logieei("read uid %d\n\r", (uint32_t)uid);
+		logieei("read uid %u\n\r", uid);
 		return uid;
 	}
 
