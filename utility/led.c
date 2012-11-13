@@ -26,7 +26,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <pio/pio.h>
+#include "bricklib/drivers/pio/pio.h"
 
 #include "bricklib/utility/util_definitions.h"
 
@@ -97,7 +97,7 @@ void led_blink(const uint8_t led_num, const uint32_t delay) {
 }
 
 // If standard blue led is present, use it for rxtx signaling
-void led_tick_task(uint8_t tick_type) {
+void led_tick_task(const uint8_t tick_type) {
 #ifdef LED_STD_BLUE
 	if(led_counter > 0) {
 		led_counter++;

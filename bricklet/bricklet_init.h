@@ -22,7 +22,7 @@
 #ifndef BRICKLET_INIT_H
 #define BRICKLET_INIT_H
 
-#include <pio/pio.h>
+#include "bricklib/drivers/pio/pio.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -37,6 +37,6 @@ void bricklet_deselect(const uint8_t bricklet);
 void bricklet_init(void);
 void bricklet_clear_eeproms(void);
 void bricklet_try_connection(const uint8_t bricklet);
-void bricklet_tick_task(uint8_t tick_type);
+void bricklet_tick_task(const uint8_t tick_type);
 
 #endif

@@ -29,10 +29,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <pio/pio.h>
 
 #include "bricklib/com/usb/usb_descriptors.h"
 #include "bricklib/drivers/uid/uid.h"
+#include "bricklib/drivers/pio/pio.h"
 
 #define SIZE_OF_MESSAGE_HEADER 8
 
@@ -64,7 +64,7 @@
 #define NO_CONNECTED_UID_STR         "0\0\0\0\0\0\0\0"
 #define NO_CONNECTED_UID_STR_LENGTH  sizeof(NO_CONNECTED_UID_STR)
 
-#define UID_STR_MAX_LENGTH 8
+#define UID_STR_MAX_LENGTH MAX_BASE58_STR_SIZE
 
 typedef void (*message_handler_func_t)(uint8_t, const void*);
 
@@ -144,13 +144,15 @@ uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
 
-void reset(uint8_t com, const Reset *data);
-void get_chip_temperature(uint8_t com, const GetChipTemperature *data);
-void get_adc_calibration(uint8_t com, const GetADCCalibration *data);
-void com_adc_calibrate(uint8_t com, const ADCCalibrate *data);
-void stack_enumerate(uint8_t com, const StackEnumerate *data);
-void enumerate(uint8_t com, const Enumerate *data);
-void get_identity(uint8_t com, const GetIdentity *data);
+void reset(const ComType com, const Reset *data);
+void get_chip_temperature(const ComType com, const GetChipTemperature *data);
+void get_adc_calibration(const ComType com, const GetADCCalibration *data);
+void com_adc_calibrate(const ComType com, const ADCCalibrate *data);
+void stack_enumerate(const ComType com, const StackEnumerate *data);
+void enumerate(const ComType com, const Enumerate *data);
+void get_identity(const ComType com, const GetIdentity *data);
+void make_brick_enumerate(EnumerateCallback *ec);
+void make_bricklet_enumerate(EnumerateCallback *ec, const uint8_t bricklet);
 
 
 #endif

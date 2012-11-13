@@ -51,9 +51,9 @@
     licensing and training services.
 */
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "croutine.h"
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
+#include "bricklib/free_rtos/include/croutine.h"
 
 /*
  * Some kernel aware debuggers require data to be viewed to be global, rather

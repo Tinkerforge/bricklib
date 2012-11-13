@@ -1,11 +1,31 @@
+/* master-brick
+ * Copyright (C) 2012 Olaf Lüke <olaf@tinkerforge.com>
+ *
+ * uid.c: Read UID from unique identifier register
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+
 #include "uid.h"
 
 #include <stddef.h>
 #include <stdio.h>
-#include <pio/pio.h>
-#include <efc/efc.h>
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/efc/efc.h"
 
-#define MAX_BASE58_STR_SIZE 13
 const char BASE58_STR[] = \
 	"123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
 
@@ -18,12 +38,21 @@ uint32_t uid_get_uid32(void) {
 
     // The Unique Identifier has 128 bits.
 	// We only use the second last 32 bits.
-    uint32_t uid = *(((uint32_t *)IFLASH_ADDR) + 2);
+    const uint32_t value1 = *(((uint32_t *)(IFLASH_ADDR + 8)));
+    const uint32_t value2 = *(((uint32_t *)(IFLASH_ADDR + 12)));
 
     // Write "Stop Read" unique identifier command (SPUI)
     EFC->EEFC_FCR = (0x5A << 24) | EFC_FCMD_SPUI;
     // If SPUI is performed, FRDY is set
     while ((EFC->EEFC_FSR & EEFC_FSR_FRDY) != EEFC_FSR_FRDY);
+
+    uint32_t uid = 0;
+
+    uid |= (value1 & 0x3F000000) << 2;
+	uid |= (value1 & 0x000F0000) << 6;
+	uid |= (value1 & 0x0000003F) << 16;
+	uid |= (value2 & 0x0F000000) >> 12;
+	uid |= (value2 & 0x00000FFF);
 
     return uid;
 }
@@ -41,27 +70,22 @@ char uid_get_serial_char_from_num(uint8_t num) {
 }
 
 void uid_to_serial_number(uint32_t value, char *str) {
-	char reverse_str[MAX_BASE58_STR_SIZE] = {0};
-	int i = 0;
+	char reverse_str[MAX_BASE58_STR_SIZE] = {'\0'};
+	uint8_t i = 0;
 	while(value >= 58) {
-		uint64_t mod = value % 58;
+		uint32_t mod = value % 58;
 		reverse_str[i] = BASE58_STR[mod];
 		value = value/58;
 		i++;
 	}
 
 	reverse_str[i] = BASE58_STR[value];
-	int j = 0;
-	i = 0;
-	while(reverse_str[MAX_BASE58_STR_SIZE-1 - i] == '\0') {
-		i++;
+
+	uint8_t j = 0;
+	for(j = 0; j <= i; j++) {
+		str[j] = reverse_str[i-j];
 	}
-	for(j = 0; j < MAX_BASE58_STR_SIZE; j++) {
-		if(MAX_BASE58_STR_SIZE - i >= 0) {
-			str[j] = reverse_str[MAX_BASE58_STR_SIZE-1 - i];
-		} else {
-			str[j] = '\0';
-		}
-		i++;
+	for(; j < MAX_BASE58_STR_SIZE; j++) {
+		str[j] = '\0';
 	}
 }

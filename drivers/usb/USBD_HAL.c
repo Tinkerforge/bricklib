@@ -52,7 +52,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <pmc/pmc.h>
+#include "bricklib/drivers/pmc/pmc.h"
 
 // include bricklib usb.h for usb_read_hool
 #include "bricklib/com/usb/usb.h"
@@ -1699,6 +1699,10 @@ void USBD_HAL_Activate(void)
     UDP_EnablePeripheralClock();
     UDP_EnableUsbClock();
     UDP_EnableTransceiver();
+}
+
+bool usbd_hal_is_disabled(const uint8_t bEndpoint) {
+    return endpoints[bEndpoint].state == UDP_ENDPOINT_DISABLED;
 }
 
 /**@}*/

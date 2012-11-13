@@ -35,7 +35,7 @@
 #include "twid.h"
 
 #include <assert.h>
-#include <twi/twi.h>
+#include "bricklib/drivers/twi/twi.h"
 
 #include "bricklib/utility/trace.h"
 

@@ -23,6 +23,8 @@
 #define INIT_H
 
 #include <stdint.h>
+#include <stdbool.h>
+#include "bricklib/com/com.h"
 
 #define TICK_TASK_TYPE_MESSAGE 1
 #define TICK_TASK_TYPE_CALCULATION 2
@@ -32,5 +34,6 @@ void brick_init_new_connection(void);
 void brick_tick_task(void *parameters);
 void brick_init_start_tick_task(void);
 void brick_reset(void);
+bool brick_init_enumeration(const ComType com);
 
 #endif

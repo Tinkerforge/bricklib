@@ -23,20 +23,19 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <spi/spi.h>
-#include <pio/pio.h>
-#include <pio/pio_it.h>
-#include <cmsis/core_cm3.h>
+#include "bricklib/drivers/spi/spi.h"
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/pio/pio_it.h"
+#include "bricklib/drivers/cmsis/core_cm3.h"
 #include <stdbool.h>
-#include <FreeRTOS.h>
-#include <task.h>
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
 
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/utility/pearson_hash.h"
 #include "bricklib/drivers/crc/crc.h"
 #include "bricklib/com/com_common.h"
 #include "bricklib/com/com_messages.h"
-#include "bricklib/com/spi/spi_common.h"
 #include "bricklib/com/i2c/i2c_eeprom/i2c_eeprom_master.h"
 #include "bricklib/drivers/uid/uid.h"
 #include "extensions/rs485/rs485_low_level.h"
@@ -45,27 +44,23 @@
 #include "spi_stack_common.h"
 #include "config.h"
 
+#include "routing.h"
+
 #define SPI_DLYBCS(delay, mc) ((uint32_t)((mc/1000000) * delay) << 24)
 #define SPI_STACK_MASTER_TIMEOUT 10000
 
-static bool recv_long_message = false;
-static bool send_long_message = false;
-static bool find_new_stack_participant = false;
-
-extern uint8_t com_stack_id;
 extern uint8_t com_last_stack_address;
-extern uint8_t spi_stack_select_last_num;
 extern uint8_t spi_stack_buffer_recv[SPI_STACK_BUFFER_SIZE];
 extern uint8_t spi_stack_buffer_send[SPI_STACK_BUFFER_SIZE];
-
-extern uint8_t rs485_state;
 
 // Recv and send buffer size for SPI stack (written by spi_stack_send/recv)
 extern uint16_t spi_stack_buffer_size_send;
 extern uint16_t spi_stack_buffer_size_recv;
-extern uint8_t master_routing_table[];
+
+extern int8_t spi_stack_send_to;
 
 extern Pin spi_select_master[];
+extern ComType com_current;
 
 bool spi_stack_master_transceive(void) {
 	uint8_t master_checksum = 0;
@@ -235,43 +230,29 @@ void spi_stack_master_init(void) {
 
 void spi_stack_master_state_machine_loop(void *arg) {
 	uint8_t sa_counter = 1;
-	uint8_t sa_send = 0;
     while(true) {
 		// As long as receive buffer is not empty
     	// Or there are no stack participants, do nothing
-    	if(spi_stack_buffer_size_recv == 0) {
+    	if(spi_stack_buffer_size_recv == 0 && com_current != COM_NONE) {
     		// If nothing to send ask for data round robin
-			if(!send_long_message &&
-			   (recv_long_message || spi_stack_buffer_size_send == 0)) {
+			if(spi_stack_buffer_size_send == 0) {
 				spi_stack_select(sa_counter);
 				spi_stack_master_transceive();
 				spi_stack_deselect();
-				if(spi_stack_buffer_size_recv == SPI_STACK_BUFFER_SIZE) {
-					recv_long_message = true;
+				if(sa_counter == com_last_stack_address) {
+					sa_counter = 1;
 				} else {
-					recv_long_message = false;
-					if(sa_counter == com_last_stack_address) {
-						sa_counter = 1;
-					} else {
-						sa_counter++;
-					}
+					sa_counter++;
 				}
 			}
 
 			// If something to send, handle it first
 			else {
-				// If we have a long message, use the old stack address
-				if(!send_long_message) {
-					sa_send = master_routing_table[spi_stack_buffer_send[0]];
+				if((spi_stack_send_to < SPI_ADDRESS_MIN) ||
+				   (spi_stack_send_to > com_last_stack_address)) {
+					spi_stack_send_to = routing_route_to(spi_stack_buffer_send[0] | (spi_stack_buffer_send[1] << 8) | (spi_stack_buffer_send[2] << 16) | (spi_stack_buffer_send[3] << 24));
 				}
-
-				if(spi_stack_buffer_size_send == SPI_STACK_BUFFER_SIZE) {
-					send_long_message = true;
-				} else {
-					send_long_message = false;
-				}
-
-				spi_stack_select(sa_send);
+				spi_stack_select(spi_stack_send_to);
 				spi_stack_master_transceive();
 				spi_stack_deselect();
 			}
@@ -280,8 +261,7 @@ void spi_stack_master_state_machine_loop(void *arg) {
     }
 }
 
-extern ComType com_current;
-void spi_stack_master_message_loop_return(char *data, uint16_t length) {
+void spi_stack_master_message_loop_return(char *data, const uint16_t length) {
 	send_blocking_with_timeout(data, length, com_current);
 }
 

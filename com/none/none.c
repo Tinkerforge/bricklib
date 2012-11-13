@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * none.c: Communication stubs, used when no interface is available
  *
@@ -24,11 +24,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-uint16_t no_send(const void *data, const uint16_t length) {
+uint16_t no_send(const void *data, const uint16_t length, uint32_t *options) {
 	return length;
 }
 
-uint16_t no_recv(void *data, const uint16_t length) {
+uint16_t no_recv(void *data, const uint16_t length, uint32_t *options) {
 	return length;
 }
 

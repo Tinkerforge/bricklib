@@ -22,9 +22,9 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
-#include <FreeRTOS.h>
-#include <task.h>
-#include <semphr.h>
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
+#include "bricklib/free_rtos/include/semphr.h"
 
 typedef xSemaphoreHandle Mutex;
 
@@ -32,7 +32,7 @@ typedef xSemaphoreHandle Mutex;
 
 void mutex_init();
 Mutex mutex_create(void);
-bool mutex_take(Mutex mutex, uint32_t time);
+bool mutex_take(Mutex mutex, const uint32_t time);
 bool mutex_give(Mutex mutex);
 
 #endif

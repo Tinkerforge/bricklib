@@ -31,15 +31,10 @@ bool spi_stack_master_transceive(void);
 void spi_master_state_machine(void);
 void spi_master_reset_state_machine(void);
 void spi_stack_master_init(void);
-void spi_stack_master_transceive_dma(void *data_transceive,
-                                     uint16_t len_transceive,
-                                     void *data_send,
-                                     void *data_recv,
-                                     uint16_t len);
 
 void spi_stack_master_state_machine_loop(void *arg);
 void spi_stack_master_message_loop(void *parameters);
 
-void spi_stack_master_message_loop_return(char *data, uint16_t length);
+void spi_stack_master_message_loop_return(char *data, const uint16_t length);
 
 #endif

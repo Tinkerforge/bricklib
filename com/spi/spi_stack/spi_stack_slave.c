@@ -21,14 +21,14 @@
 
 #include "spi_stack_slave.h"
 
-#include <pio/pio.h>
-#include <pio/pio_it.h>
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/pio/pio_it.h"
 #include <string.h>
 #include <stdio.h>
-#include <spi/spi.h>
-#include <cmsis/core_cm3.h>
-#include <FreeRTOS.h>
-#include <task.h>
+#include "bricklib/drivers/spi/spi.h"
+#include "bricklib/drivers/cmsis/core_cm3.h"
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
 #include <stdbool.h>
 
 #include "bricklib/bricklet/bricklet_config.h"
@@ -36,8 +36,6 @@
 #include "bricklib/utility/pearson_hash.h"
 #include "bricklib/com/com_common.h"
 #include "bricklib/com/com_messages.h"
-#include "bricklib/com/spi/spi_common.h"
-//#include "servo.h"
 
 #include "spi_stack_common.h"
 #include "config.h"
@@ -48,10 +46,6 @@ extern uint8_t spi_stack_buffer_send[SPI_STACK_BUFFER_SIZE];
 // Recv and send buffer size for SPI stack (written by spi_stack_send/recv)
 extern uint16_t spi_stack_buffer_size_send;
 extern uint16_t spi_stack_buffer_size_recv;
-
-extern uint8_t com_stack_id;
-extern BrickletSettings bs[];
-extern const BrickletAddress baddr[];
 
 static const Pin spi_slave_pins[] = {PINS_SPI, PIN_SPI_SELECT_SLAVE};
 
@@ -68,7 +62,7 @@ void SPI_IrqHandler(void) {
 	uint8_t master_checksum = 0;
 	PEARSON(slave_checksum, spi_stack_buffer_size_send);
 
-	volatile uint8_t dummy;
+	__attribute__((unused)) volatile uint8_t dummy;
 
 	// Empty read register
 	while((SPI->SPI_SR & SPI_SR_RDRF) == 0);
@@ -196,26 +190,12 @@ void spi_stack_slave_init(void) {
     SPI_EnableIt(SPI, SPI_IER_RDRF);
 }
 
-void spi_stack_slave_message_loop_return(char *data, uint16_t length) {
+void spi_stack_slave_message_loop_return(char *data, const uint16_t length) {
 	if(spi_stack_buffer_size_recv == 0) {
 		SPI_EnableIt(SPI, SPI_IER_RDRF);
 	}
 
-/*	const uint8_t stack_id = get_stack_id_from_data(data);
-	if(stack_id == com_stack_id || stack_id == 0) {
-		const ComMessage *com_message = get_com_from_data(data);
-		if(com_message->reply_func != NULL) {
-			com_message->reply_func(COM_SPI_STACK, (void*)data);
-			return;
-		}
-	}
-
-	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		if(bs[i].stack_id == stack_id) {
-			baddr[i].entry(BRICKLET_TYPE_INVOCATION, COM_SPI_STACK, (void*)data);
-			return;
-		}
-	}*/
+	com_route_message_brick(data, length, COM_SPI_STACK);
 }
 
 void spi_stack_slave_message_loop(void *parameters) {

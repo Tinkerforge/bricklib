@@ -21,10 +21,10 @@
 
 #include "usb_descriptors.h"
 
-#include <usb/USBDescriptors.h>
-#include <usb/USBRequests.h>
-#include <usb/USBD.h>
-#include <usb/USBDDriver.h>
+#include "bricklib/drivers/usb/USBDescriptors.h"
+#include "bricklib/drivers/usb/USBRequests.h"
+#include "bricklib/drivers/usb/USBD.h"
+#include "bricklib/drivers/usb/USBDDriver.h"
 #include <string.h>
 
 #include "bricklib/utility/util_definitions.h"
@@ -129,7 +129,7 @@ static const unsigned char manufacturer_descriptor[] = {
     USBStringDescriptor_UNICODE('H'),
 };
 
-#define SERIAL_NUMBER_LENGTH USBStringDescriptor_LENGTH(UID_LENGTH)
+#define SERIAL_NUMBER_LENGTH USBStringDescriptor_LENGTH(MAX_BASE58_STR_SIZE)
 
 static const unsigned char product_descriptor[] = PRODUCT_DESCRIPTOR;
 static unsigned char serial_number_descriptor[SERIAL_NUMBER_LENGTH] = {
@@ -137,8 +137,8 @@ static unsigned char serial_number_descriptor[SERIAL_NUMBER_LENGTH] = {
 	USBGenericDescriptor_STRING
 };
 
-void set_serial_number_descriptor(char *sn, uint8_t length) {
-	for(uint8_t i = 0; i < MIN(UID_LENGTH, length); i++) {
+void set_serial_number_descriptor(char *sn, const uint8_t length) {
+	for(uint8_t i = 0; i < MIN(MAX_BASE58_STR_SIZE, length); i++) {
 		serial_number_descriptor[2+i*2] = sn[i];
 		serial_number_descriptor[2+i*2+1] = 0;
 	}

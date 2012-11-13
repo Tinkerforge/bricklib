@@ -35,7 +35,7 @@
 #include "exceptions.h"
 #include "board_lowlevel.h"
 
-#include <cmsis/core_cm3.h>
+#include "bricklib/drivers/cmsis/core_cm3.h"
 
 /*----------------------------------------------------------------------------
  *        Exported variables
@@ -52,7 +52,7 @@ extern uint32_t _estack;
 
 /* Initialize segments */
 extern uint32_t _sfixed;
-extern uint32_t _efixed;
+//extern uint32_t _efixed;
 extern uint32_t _etext;
 extern uint32_t _srelocate;
 extern uint32_t _erelocate;

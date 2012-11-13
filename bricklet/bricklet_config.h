@@ -26,34 +26,22 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include <pio/pio.h>
-#include <twi/twid.h>
-
 #include "bricklet_init.h"
 #include "bricklib/com/com_messages.h"
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/twi/twid.h"
 
 #include "bricklib/logging/logging.h"
 #include "bricklib/utility/mutex.h"
 
-typedef int (*BrickletEntryFunction)(uint8_t, uint8_t, uint8_t*);
-
-typedef struct {
-	uint8_t firmware_version[3];
-	char name[40];
-} BrickletInfo;
-
-typedef struct {
-	uint8_t stack_id;
-	uint64_t uid;
-	char name[40];
-} BrickletConnection;
+typedef int (*BrickletEntryFunction)(const uint8_t, const uint8_t, uint8_t*);
 
 typedef struct {
 	ComType *com_current;
 	signed int (*printf)(const char *, ...);
 	uint16_t (*send_blocking_with_timeout)(const void*,
 	                                       const uint16_t,
-	                                       uint8_t);
+	                                       const ComType com);
 	void (*bricklet_select)(const uint8_t bricklet);
 	void (*bricklet_deselect)(const uint8_t bricklet);
 	uint8_t (*TWID_Read)(Twid *pTwid,
@@ -76,7 +64,7 @@ typedef struct {
 	Mutex (*mutex_create)(void);
 	bool (*mutex_take)(Mutex mutex, uint32_t time);
 	bool (*mutex_give)(Mutex mutex);
-	uint16_t (*adc_channel_get_data)(uint8_t c);
+	uint16_t (*adc_channel_get_data)(const uint8_t c);
 	bool (*i2c_eeprom_master_read)(Twi *twi,
 	                               const uint16_t internal_address,
 	                               char *data,
@@ -87,7 +75,7 @@ typedef struct {
 	                                const uint16_t length);
 	Twid *twid;
 	Mutex *mutex_twi_bricklet;
-	void (*com_return_error)(const void *data, const uint8_t ret_length, ComType com);
+	void (*com_return_error)(const void *data, const uint8_t ret_length, uint8_t error_code, ComType com);
 	void (*com_return_setter)(ComType com, const void *data);
 	void (*com_make_default_header)(void *message, uint32_t uid, uint8_t length, uint8_t fid);
 } BrickletAPI;

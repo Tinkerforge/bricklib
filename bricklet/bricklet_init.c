@@ -22,12 +22,12 @@
 #include "bricklet_init.h"
 
 #include <string.h>
-#include <flash/flashd.h>
-#include <FreeRTOS.h>
-#include <task.h>
-#include <adc/adc.h>
-#include <pio/pio.h>
-#include <pio/pio_it.h>
+#include "bricklib/drivers/flash/flashd.h"
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
+#include "bricklib/drivers/adc/adc.h"
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/pio/pio_it.h"
 
 #include "bricklib/logging/logging.h"
 #include "bricklib/com/i2c/i2c_eeprom/i2c_eeprom_master.h"
@@ -39,10 +39,10 @@
 #include "bricklet_config.h"
 
 // Includes for bricklet api
-#include <twi/twid.h> // TWID_Read, TWID_Write
+#include "bricklib/drivers/twi/twid.h" // TWID_Read, TWID_Write
 #include <stdio.h> // printf
-#include <pio/pio.h> // PIO_Configure
-#include <pio/pio_it.h> // PIO_ConfigureIt
+#include "bricklib/drivers/pio/pio.h" // PIO_Configure
+#include "bricklib/drivers/pio/pio_it.h" // PIO_ConfigureIt
 #include "bricklib/drivers/adc/adc.h" // adc_channel_get_data
 #include "bricklib/com/com_messages.h" // get_com_from_type
 #include "bricklib/com/com_common.h" // send_blocking_with_timeout
@@ -51,8 +51,6 @@
 #define BRICKLET_DEBOUNCE_TICKS 1000
 
 extern ComType com_current;
-extern uint8_t com_last_spi_stack_id;
-extern uint8_t com_stack_id;
 extern uint8_t bricklet_eeprom_address;
 extern Mutex mutex_twi_bricklet;
 
@@ -283,13 +281,14 @@ void bricklet_try_connection(const uint8_t bricklet) {
 
 	bs[bricklet].uid = uid;
 
-	logbleti("Bricklet %c configured (UID %u)\n\r", 'a' + bricklet, uid);
+	logbleti("Bricklet %c configured (UID %lu)\n\r", 'a' + bricklet, uid);
 }
 
-void bricklet_tick_task(uint8_t tick_type) {
+void bricklet_tick_task(const uint8_t tick_type) {
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		if(bricklet_attached[i]) {
-			baddr[i].entry(BRICKLET_TYPE_TICK, 0, &tick_type);
+			uint8_t tt = tick_type;
+			baddr[i].entry(BRICKLET_TYPE_TICK, 0, &tt);
 		}
 	}
 }

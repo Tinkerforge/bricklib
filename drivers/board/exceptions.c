@@ -66,7 +66,7 @@ __attribute__ ((weak)) void NMI_Handler(void)
     while(1);
 }
 
-#include <cmsis/core_cm3.h>
+#include "bricklib/drivers/cmsis/core_cm3.h"
 /**
  * \brief Default HardFault interrupt handler.
  */
@@ -86,6 +86,7 @@ __attribute__ ((weak)) void HardFault_Handler(void)
 
 __attribute__ ((weak)) void HardFault_HandlerC(uint32_t * hardfault_args)
 {
+#if LOGGING_LEVEL != LOGGING_NONE
 	uint32_t stacked_r0;
 	uint32_t stacked_r1;
 	uint32_t stacked_r2;
@@ -108,20 +109,21 @@ __attribute__ ((weak)) void HardFault_HandlerC(uint32_t * hardfault_args)
 	uint32_t *pc = (uint32_t*)stacked_pc;
 
 	logf("\n\n[Hard fault handler]\n\r");
-	logf("R0 = %x\n\r", stacked_r0);
-	logf("R1 = %x\n\r", stacked_r1);
-	logf("R2 = %x\n\r", stacked_r2);
-	logf("R3 = %x\n\r", stacked_r3);
-	logf("R12 = %x\n\r", stacked_r12);
-	logf("LR [R14] = %x  subroutine call return address\n\r", stacked_lr);
-	logf("PC [R15] = %x (%d)  program counter\n\r", stacked_pc, *pc);
-	logf("PSR = %x\n\r", stacked_psr);
-	logf("BFAR = %x\n\r", (*((volatile uint32_t *)(0xE000ED38))));
-	logf("CFSR = %x\n\r", (*((volatile uint32_t *)(0xE000ED28))));
-	logf("HFSR = %x\n\r", (*((volatile uint32_t *)(0xE000ED2C))));
-	logf("DFSR = %x\n\r", (*((volatile uint32_t *)(0xE000ED30))));
-	logf("AFSR = %x\n\r", (*((volatile uint32_t *)(0xE000ED3C))));
-	logf("SCB_SHCSR = %x\n\r", SCB->SHCSR);
+	logf("R0 = %lux\n\r", stacked_r0);
+	logf("R1 = %lux\n\r", stacked_r1);
+	logf("R2 = %lux\n\r", stacked_r2);
+	logf("R3 = %lux\n\r", stacked_r3);
+	logf("R12 = %lux\n\r", stacked_r12);
+	logf("LR [R14] = %lux  subroutine call return address\n\r", stacked_lr);
+	logf("PC [R15] = %lux (%lux)  program counter\n\r", stacked_pc, *pc);
+	logf("PSR = %lux\n\r", stacked_psr);
+	logf("BFAR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED38))));
+	logf("CFSR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED28))));
+	logf("HFSR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED2C))));
+	logf("DFSR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED30))));
+	logf("AFSR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED3C))));
+	logf("SCB_SHCSR = %lux\n\r", SCB->SHCSR);
+#endif
 
     while(1);
 }

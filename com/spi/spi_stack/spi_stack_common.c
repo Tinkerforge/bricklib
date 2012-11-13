@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * spi_stack_common.c: SPI stack functions common to master and slave
  *
@@ -21,16 +21,15 @@
 
 #include "spi_stack_common.h"
 
-#include <FreeRTOS.h>
-#include <task.h>
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <spi/spi.h>
+#include "bricklib/drivers/spi/spi.h"
 
 #include "bricklib/com/com_messages.h"
-#include "bricklib/com/spi/spi_common.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/drivers/crc/crc.h"
 
@@ -47,9 +46,19 @@ uint8_t spi_stack_buffer_send[SPI_STACK_BUFFER_SIZE] = {0};
 uint16_t spi_stack_buffer_size_send = 0;
 uint16_t spi_stack_buffer_size_recv = 0;
 
-uint16_t spi_stack_send(const void *data, const uint16_t length) {
+int8_t spi_stack_send_to = -1;
+
+extern uint8_t com_last_stack_address;
+
+uint16_t spi_stack_send(const void *data, const uint16_t length, uint32_t *options) {
 	if(spi_stack_buffer_size_send > 0) {
 		return 0;
+	}
+
+	if(options && *options >= SPI_ADDRESS_MIN && *options <= com_last_stack_address) {
+		spi_stack_send_to = *options;
+	} else {
+		spi_stack_send_to = -1;
 	}
 
 	led_rxtx++;
@@ -62,7 +71,7 @@ uint16_t spi_stack_send(const void *data, const uint16_t length) {
 	return send_length;
 }
 
-uint16_t spi_stack_recv(void *data, const uint16_t length) {
+uint16_t spi_stack_recv(void *data, const uint16_t length, uint32_t *options) {
 	if(spi_stack_buffer_size_recv == 0) {
 		return 0;
 	}

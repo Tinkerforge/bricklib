@@ -99,14 +99,14 @@ void logging_lcd(const int type, const char *msg) {
 #endif
 
 
-
+#ifdef LOGGING_LCD
 static const char * const log_type_to_string[LOG_NUM_TYPES] = {
 	"D: ",
 	"I: ",
 	"W: ",
 	"E: "
 };
-
+#endif
 
 
 void logging_serial(const char *msg, const uint8_t length) {

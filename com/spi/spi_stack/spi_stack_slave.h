@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * spi_stack_slave.h: SPI stack slave functionality
  *
@@ -31,6 +31,6 @@ void SPI_IrqHandler(void);
 bool spi_stack_slave_is_selected(void);
 void spi_stack_slave_init(void);
 void spi_stack_slave_message_loop(void *parameters);
-void spi_stack_slave_message_loop_return(char *data, uint16_t length);
+void spi_stack_slave_message_loop_return(char *data, const uint16_t length);
 
 #endif

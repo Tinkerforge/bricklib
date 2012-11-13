@@ -106,6 +106,7 @@ extern uint8_t USBD_HAL_Read(uint8_t bEndpoint,
                              uint32_t dLength);
 extern uint8_t USBD_HAL_Stall(uint8_t bEP);
 extern uint8_t USBD_HAL_Halt(uint8_t bEndpoint,uint8_t ctl);
+extern bool usbd_hal_is_disabled(const uint8_t bEndpoint);
 /**@}*/
 
 #endif // #define USBD_HAL_H

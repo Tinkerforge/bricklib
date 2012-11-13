@@ -72,7 +72,7 @@
 #include "spi.h"
 
 #include <stdint.h>
-#include <pmc/pmc.h>
+#include "bricklib/drivers/pmc/pmc.h"
 /*----------------------------------------------------------------------------
  *        Exported functions
  *----------------------------------------------------------------------------*/

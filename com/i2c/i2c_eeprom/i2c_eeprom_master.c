@@ -21,10 +21,10 @@
 
 #include "i2c_eeprom_master.h"
 
-#include <cmsis/core_cm3.h>
-#include <pio/pio.h>
-#include <twi/twi.h>
-#include <twi/twid.h>
+#include "bricklib/drivers/cmsis/core_cm3.h"
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/twi/twi.h"
+#include "bricklib/drivers/twi/twid.h"
 #include <stdio.h>
 #include <stddef.h>
 #include <stdbool.h>
@@ -200,7 +200,7 @@ bool i2c_eeprom_master_write_name(Twi *twi, const char *name) {
 }
 
 uint32_t i2c_eeprom_master_read_uid(Twi *twi) {
-	uint64_t uid;
+	uint32_t uid;
 	if(i2c_eeprom_master_read(twi,
 	                          I2C_EEPROM_INTERNAL_ADDRESS_UID,
 	                          (char*)&uid,
@@ -213,7 +213,7 @@ uint32_t i2c_eeprom_master_read_uid(Twi *twi) {
 	return 0;
 }
 
-bool i2c_eeprom_master_write_uid(Twi *twi, uint64_t uid) {
+bool i2c_eeprom_master_write_uid(Twi *twi, const uint32_t uid) {
 	if(i2c_eeprom_master_write(twi,
 	                           I2C_EEPROM_INTERNAL_ADDRESS_UID,
 	                           (char*)&uid,

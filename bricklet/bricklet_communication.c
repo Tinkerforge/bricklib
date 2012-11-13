@@ -21,8 +21,8 @@
 
 #include "bricklet_communication.h"
 
-#include <twi/twi.h>
-#include <cmsis/core_cm3.h>
+#include "bricklib/drivers/twi/twi.h"
+#include "bricklib/drivers/cmsis/core_cm3.h"
 
 #include "bricklib/bricklet/bricklet_config.h"
 #include "bricklib/bricklet/bricklet_init.h"
@@ -31,48 +31,10 @@
 
 #include "config.h"
 
-extern const BrickletAddress baddr[BRICKLET_NUM];
-
-void write_bricklet_name(uint8_t com, const WriteBrickletName *data) {
-	uint8_t port = tolower(data->port) - 'a';
+void write_bricklet_plugin(const ComType com, const WriteBrickletPlugin *data) {
+	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
-		// TODO: Error?
-		logblete("Bricklet Port %d does not exist (write name)\n\r", port);
-		return;
-	}
-
-	bricklet_select(port);
-	i2c_eeprom_master_write_name(TWI_BRICKLET, data->name);
-	bricklet_deselect(port);
-
-	logbletd("Write Bricklet Name [%s] (port %c)\n\r", data->name, data->port);
-}
-
-void read_bricklet_name(uint8_t com, const ReadBrickletName *data) {
-	uint8_t port = tolower(data->port) - 'a';
-	if(port >= BRICKLET_NUM) {
-		// TODO: Error?
-		logblete("Bricklet Port %d does not exist (read name)\n\r", port);
-		return;
-	}
-
-	ReadBrickletNameReturn rbnr;
-	rbnr.stack_id = data->stack_id;
-	rbnr.type = TYPE_READ_BRICKLET_NAME;
-	rbnr.length = sizeof(ReadBrickletNameReturn);
-
-	bricklet_select(port);
-	i2c_eeprom_master_read_name(TWI_BRICKLET, rbnr.name);
-	bricklet_deselect(port);
-
-	send_blocking_with_timeout(&rbnr, sizeof(ReadBrickletNameReturn), com);
-	logbletd("Read Bricklet Name [%s] (port %c)\n\r", rbnr.name, data->port);
-}
-
-void write_bricklet_plugin(uint8_t com, const WriteBrickletPlugin *data) {
-	uint8_t port = tolower(data->port) - 'a';
-	if(port >= BRICKLET_NUM) {
-		// TODO: Error?
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
 		logblete("Bricklet Port %d does not exist (write plugin)\n\r", port);
 		return;
 	}
@@ -91,20 +53,21 @@ void write_bricklet_plugin(uint8_t com, const WriteBrickletPlugin *data) {
 	         data->plugin[5],
 	         data->port,
 	         data->position);
+
+	com_return_setter(com, data);
 }
 
-void read_bricklet_plugin(uint8_t com, const ReadBrickletPlugin *data) {
-	uint8_t port = tolower(data->port) - 'a';
+void read_bricklet_plugin(const ComType com, const ReadBrickletPlugin *data) {
+	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
-		// TODO: Error?
+		com_return_error(data, sizeof(ReadBrickletPluginReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
 		logblete("Bricklet Port %d does not exist (read plugin)\n\r", port);
 		return;
 	}
 
 	ReadBrickletPluginReturn rbpr;
-	rbpr.stack_id = data->stack_id;
-	rbpr.type = TYPE_READ_BRICKLET_PLUGIN;
-	rbpr.length = sizeof(ReadBrickletPluginReturn);
+	rbpr.header = data->header;
+	rbpr.header.length = sizeof(ReadBrickletPluginReturn);
 
 	bricklet_select(port);
 	i2c_eeprom_master_read_plugin(TWI_BRICKLET,
@@ -125,10 +88,10 @@ void read_bricklet_plugin(uint8_t com, const ReadBrickletPlugin *data) {
 	         data->position);
 }
 
-void write_bricklet_uid(uint8_t com, const WriteBrickletUID *data) {
-	uint8_t port = tolower(data->port) - 'a';
+void write_bricklet_uid(const ComType com, const WriteBrickletUID *data) {
+	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
-		// TODO: Error?
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
 		logblete("Bricklet Port %d does not exist (write uid)\n\r", port);
 		return;
 	}
@@ -136,26 +99,27 @@ void write_bricklet_uid(uint8_t com, const WriteBrickletUID *data) {
 	bricklet_select(port);
 	i2c_eeprom_master_write_uid(TWI_BRICKLET, data->uid);
 	bricklet_deselect(port);
-	logbletd("Write Bricklet UID %d\n\r", (uint32_t)data->uid);
+	logbletd("Write Bricklet UID %lu\n\r", data->uid);
+
+	com_return_setter(com, data);
 }
 
-void read_bricklet_uid(uint8_t com, const ReadBrickletUID *data) {
-	uint8_t port = tolower(data->port) - 'a';
+void read_bricklet_uid(const ComType com, const ReadBrickletUID *data) {
+	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
-		// TODO: Error?
+		com_return_error(data, sizeof(ReadBrickletUIDReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
 		logblete("Bricklet Port %d does not exist (read uid)\n\r", port);
 		return;
 	}
 
 	ReadBrickletUIDReturn rbuidr;
+	rbuidr.header = data->header;
+	rbuidr.header.length = sizeof(ReadBrickletUIDReturn);
 
-	rbuidr.stack_id = data->stack_id;
-	rbuidr.type = TYPE_READ_BRICKLET_UID;
-	rbuidr.length = sizeof(ReadBrickletUIDReturn);
 	bricklet_select(port);
 	rbuidr.uid = i2c_eeprom_master_read_uid(TWI_BRICKLET);
 	bricklet_deselect(port);
 
 	send_blocking_with_timeout(&rbuidr, sizeof(ReadBrickletUIDReturn), com);
-	logbletd("Read Bricklet UID %d\n\r", (uint32_t)rbuidr.uid);
+	logbletd("Read Bricklet UID %lu\n\r", rbuidr.uid);
 }

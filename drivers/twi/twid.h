@@ -37,7 +37,7 @@
 #include "config.h"
 
 #include <stdint.h>
-#include <async/async.h>
+#include "bricklib/drivers/async/async.h"
 /*----------------------------------------------------------------------------
  *        Definition
  *----------------------------------------------------------------------------*/

@@ -41,7 +41,7 @@
 
 #include <assert.h>
 #include <stddef.h>
-#include <pmc/pmc.h>
+#include "bricklib/drivers/pmc/pmc.h"
 
 #include "bricklib/utility/trace.h"
 /*----------------------------------------------------------------------------

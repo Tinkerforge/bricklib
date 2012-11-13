@@ -37,7 +37,7 @@ Mutex mutex_create(void) {
 	return xSemaphoreCreateMutex();
 }
 
-bool mutex_take(Mutex mutex, uint32_t time) {
+bool mutex_take(Mutex mutex, const uint32_t time) {
 	return xSemaphoreTake(mutex, time);
 }
 

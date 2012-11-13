@@ -22,7 +22,7 @@
 #ifndef USB_DESCRIPTORS_H
 #define USB_DESCRIPTORS_H
 
-#include <usb/USBDescriptors.h>
+#include "bricklib/drivers/usb/USBDescriptors.h"
 #include <stdint.h>
 
 #define DEFAULT_EP_SIZE 80
@@ -37,6 +37,6 @@ typedef struct BrickConfigurationDescriptors {
     USBEndpointDescriptor endpoint_out;
 } EEConfigurationDescriptors;
 
-void set_serial_number_descriptor(char *sn, uint8_t length);
+void set_serial_number_descriptor(char *sn, const uint8_t length);
 
 #endif

@@ -77,7 +77,7 @@
 #include "flashd.h"
 #include "config.h"
 
-#include <efc/efc.h>
+#include "bricklib/drivers/efc/efc.h"
 #include <string.h>
 #include <assert.h>
 
@@ -377,7 +377,7 @@ extern uint32_t FLASHD_IsLocked( uint32_t start, uint32_t end )
     uint8_t startRegion, endRegion ;
     uint32_t numPagesInRegion ;
     uint32_t status ;
-    uint32_t dwError ;
+    __attribute__((unused)) uint32_t dwError ;
     uint32_t numLockedRegions = 0 ;
 
     assert( end >= start ) ;
@@ -422,7 +422,7 @@ extern uint32_t FLASHD_IsLocked( uint32_t start, uint32_t end )
  */
 extern uint32_t FLASHD_IsGPNVMSet( uint8_t ucGPNVM )
 {
-    uint32_t dwError ;
+	__attribute__((unused)) uint32_t dwError ;
     uint32_t dwStatus ;
 
     assert( ucGPNVM < 2 ) ;

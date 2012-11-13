@@ -22,7 +22,7 @@
 #include "usb_callbacks.h"
 
 #include "config.h"
-#include <cmsis/core_cm3.h>
+#include "bricklib/drivers/cmsis/core_cm3.h"
 #include "bricklib/logging/logging.h"
 
 // Invoked after the USB driver has been initialized.

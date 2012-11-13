@@ -21,17 +21,18 @@
 
 #include "usb.h"
 
-#include <pio/pio.h>
-#include <pio/pio_it.h>
-#include <pmc/pmc.h>
-#include <FreeRTOS.h>
-#include <task.h>
-#include <semphr.h>
 #include <string.h>
-#include <usb/USBDescriptors.h>
-#include <usb/USBDDriver.h>
-#include <usb/USBD.h>
-#include <usb/USBD_HAL.h>
+
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/pio/pio_it.h"
+#include "bricklib/drivers/pmc/pmc.h"
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
+#include "bricklib/free_rtos/include/semphr.h"
+#include "bricklib/drivers/usb/USBDescriptors.h"
+#include "bricklib/drivers/usb/USBDDriver.h"
+#include "bricklib/drivers/usb/USBD.h"
+#include "bricklib/drivers/usb/USBD_HAL.h"
 
 #include "bricklib/drivers/adc/adc.h"
 
@@ -71,6 +72,8 @@ extern bool master_startup_usb_connected;
 static const Pin pin_usb_detect = PIN_USB_DETECT;
 #endif
 
+uint32_t usb_sequence_number = 0;
+
 void usb_send_callback(void *arg,
                        uint8_t status,
                        uint32_t transferred,
@@ -79,18 +82,20 @@ void usb_send_callback(void *arg,
 
 	usb_send_transferred = transferred;
 
-	send_status |= USB_CALLBACK;
+	if((uint32_t)arg == usb_sequence_number) {
+		send_status |= USB_CALLBACK;
+	}
 	portEND_SWITCHING_ISR(higher_priority_task_woken);
 }
 
-inline uint16_t usb_send(const void *data, const uint16_t length) {
+inline uint16_t usb_send(const void *data, const uint16_t length, uint32_t *options) {
 	if((send_status & (USB_IN_FUNCTION))) {
 		return 0;
 	}
 
 	if(!(send_status & USB_CALLBACK)) {
 		send_status |= USB_IN_FUNCTION;
-		if(USBD_Write(IN_EP, data, length, usb_send_callback, 0) != USBD_STATUS_SUCCESS) {
+		if(USBD_Write(IN_EP, data, length, usb_send_callback, (void*)usb_sequence_number) != USBD_STATUS_SUCCESS) {
 			send_status &= ~USB_IN_FUNCTION;
 			return 0;
 		}
@@ -105,6 +110,7 @@ inline uint16_t usb_send(const void *data, const uint16_t length) {
 		// USBD_Write does not always call callback when USBD_STATUS_SUCCESS
 		// Wait for NUM_SEND_TRIES
 		if(num_tries > NUM_SEND_TRIES) {
+			usb_sequence_number++;
 			send_status = 0;
 			return 0;
 		}
@@ -121,7 +127,7 @@ inline uint16_t usb_send(const void *data, const uint16_t length) {
 // we write the usb_recv_buffer directly to the endpoint whenever the pc
 // polls and there is data available. This is a little bit faster and seems
 // to work very reliable.
-inline uint16_t usb_recv(void *data, const uint16_t length) {
+inline uint16_t usb_recv(void *data, const uint16_t length, uint32_t *options) {
 	if(usb_recv_transferred == 0) {
 		usb_set_read_endpoint_state_to_receiving();
 		return 0;
@@ -186,7 +192,7 @@ bool usb_init() {
 	return true;
 }
 
-void usb_message_loop_return(char *data, uint16_t length) {
+void usb_message_loop_return(char *data, const uint16_t length) {
 	com_route_message_from_pc(data, length, COM_USB);
 
 	// TODO

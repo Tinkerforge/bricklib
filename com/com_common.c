@@ -26,8 +26,8 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <string.h>
-#include <FreeRTOS.h>
-#include <task.h>
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
 
 #include "bricklib/bricklet/bricklet_config.h"
 #include "bricklib/utility/util_definitions.h"
@@ -40,19 +40,20 @@
 extern uint32_t led_rxtx;
 extern uint32_t com_blocking_trials[];
 
-extern uint8_t rs485_state;
 extern uint32_t com_brick_uid;
 extern const BrickletAddress baddr[];
 extern BrickletSettings bs[];
+extern ComType com_current;
 
-uint16_t send_blocking_with_timeout(const void *data,
-                                    const uint16_t length,
-                                    ComType com) {
+uint16_t send_blocking_with_timeout_options(const void *data,
+                                            const uint16_t length,
+                                            const ComType com,
+                                            uint32_t *options) {
 	uint16_t bytes_send = 0;
 	uint32_t trials = com_blocking_trials[com];
 
 	while(length - bytes_send != 0 && trials--) {
-		bytes_send += SEND(data + bytes_send, length - bytes_send, com);
+		bytes_send += SEND(data + bytes_send, length - bytes_send, com, options);
 		taskYIELD();
 	}
 
@@ -60,7 +61,13 @@ uint16_t send_blocking_with_timeout(const void *data,
 	return bytes_send;
 }
 
-void com_handle_setter(uint8_t com, void *message) {
+uint16_t send_blocking_with_timeout(const void *data,
+                                    const uint16_t length,
+                                    const ComType com) {
+	return send_blocking_with_timeout_options(data, length, com, NULL);
+}
+
+void com_handle_setter(const ComType com, void *message) {
 	MessageHeader *header = message;
 	if(header->return_expected) {
 		send_blocking_with_timeout(message, header->length, com);
@@ -68,15 +75,15 @@ void com_handle_setter(uint8_t com, void *message) {
 }
 
 void com_make_default_header(void *message,
-                             uint32_t uid,
-                             uint8_t length,
-                             uint8_t fid) {
+                             const uint32_t uid,
+                             const uint8_t length,
+                             const uint8_t fid) {
 	MessageHeader *header = message;
 
 	header->uid              = uid;
 	header->length           = length;
 	header->fid              = fid;
-	header->sequence_num     = 0; // TODO
+	header->sequence_num     = 0; // Sequence number for callback is 0
 	header->return_expected  = 1;
 	header->authentication   = 0; // TODO
 	header->other_options    = 0;
@@ -97,7 +104,8 @@ void com_message_loop(void *parameters) {
 		while(length < SIZE_OF_MESSAGE_HEADER) {
 			received = RECV(data + length,
 			                mlp->buffer_size - length,
-			                mlp->com_type);
+			                mlp->com_type,
+			                NULL);
 			if(received == 0) {
 				taskYIELD();
 			} else {
@@ -112,7 +120,8 @@ void com_message_loop(void *parameters) {
 		while(length < header->length) {
 			received = RECV(data + length,
 			                header->length - length,
-			                mlp->com_type);
+			                mlp->com_type,
+			                NULL);
 			if(received == 0) {
 				taskYIELD();
 			} else {
@@ -120,14 +129,14 @@ void com_message_loop(void *parameters) {
 			}
 		}
 
-		com_debug_message(header);
+		//com_debug_message(header);
 
 		led_rxtx++;
 		mlp->return_func(data, header->length);
 	}
 }
 
-void com_route_message_from_pc(char *data, uint16_t length, ComType com) {
+void com_route_message_from_pc(const char *data, const uint16_t length, const ComType com) {
 	if(!com_route_message_brick(data, length, COM_USB)) {
 #ifdef BRICK_CAN_BE_MASTER
 		routing_master_from_pc(data, length);
@@ -135,7 +144,9 @@ void com_route_message_from_pc(char *data, uint16_t length, ComType com) {
 	}
 }
 
-bool com_route_message_brick(char *data, uint16_t length, ComType com) {
+bool com_route_message_brick(const char *data, const uint16_t length, const ComType com) {
+	com_current = com;
+
 	MessageHeader *header = (MessageHeader*)data;
 	if(header->uid == 0) {
 		const ComMessage *com_message = get_com_from_header(header);
@@ -149,6 +160,8 @@ bool com_route_message_brick(char *data, uint16_t length, ComType com) {
 		if(com_message != NULL && com_message->reply_func != NULL) {
 			com_message->reply_func(com, (void*)data);
 			return true;
+		} else {
+			com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
 		}
 
 		return false;
@@ -161,6 +174,8 @@ bool com_route_message_brick(char *data, uint16_t length, ComType com) {
 				if(com_message != NULL && com_message->reply_func != NULL) {
 					com_message->reply_func(com, (void*)data);
 					return true;
+				} else {
+					com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
 				}
 			} else {
 				baddr[i].entry(BRICKLET_TYPE_INVOCATION, com, (void*)data);
@@ -172,14 +187,14 @@ bool com_route_message_brick(char *data, uint16_t length, ComType com) {
 	return false;
 }
 
-void com_return_error(const void *data, const uint8_t ret_length, ComType com) {
+void com_return_error(const void *data, const uint8_t ret_length, const uint8_t error_code, const ComType com) {
 	MessageHeader *message = (MessageHeader*)data;
 
 	if(!message->return_expected) {
 		return;
 	}
 
-	char ret_data[ret_length];
+	uint8_t ret_data[ret_length];
 	MessageHeader *ret_message = (MessageHeader*)&ret_data;
 
 	memset(ret_data, 0, ret_length);
@@ -190,16 +205,16 @@ void com_return_error(const void *data, const uint8_t ret_length, ComType com) {
 	send_blocking_with_timeout(ret_data, ret_length, com);
 }
 
-void com_return_setter(ComType com, const void *data) {
+void com_return_setter(const ComType com, const void *data) {
 	if(((MessageHeader*)data)->return_expected) {
 		MessageHeader ret = *((MessageHeader*)data);
 		ret.length = sizeof(MessageHeader);
-		send_blocking_with_timeout(&ret, sizeof(MessageHeader), com);
+		uint16_t val = send_blocking_with_timeout(&ret, sizeof(MessageHeader), com);
 	}
 }
 
-void com_debug_message(MessageHeader *header) {
-	printf("Message UID: %u", header->uid);
+void com_debug_message(const MessageHeader *header) {
+	printf("Message UID: %lu", header->uid);
 	printf(", length: %d", header->length);
 	printf(", fid: %d", header->fid);
 	printf(", (seq#, r, a, oo): (%d, %d, %d, %d)", header->sequence_num, header->return_expected, header->authentication, header->other_options);

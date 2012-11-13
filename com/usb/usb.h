@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * usb.h: Communication interface implementation for USB
  *
@@ -24,8 +24,8 @@
 
 #include "usb_descriptors.h"
 
-#include <usb/USBD.h>
-#include <pio/pio.h>
+#include "bricklib/drivers/usb/USBD.h"
+#include "bricklib/drivers/pio/pio.h"
 
 #include "bricklib/com/com_messages.h"
 #include "bricklib/com/com.h"
@@ -46,17 +46,8 @@ void usb_recv_callback(void *arg,
                        uint32_t transferred,
                        uint32_t remaining);
 
-// buffered send
-//void usb_send_loop(void *parameters);
-
-uint16_t usb_send_implementation(const void *data, const uint16_t length, const uint8_t ep) __attribute__((warn_unused_result));
-uint16_t usb_recv_implementation(void *data, const uint16_t length, const uint8_t ep) __attribute__((nonnull(1), warn_unused_result));
-
-uint16_t usb_send_ee(const void *data, const uint16_t length) __attribute__((warn_unused_result));
-uint16_t usb_recv_ee(void *data, const uint16_t length) __attribute__((nonnull(1), warn_unused_result));
-
-uint16_t usb_send(const void *data, const uint16_t length) __attribute__((warn_unused_result));
-uint16_t usb_recv(void *data, const uint16_t length) __attribute__((nonnull(1), warn_unused_result));
+uint16_t usb_send(const void *data, const uint16_t length, uint32_t *options);
+uint16_t usb_recv(void *data, const uint16_t length, uint32_t *options);
 
 void usb_isr_vbus(const Pin *pin);
 void usb_detect_configure(void);
@@ -65,7 +56,7 @@ bool usb_is_connected(void);
 bool usb_init();
 void usb_message_loop(void *parameters);
 
-void usb_message_loop_return(char *data, uint16_t length);
+void usb_message_loop_return(char *data, const uint16_t length);
 
 void USBDCallbacks_RequestReceived(const USBGenericRequest *request);
 

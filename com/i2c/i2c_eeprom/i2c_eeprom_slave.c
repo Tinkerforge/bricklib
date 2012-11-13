@@ -26,10 +26,10 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <cmsis/core_cm3.h>
-#include <pio/pio.h>
-#include <twi/twi.h>
-#include <twi/twid.h>
+#include "bricklib/drivers/cmsis/core_cm3.h"
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/twi/twi.h"
+#include "bricklib/drivers/twi/twid.h"
 
 #include "bricklib/drivers/uid/uid.h"
 #include "bricklib/com/i2c/i2c_eeprom/i2c_eeprom_common.h"
@@ -43,7 +43,7 @@ typedef struct {
     uint8_t page;
     uint8_t offset;
     uint8_t acquire;
-    char memory[sizeof(uint64_t)];
+    char memory[sizeof(uint32_t)];
 } EEPROMDriver;
 
 static EEPROMDriver eeprom;
@@ -109,22 +109,22 @@ void TWI1_IrqHandler(void) {
 }
 
 char i2c_eeprom_slave_get_memory(uint16_t address) {
-	if(address < sizeof(uint64_t)) {
+	if(address < sizeof(uint32_t)) {
 		return eeprom.memory[address];
 	}
 	return 0;
 }
 
 void i2c_eeprom_slave_set_memory(uint16_t address, char data) {
-	if(address < sizeof(uint64_t)) {
+	if(address < sizeof(uint32_t)) {
 		eeprom.memory[address] = data;
 	}
 }
 
 void i2c_eeprom_slave_init(void) {
-	uint64_t uid = uid_get_uid64();
+	uint32_t uid = uid_get_uid32();
 
-	memcpy(eeprom.memory, &uid, sizeof(uint64_t));
+	memcpy(eeprom.memory, &uid, sizeof(uint32_t));
 
 	eeprom.offset = 0;
 	eeprom.acquire = 0;

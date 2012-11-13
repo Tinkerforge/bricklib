@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2011 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2011-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * tc.h: Implementation of tc access
  *
@@ -24,7 +24,7 @@
 #include <stdint.h>
 #include "config.h"
 
-void tc_channel_init(TcChannel *channel, uint32_t mode) {
+void tc_channel_init(TcChannel *channel, const uint32_t mode) {
 	channel->TC_CCR = TC_CCR_CLKDIS;
 	channel->TC_IDR = 0xFFFFFFFF;
 	channel->TC_SR;

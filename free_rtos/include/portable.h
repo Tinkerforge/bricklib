@@ -304,7 +304,7 @@ portmacro.h has not yet been included - as every portmacro.h provides a
 portENTER_CRITICAL() definition.  Check the demo application for your demo
 to find the path to the correct portmacro.h file. */
 #ifndef portENTER_CRITICAL
-	#include "portmacro.h"	
+	#include "bricklib/free_rtos/portable/GCC/ARM_CM3/portmacro.h"
 #endif
 	
 #if portBYTE_ALIGNMENT == 8

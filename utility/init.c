@@ -21,12 +21,12 @@
 
 #include "init.h"
 
-#include <pio/pio_it.h>
-#include <wdt/wdt.h>
-#include <adc/adc.h>
+#include "bricklib/drivers/pio/pio_it.h"
+#include "bricklib/drivers/wdt/wdt.h"
+#include "bricklib/drivers/adc/adc.h"
 
-#include <FreeRTOS.h>
-#include <task.h>
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
 
 #include "bricklib/com/com_common.h"
 #include "bricklib/bricklet/bricklet_init.h"
@@ -47,14 +47,12 @@ extern uint32_t com_brick_uid;
 static uint8_t type_calculation = TICK_TASK_TYPE_CALCULATION;
 static uint8_t type_message = TICK_TASK_TYPE_MESSAGE;
 
-static char brick_hardware_name[];
-
 void brick_init(void) {
 	// Wait 5ms so everything can power up
 	SLEEP_MS(5);
 	logging_init();
 
-	logsi("Booting %s\n\r", brick_hardware_name);
+	logsi("Booting %d\n\r", BRICK_DEVICE_IDENTIFIER);
 	logsi("Compiled on %s %s\n\r", __DATE__, __TIME__);
 
     led_init();
@@ -69,10 +67,10 @@ void brick_init(void) {
 	com_brick_uid = uid_get_uid32();
 
 	// Add 0 at end for printing
-    char sn[12] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0};
+    char sn[MAX_BASE58_STR_SIZE] = {'\0'};
     uid_to_serial_number(com_brick_uid, sn);
-    set_serial_number_descriptor(sn, 11);
-    logsi("Unique ID %s (%u)\n\r\n\r", sn, com_brick_uid);
+    set_serial_number_descriptor(sn, MAX_BASE58_STR_SIZE);
+    logsi("Unique ID %s (%lu)\n\r\n\r", sn, com_brick_uid);
 
     WDT_Disable(WDT);
     logsi("Watchdog disabled\n\r");
@@ -144,6 +142,30 @@ void brick_init_start_tick_task(void) {
 				&type_calculation,
 				1,
 				(xTaskHandle *)NULL);
+}
+
+bool brick_init_enumeration(const ComType com) {
+	EnumerateCallback ec = MESSAGE_EMPTY_INITIALIZER;
+	make_brick_enumerate(&ec);
+	ec.enumeration_type = ENUMERATE_TYPE_ADDED;
+
+	if(SEND(&ec, sizeof(EnumerateCallback), com, NULL) != 0) {
+		logd("Returning initial Enumeration for Brick: %lu\n\r", ec.header.uid);
+
+		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
+			EnumerateCallback ec = MESSAGE_EMPTY_INITIALIZER;
+			make_bricklet_enumerate(&ec, i);
+			if(ec.device_identifier != 0) {
+				logd("Returning initial Enumeration for Bricklet %c: %lu\n\r", 'a' + i, ec.header.uid);
+				ec.enumeration_type = ENUMERATE_TYPE_ADDED;
+				while(send_blocking_with_timeout(&ec, sizeof(EnumerateCallback), com) == 0);
+			}
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
 void brick_tick_task(void *parameters) {

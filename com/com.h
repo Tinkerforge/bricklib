@@ -53,12 +53,12 @@ typedef struct Com Com;
 
 // define main communication functions
 #define INIT(com) com_list[com]->init()
-#define SEND(data, length, com)	com_list[com].send(data, length)
-#define RECV(data, length, com) com_list[com].recv(data, length)
+#define SEND(data, length, com, options) com_list[com].send(data, length, options)
+#define RECV(data, length, com, options) com_list[com].recv(data, length, options)
 
 typedef bool (*function_init_t)();
-typedef uint16_t (*function_send_t)(const void *data, const uint16_t length);
-typedef uint16_t (*function_recv_t)(void *data, const uint16_t length);
+typedef uint16_t (*function_send_t)(const void *data, const uint16_t length, uint32_t *options);
+typedef uint16_t (*function_recv_t)(void *data, const uint16_t length, uint32_t *options);
 
 struct Com {
 	ComType type;

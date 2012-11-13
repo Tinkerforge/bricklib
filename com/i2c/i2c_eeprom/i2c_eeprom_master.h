@@ -43,7 +43,7 @@ bool i2c_eeprom_master_write(Twi *twi,
 
 void i2c_eeprom_master_init(Twi *twi);
 uint32_t i2c_eeprom_master_read_uid(Twi *twi);
-bool i2c_eeprom_master_write_uid(Twi *twi, uint64_t uid);
+bool i2c_eeprom_master_write_uid(Twi *twi, const uint32_t uid);
 
 bool i2c_eeprom_master_read_plugin(Twi *twi,
                                    char *plugin,

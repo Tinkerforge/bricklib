@@ -24,98 +24,63 @@
 
 #include <stdint.h>
 #include "bricklib/com/com_messages.h"
+#include "bricklib/com/com.h"
 
 #define PLUGIN_CHUNK_SIZE 32
 #define PLUGIN_CHUNK_SIZE_STARTUP 128
 
-#define TYPE_WRITE_BRICKLET_NAME 244
-#define TYPE_READ_BRICKLET_NAME 245
-#define TYPE_WRITE_BRICKLET_PLUGIN 246
-#define TYPE_READ_BRICKLET_PLUGIN 247
-#define TYPE_WRITE_BRICKLET_UID 248
-#define TYPE_READ_BRICKLET_UID 249
+#define FID_WRITE_BRICKLET_NAME 244
+#define FID_READ_BRICKLET_NAME 245
+#define FID_WRITE_BRICKLET_PLUGIN 246
+#define FID_READ_BRICKLET_PLUGIN 247
+#define FID_WRITE_BRICKLET_UID 248
+#define FID_READ_BRICKLET_UID 249
 
 #define COM_MESSAGES_BRICKLET \
-	{TYPE_WRITE_BRICKLET_NAME, (message_handler_func_t)write_bricklet_name}, \
-	{TYPE_READ_BRICKLET_NAME, (message_handler_func_t)read_bricklet_name}, \
-	{TYPE_WRITE_BRICKLET_PLUGIN, (message_handler_func_t)write_bricklet_plugin}, \
-	{TYPE_READ_BRICKLET_PLUGIN, (message_handler_func_t)read_bricklet_plugin}, \
-	{TYPE_WRITE_BRICKLET_UID, (message_handler_func_t)write_bricklet_uid}, \
-	{TYPE_READ_BRICKLET_UID, (message_handler_func_t)read_bricklet_uid},
+	{FID_WRITE_BRICKLET_NAME, (message_handler_func_t)NULL}, /* Not used anymore */ \
+	{FID_READ_BRICKLET_NAME, (message_handler_func_t)NULL}, /* Not used anymore */ \
+	{FID_WRITE_BRICKLET_PLUGIN, (message_handler_func_t)write_bricklet_plugin}, \
+	{FID_READ_BRICKLET_PLUGIN, (message_handler_func_t)read_bricklet_plugin}, \
+	{FID_WRITE_BRICKLET_UID, (message_handler_func_t)write_bricklet_uid}, \
+	{FID_READ_BRICKLET_UID, (message_handler_func_t)read_bricklet_uid},
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	char port;
-	char name[MAX_LENGTH_NAME];
-} __attribute__((__packed__)) WriteBrickletName;
-
-typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	char port;
-} __attribute__((__packed__)) ReadBrickletName;
-
-typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	char name[MAX_LENGTH_NAME];
-} __attribute__((__packed__)) ReadBrickletNameReturn;
-
-typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 	char port;
 	uint8_t position;
 	char plugin[PLUGIN_CHUNK_SIZE];
 } __attribute__((__packed__)) WriteBrickletPlugin;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 	char port;
 	uint8_t position;
 } __attribute__((__packed__)) ReadBrickletPlugin;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 	char plugin[PLUGIN_CHUNK_SIZE];
 } __attribute__((__packed__)) ReadBrickletPluginReturn;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 	char port;
-	uint64_t uid;
+	uint32_t uid;
 } __attribute__((__packed__)) WriteBrickletUID;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
+	MessageHeader header;
 	char port;
 } __attribute__((__packed__)) ReadBrickletUID;
 
 typedef struct {
-	uint8_t stack_id;
-	uint8_t type;
-	uint16_t length;
-	uint64_t uid;
+	MessageHeader header;
+	uint32_t uid;
 } __attribute__((__packed__)) ReadBrickletUIDReturn;
 
-void write_bricklet_name(uint8_t com, const WriteBrickletName *data);
-void read_bricklet_name(uint8_t com, const ReadBrickletName *data);
-void write_bricklet_plugin(uint8_t com, const WriteBrickletPlugin *data);
-void read_bricklet_plugin(uint8_t com, const ReadBrickletPlugin *data);
-void write_bricklet_uid(uint8_t com, const WriteBrickletUID *data);
-void read_bricklet_uid(uint8_t com, const ReadBrickletUID *data);
+void write_bricklet_plugin(const ComType com, const WriteBrickletPlugin *data);
+void read_bricklet_plugin(const ComType com, const ReadBrickletPlugin *data);
+void write_bricklet_uid(const ComType com, const WriteBrickletUID *data);
+void read_bricklet_uid(const ComType com, const ReadBrickletUID *data);
 
 #endif

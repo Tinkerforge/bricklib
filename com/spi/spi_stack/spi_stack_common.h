@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
  *
  * spi_stack_common.h: SPI stack functions common to master and slave
  *
@@ -19,8 +19,8 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#ifndef SPI_GENERAL_H
-#define SPI_GENERAL_H
+#ifndef SPI_STACK_COMMON_H
+#define SPI_STACK_COMMON_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -42,7 +42,10 @@
 #endif
 
 
-#define SPI_STACK_BUFFER_SIZE 64
+#define SPI_STACK_BUFFER_SIZE 80
+
+#define SPI_ADDRESS_MIN 1
+#define SPI_ADDRESS_MAX 8
 
 // SPI delays in ns, 0 = half a clock
 #define SPI_DELAY_BETWEEN_CHIP_SELECT 0
@@ -52,7 +55,7 @@
 // Speed of SPI clock
 #define SPI_CLOCK 8000000 // 8 Mhz
 
-uint16_t spi_stack_send(const void *data, const uint16_t length);
-uint16_t spi_stack_recv(void *data, const uint16_t length);
+uint16_t spi_stack_send(const void *data, const uint16_t length, uint32_t *options);
+uint16_t spi_stack_recv(void *data, const uint16_t length, uint32_t *options);
 
 #endif

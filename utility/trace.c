@@ -33,8 +33,8 @@
  *------------------------------------------------------------------------------*/
 
 #include "config.h"
-#include <pio/pio.h>
-#include <usart/uart_console.h>
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/usart/uart_console.h"
 /*------------------------------------------------------------------------------
  *         Internal variables
  *------------------------------------------------------------------------------*/

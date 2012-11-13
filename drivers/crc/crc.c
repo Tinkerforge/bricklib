@@ -24,19 +24,19 @@
 #include <string.h>
 #include "config.h"
 
-inline uint16_t crc16_compute(uint8_t *buffer, uint16_t length) {
+inline uint16_t crc16_compute(uint8_t *buffer, const uint16_t length) {
 	return crc_compute(buffer,
 	                   length,
 	                   CRCCU_MR_PTYPE_CCIT16) &  0xFFFF;
 }
 
-inline uint32_t crc32_compute(uint8_t *buffer, uint16_t length) {
+inline uint32_t crc32_compute(uint8_t *buffer, const uint16_t length) {
 	return crc_compute(buffer,
 	                   length,
 	                   CRCCU_MR_PTYPE_CCIT8023);
 }
 
-uint32_t crc_compute(uint8_t *buffer, uint16_t length, uint32_t polynom_type) {
+uint32_t crc_compute(uint8_t *buffer, const uint16_t length, const uint32_t polynom_type) {
 	CCRCDescriptor __attribute__ ((aligned(512))) crcd;
 	// Reset CRC value
 	CRCCU->CRCCU_CR = CRCCU_CR_RESET;

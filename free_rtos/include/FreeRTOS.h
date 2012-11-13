@@ -61,13 +61,13 @@
 #include <stddef.h>
 
 /* Basic FreeRTOS definitions. */
-#include "projdefs.h"
+#include "bricklib/free_rtos/include/projdefs.h"
 
 /* Application specific configuration options. */
-#include "FreeRTOSConfig.h"
+#include "bricklib/free_rtos/FreeRTOSConfig.h"
 
 /* Definitions specific to the port being used. */
-#include "portable.h"
+#include "bricklib/free_rtos/include/portable.h"
 
 
 /* Defines the prototype to which the application task hook function must

@@ -42,7 +42,7 @@
 
 #ifdef LOGGING_SERIAL
 
-#include <pio/pio.h>
+#include "bricklib/drivers/pio/pio.h"
 
 #include <stdio.h>
 #include <stdint.h>
@@ -92,7 +92,7 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
     Uart *pUart = CONSOLE_USART;
 #else
     const Pin pPins[] = CONSOLE_PINS;
-    Uart *pUart = CONSOLE_USART;
+    Uart *pUart = (Uart *)CONSOLE_USART;
 #endif
     /* Configure PIO */
     PIO_Configure(pPins, PIO_LISTSIZE(pPins));
@@ -131,7 +131,7 @@ extern void UART_Configure( uint32_t baudrate, uint32_t masterClock)
  */
 extern void UART_PutChar( uint8_t c )
 {
-    Uart *pUart=CONSOLE_USART ;
+    Uart *pUart = (Uart *)CONSOLE_USART ;
 
     /* Wait for the transmitter to be ready */
     while ( (pUart->UART_SR & UART_SR_TXEMPTY) == 0 );
@@ -149,7 +149,7 @@ extern void UART_PutChar( uint8_t c )
  */
 extern uint32_t UART_GetChar( void )
 {
-    Uart *pUart=CONSOLE_USART ;
+    Uart *pUart = (Uart *)CONSOLE_USART ;
 
     while ( (pUart->UART_SR & UART_SR_RXRDY) == 0 ) ;
 
@@ -163,7 +163,7 @@ extern uint32_t UART_GetChar( void )
  */
 extern uint32_t UART_IsRxReady( void )
 {
-    Uart *pUart=CONSOLE_USART ;
+    Uart *pUart = (Uart *)CONSOLE_USART ;
 
     return (pUart->UART_SR & UART_SR_RXRDY) > 0 ;
 }
@@ -299,6 +299,8 @@ extern uint32_t UART_GetInteger( uint32_t* pdwValue )
             }
         }
     }
+
+    return 0;
 }
 
 /**

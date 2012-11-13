@@ -24,7 +24,7 @@
 
 #include <stdint.h>
 
-void spi_stack_select(uint8_t num);
+void spi_stack_select(const uint8_t num);
 void spi_stack_deselect();
 
 #endif

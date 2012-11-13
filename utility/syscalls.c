@@ -26,12 +26,12 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <usart/uart_console.h>
+#include "bricklib/drivers/usart/uart_console.h"
 
 #include "bricklib/logging/logging.h"
 
 // Adresses provided by Linker Script
-extern int32_t  _end ;
+//extern int32_t  _end ;
 extern int32_t  _start_heap;
 extern int32_t  _end_heap;
 

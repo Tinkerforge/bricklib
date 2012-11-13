@@ -31,8 +31,8 @@ typedef struct {
     uint32_t TR_CTRL;
 } CCRCDescriptor;
 
-uint16_t crc16_compute(uint8_t *buffer, uint16_t length);
-uint32_t crc32_compute(uint8_t *buffer, uint16_t length);
-uint32_t crc_compute(uint8_t *buffer, uint16_t length, uint32_t polynom_type);
+uint16_t crc16_compute(uint8_t *buffer, const uint16_t length);
+uint32_t crc32_compute(uint8_t *buffer, const uint16_t length);
+uint32_t crc_compute(uint8_t *buffer, const uint16_t length, const uint32_t polynom_type);
 
 #endif

@@ -68,7 +68,7 @@
  *         Headers
  */
 
-#include <pio/pio.h>
+#include "bricklib/drivers/pio/pio.h"
 
 #include <stdio.h>
 

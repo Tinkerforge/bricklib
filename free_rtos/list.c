@@ -53,8 +53,8 @@
 
 
 #include <stdlib.h>
-#include "FreeRTOS.h"
-#include "list.h"
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/list.h"
 
 /*-----------------------------------------------------------
  * PUBLIC LIST API documented in list.h

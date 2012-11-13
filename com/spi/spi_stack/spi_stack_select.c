@@ -20,17 +20,21 @@
  */
 
 #include "spi_stack_select.h"
+#include "spi_stack_common.h"
+
+#include "bricklib/drivers/pio/pio.h"
 
 #include <stdint.h>
-#include <pio/pio.h>
 
-uint8_t spi_stack_select_last_num = 0;
+static uint8_t spi_stack_select_last_num = 0;
 
 Pin spi_select_master[8] = {PINS_SPI_SELECT_MASTER};
 
-void spi_stack_select(uint8_t num) {
-	PIO_Clear(&spi_select_master[num-1]);
-	spi_stack_select_last_num = num;
+void spi_stack_select(const uint8_t num) {
+	if(num >= SPI_ADDRESS_MIN && num <= SPI_ADDRESS_MAX) {
+		PIO_Clear(&spi_select_master[num-1]);
+		spi_stack_select_last_num = num;
+	}
 }
 
 void spi_stack_deselect() {
