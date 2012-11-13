@@ -190,7 +190,7 @@ void spi_stack_slave_init(void) {
     SPI_EnableIt(SPI, SPI_IER_RDRF);
 }
 
-void spi_stack_slave_message_loop_return(char *data, const uint16_t length) {
+void spi_stack_slave_message_loop_return(const char *data, const uint16_t length) {
 	if(spi_stack_buffer_size_recv == 0) {
 		SPI_EnableIt(SPI, SPI_IER_RDRF);
 	}

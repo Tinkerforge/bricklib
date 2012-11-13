@@ -35,7 +35,7 @@
 #define MESSAGE_ERROR_CODE_INVALID_PARAMETER 1
 #define MESSAGE_ERROR_CODE_NOT_SUPPORTED 2
 
-typedef void (*function_message_loop_return_t)(char *, const uint16_t);
+typedef void (*function_message_loop_return_t)(const char *, const uint16_t);
 
 typedef struct {
 	uint16_t buffer_size;

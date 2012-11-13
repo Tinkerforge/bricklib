@@ -137,7 +137,7 @@ void com_message_loop(void *parameters) {
 }
 
 void com_route_message_from_pc(const char *data, const uint16_t length, const ComType com) {
-	if(!com_route_message_brick(data, length, COM_USB)) {
+	if(!com_route_message_brick(data, length, com)) {
 #ifdef BRICK_CAN_BE_MASTER
 		routing_master_from_pc(data, length);
 #endif

@@ -103,7 +103,7 @@ inline uint16_t usb_send(const void *data, const uint16_t length, uint32_t *opti
 		return 0;
 	}
 
-	uint16_t num_tries = 0;
+	uint32_t num_tries = 0;
 	while(~send_status & USB_CALLBACK) {
 		taskYIELD();
 		num_tries++;
@@ -192,25 +192,8 @@ bool usb_init() {
 	return true;
 }
 
-void usb_message_loop_return(char *data, const uint16_t length) {
+void usb_message_loop_return(const char *data, const uint16_t length) {
 	com_route_message_from_pc(data, length, COM_USB);
-
-	// TODO
-	/*
-	if(stack_id <= com_last_spi_stack_id) {
-		send_blocking_with_timeout(data, length, COM_SPI_STACK);
-		return;
-	}
-
-	if(stack_id <= com_last_ext_id[0]) {
-		send_blocking_with_timeout(data, length, com_ext[0]);
-		return;
-	}
-
-	if(stack_id <= com_last_ext_id[1]) {
-		send_blocking_with_timeout(data, length, com_ext[1]);
-		return;
-	}*/
 }
 
 void usb_message_loop(void *parameters) {

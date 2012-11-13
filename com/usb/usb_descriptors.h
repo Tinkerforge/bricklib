@@ -25,7 +25,7 @@
 #include "bricklib/drivers/usb/USBDescriptors.h"
 #include <stdint.h>
 
-#define DEFAULT_EP_SIZE 80
+#define DEFAULT_EP_SIZE 64
 
 #define IN_EP     4
 #define OUT_EP    5

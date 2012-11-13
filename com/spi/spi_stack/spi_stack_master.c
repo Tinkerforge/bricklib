@@ -261,7 +261,7 @@ void spi_stack_master_state_machine_loop(void *arg) {
     }
 }
 
-void spi_stack_master_message_loop_return(char *data, const uint16_t length) {
+void spi_stack_master_message_loop_return(const char *data, const uint16_t length) {
 	send_blocking_with_timeout(data, length, com_current);
 }
 
