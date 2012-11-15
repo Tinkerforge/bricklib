@@ -36,6 +36,20 @@ typedef enum {
 	COM_ETHERNET  = 6
 } ComType;
 
+typedef enum {
+	COM_TYPE_NONE   = 0,
+	COM_TYPE_MASTER = 1,
+	COM_TYPE_SLAVE  = 2
+} ComExtType;
+
+typedef struct {
+	uint32_t uid;
+	ComType current;
+	uint8_t last_stack_address;
+	ComType ext[2];
+	ComExtType ext_type[2];
+} ComInfo;
+
 #define SEND_BLOCKING_TRIALS            1000000
 
 #define SEND_BLOCKING_TRIALS_NONE       1

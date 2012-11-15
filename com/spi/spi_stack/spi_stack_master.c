@@ -49,7 +49,6 @@
 #define SPI_DLYBCS(delay, mc) ((uint32_t)((mc/1000000) * delay) << 24)
 #define SPI_STACK_MASTER_TIMEOUT 10000
 
-extern uint8_t com_last_stack_address;
 extern uint8_t spi_stack_buffer_recv[SPI_STACK_BUFFER_SIZE];
 extern uint8_t spi_stack_buffer_send[SPI_STACK_BUFFER_SIZE];
 
@@ -60,7 +59,7 @@ extern uint16_t spi_stack_buffer_size_recv;
 extern int8_t spi_stack_send_to;
 
 extern Pin spi_select_master[];
-extern ComType com_current;
+extern ComInfo com_info;
 
 bool spi_stack_master_transceive(void) {
 	uint8_t master_checksum = 0;
@@ -233,13 +232,13 @@ void spi_stack_master_state_machine_loop(void *arg) {
     while(true) {
 		// As long as receive buffer is not empty
     	// Or there are no stack participants, do nothing
-    	if(spi_stack_buffer_size_recv == 0 && com_current != COM_NONE) {
+    	if(spi_stack_buffer_size_recv == 0 && com_info.current != COM_NONE) {
     		// If nothing to send ask for data round robin
 			if(spi_stack_buffer_size_send == 0) {
 				spi_stack_select(sa_counter);
 				spi_stack_master_transceive();
 				spi_stack_deselect();
-				if(sa_counter == com_last_stack_address) {
+				if(sa_counter == com_info.last_stack_address) {
 					sa_counter = 1;
 				} else {
 					sa_counter++;
@@ -249,8 +248,12 @@ void spi_stack_master_state_machine_loop(void *arg) {
 			// If something to send, handle it first
 			else {
 				if((spi_stack_send_to < SPI_ADDRESS_MIN) ||
-				   (spi_stack_send_to > com_last_stack_address)) {
-					spi_stack_send_to = routing_route_to(spi_stack_buffer_send[0] | (spi_stack_buffer_send[1] << 8) | (spi_stack_buffer_send[2] << 16) | (spi_stack_buffer_send[3] << 24));
+				   (spi_stack_send_to > com_info.last_stack_address)) {
+					RouteTo route_to = routing_route_stack_to(spi_stack_buffer_send[0] |
+					                                          (spi_stack_buffer_send[1] << 8) |
+					                                          (spi_stack_buffer_send[2] << 16) |
+					                                          (spi_stack_buffer_send[3] << 24));
+					spi_stack_send_to = route_to.to;
 				}
 				spi_stack_select(spi_stack_send_to);
 				spi_stack_master_transceive();
@@ -262,7 +265,7 @@ void spi_stack_master_state_machine_loop(void *arg) {
 }
 
 void spi_stack_master_message_loop_return(const char *data, const uint16_t length) {
-	send_blocking_with_timeout(data, length, com_current);
+	send_blocking_with_timeout(data, length, com_info.current);
 }
 
 void spi_stack_master_message_loop(void *parameters) {

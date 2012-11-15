@@ -41,8 +41,7 @@
 
 #include "config.h"
 
-extern ComType com_current;
-extern uint32_t com_brick_uid;
+extern ComInfo com_info;
 
 static uint8_t type_calculation = TICK_TASK_TYPE_CALCULATION;
 static uint8_t type_message = TICK_TASK_TYPE_MESSAGE;
@@ -64,13 +63,13 @@ void brick_init(void) {
 #endif
 	logsi("LEDs initialized\n\r");
 
-	com_brick_uid = uid_get_uid32();
+	com_info.uid = uid_get_uid32();
 
 	// Add 0 at end for printing
     char sn[MAX_BASE58_STR_SIZE] = {'\0'};
-    uid_to_serial_number(com_brick_uid, sn);
+    uid_to_serial_number(com_info.uid, sn);
     set_serial_number_descriptor(sn, MAX_BASE58_STR_SIZE);
-    logsi("Unique ID %s (%lu)\n\r\n\r", sn, com_brick_uid);
+    logsi("Unique ID %s (%lu)\n\r\n\r", sn, com_info.uid);
 
     WDT_Disable(WDT);
     logsi("Watchdog disabled\n\r");
@@ -88,7 +87,7 @@ void brick_init(void) {
 	logsi("JTAG disabled\n\r");
 #endif
 
-    com_current = COM_NONE;
+	com_info.current = COM_NONE;
     PIO_InitializeInterrupts(0);
 
     bricklet_clear_eeproms();

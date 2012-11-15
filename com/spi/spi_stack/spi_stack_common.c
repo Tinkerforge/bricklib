@@ -48,14 +48,14 @@ uint16_t spi_stack_buffer_size_recv = 0;
 
 int8_t spi_stack_send_to = -1;
 
-extern uint8_t com_last_stack_address;
+extern ComInfo com_info;
 
 uint16_t spi_stack_send(const void *data, const uint16_t length, uint32_t *options) {
 	if(spi_stack_buffer_size_send > 0) {
 		return 0;
 	}
 
-	if(options && *options >= SPI_ADDRESS_MIN && *options <= com_last_stack_address) {
+	if(options && *options >= SPI_ADDRESS_MIN && *options <= com_info.last_stack_address) {
 		spi_stack_send_to = *options;
 	} else {
 		spi_stack_send_to = -1;

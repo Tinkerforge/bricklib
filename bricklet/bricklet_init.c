@@ -50,7 +50,7 @@
 
 #define BRICKLET_DEBOUNCE_TICKS 1000
 
-extern ComType com_current;
+extern ComInfo com_info;
 extern uint8_t bricklet_eeprom_address;
 extern Mutex mutex_twi_bricklet;
 
@@ -58,7 +58,7 @@ Twid twid = {TWI_BRICKLET, NULL};
 
 // Declare bricklet api (ba)
 const BrickletAPI ba = {
-	&com_current,
+	&com_info.current,
 	printf,
 	send_blocking_with_timeout,
 	bricklet_select,

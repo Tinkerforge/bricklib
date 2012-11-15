@@ -40,10 +40,9 @@
 extern uint32_t led_rxtx;
 extern uint32_t com_blocking_trials[];
 
-extern uint32_t com_brick_uid;
+extern ComInfo com_info;
 extern const BrickletAddress baddr[];
 extern BrickletSettings bs[];
-extern ComType com_current;
 
 uint16_t send_blocking_with_timeout_options(const void *data,
                                             const uint16_t length,
@@ -145,7 +144,7 @@ void com_route_message_from_pc(const char *data, const uint16_t length, const Co
 }
 
 bool com_route_message_brick(const char *data, const uint16_t length, const ComType com) {
-	com_current = com;
+	com_info.current = com;
 
 	MessageHeader *header = (MessageHeader*)data;
 	if(header->uid == 0) {
@@ -155,7 +154,7 @@ bool com_route_message_brick(const char *data, const uint16_t length, const ComT
 		}
 
 		return false;
-	} else if(header->uid == com_brick_uid) {
+	} else if(header->uid == com_info.uid) {
 		const ComMessage *com_message = get_com_from_header(header);
 		if(com_message != NULL && com_message->reply_func != NULL) {
 			com_message->reply_func(com, (void*)data);
@@ -209,7 +208,7 @@ void com_return_setter(const ComType com, const void *data) {
 	if(((MessageHeader*)data)->return_expected) {
 		MessageHeader ret = *((MessageHeader*)data);
 		ret.length = sizeof(MessageHeader);
-		uint16_t val = send_blocking_with_timeout(&ret, sizeof(MessageHeader), com);
+		send_blocking_with_timeout(&ret, sizeof(MessageHeader), com);
 	}
 }
 

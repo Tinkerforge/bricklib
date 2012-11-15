@@ -30,13 +30,13 @@
 #define COM_EXTENSIONS
 #endif
 
-uint8_t com_last_stack_address = 0;
-uint8_t com_last_spi_stack_id = 1;
-uint8_t com_last_ext_id[2] = {1, 1};
-ComType com_current = COM_NONE;
-ComType com_ext[2] = {COM_NONE, COM_NONE};
-uint8_t com_stack_id = 1;
-uint32_t com_brick_uid = 62;
+ComInfo com_info = {
+	0,
+	COM_NONE,
+	0,
+	{COM_NONE, COM_NONE},
+	{COM_TYPE_NONE, COM_TYPE_NONE}
+};
 
 Com com_list[] = {
 	{COM_NONE, no_init, no_send, no_recv},

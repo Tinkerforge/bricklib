@@ -42,8 +42,7 @@
 extern int32_t adc_offset;
 extern int32_t adc_gain_div;
 
-extern uint32_t com_brick_uid;
-extern ComType com_current;
+extern ComInfo com_info;
 extern BrickletSettings bs[];
 
 extern uint8_t brick_hardware_version[];
@@ -132,7 +131,7 @@ void stack_enumerate(const ComType com, const StackEnumerate *data) {
 	StackEnumerateReturn ser = MESSAGE_EMPTY_INITIALIZER;
 	ser.header               = data->header;
 	ser.header.length        = sizeof(StackEnumerateReturn);
-	ser.uids[0]              = com_brick_uid;
+	ser.uids[0]              = com_info.uid;
 
 	uint8_t i = 1;
 	for(uint8_t j = 0; j < BRICKLET_NUM; j++) {
@@ -142,7 +141,7 @@ void stack_enumerate(const ComType com, const StackEnumerate *data) {
 		}
 	}
 
-	com_current = com;
+	com_info.current = com;
 
 	send_blocking_with_timeout(&ser, sizeof(StackEnumerateReturn), com);
 	logd("Stack Enumerate: %lu %lu %lu %lu %lu\n\r", ser.uids[0], ser.uids[1], ser.uids[2], ser.uids[3], ser.uids[4]);
@@ -152,10 +151,10 @@ void stack_enumerate(const ComType com, const StackEnumerate *data) {
 
 
 void make_brick_enumerate(EnumerateCallback *ec) {
-	com_make_default_header(ec, com_brick_uid, sizeof(EnumerateCallback), FID_ENUMERATE_CALLBACK);
+	com_make_default_header(ec, com_info.uid, sizeof(EnumerateCallback), FID_ENUMERATE_CALLBACK);
 
 	memset(ec->uid, '\0', UID_STR_MAX_LENGTH);
-	uid_to_serial_number(com_brick_uid, ec->uid);
+	uid_to_serial_number(com_info.uid, ec->uid);
 	strncpy(ec->connected_uid, NO_CONNECTED_UID_STR, NO_CONNECTED_UID_STR_LENGTH);
 	ec->position = '0';
 	ec->version_fw[0] = BRICK_FIRMWARE_VERSION_MAJOR;
@@ -174,7 +173,7 @@ void make_bricklet_enumerate(EnumerateCallback *ec, const uint8_t bricklet) {
 	uid_to_serial_number(bs[bricklet].uid, ec->uid);
 
 	memset(ec->connected_uid, '\0', UID_STR_MAX_LENGTH);
-	uid_to_serial_number(com_brick_uid, ec->connected_uid);
+	uid_to_serial_number(com_info.uid, ec->connected_uid);
 	ec->position = 'a' + bricklet;
 	ec->version_fw[0] = bs[bricklet].firmware_version[0];
 	ec->version_fw[1] = bs[bricklet].firmware_version[1];
@@ -212,7 +211,7 @@ void enumerate(const ComType com, const Enumerate *data) {
 		send_blocking_with_timeout(&ec, sizeof(EnumerateCallback), com);
 	}
 
-	com_current = com;
+	com_info.current = com;
 }
 
 void get_identity(const ComType com, const GetIdentity *data) {
@@ -221,9 +220,9 @@ void get_identity(const ComType com, const GetIdentity *data) {
 	gir.header        = data->header;
 	gir.header.length = sizeof(GetIdentityReturn);
 
-	if(data->header.uid == com_brick_uid) {
+	if(data->header.uid == com_info.uid) {
 		memset(gir.uid, '\0', UID_STR_MAX_LENGTH);
-		uid_to_serial_number(com_brick_uid, gir.uid);
+		uid_to_serial_number(com_info.uid, gir.uid);
 		strncpy(gir.connected_uid, NO_CONNECTED_UID_STR, NO_CONNECTED_UID_STR_LENGTH);
 		gir.position = '0';
 		gir.version_fw[0] = BRICK_FIRMWARE_VERSION_MAJOR;
@@ -240,7 +239,7 @@ void get_identity(const ComType com, const GetIdentity *data) {
 				uid_to_serial_number(bs[i].uid, gir.uid);
 
 				memset(gir.connected_uid, '\0', UID_STR_MAX_LENGTH);
-				uid_to_serial_number(com_brick_uid, gir.connected_uid);
+				uid_to_serial_number(com_info.uid, gir.connected_uid);
 				gir.position = 'a' + i;
 				gir.version_fw[0] = bs[i].firmware_version[0];
 				gir.version_fw[1] = bs[i].firmware_version[1];
