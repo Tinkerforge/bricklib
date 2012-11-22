@@ -31,6 +31,7 @@ bool spi_stack_master_transceive(void);
 void spi_master_state_machine(void);
 void spi_master_reset_state_machine(void);
 void spi_stack_master_init(void);
+void spi_stack_master_insert_position(void* data, const uint8_t position);
 
 void spi_stack_master_state_machine_loop(void *arg);
 void spi_stack_master_message_loop(void *parameters);

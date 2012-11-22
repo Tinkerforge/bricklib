@@ -238,6 +238,7 @@ void spi_stack_master_state_machine_loop(void *arg) {
 				spi_stack_select(sa_counter);
 				spi_stack_master_transceive();
 				spi_stack_deselect();
+	    		spi_stack_master_insert_position(spi_stack_buffer_recv, sa_counter);
 				if(sa_counter == com_info.last_stack_address) {
 					sa_counter = 1;
 				} else {
@@ -258,10 +259,24 @@ void spi_stack_master_state_machine_loop(void *arg) {
 				spi_stack_select(spi_stack_send_to);
 				spi_stack_master_transceive();
 				spi_stack_deselect();
+	    		spi_stack_master_insert_position(spi_stack_buffer_recv, spi_stack_send_to);
+
+
 			}
 		}
 		taskYIELD();
     }
+}
+
+void spi_stack_master_insert_position(void* data, const uint8_t position) {
+	if(spi_stack_buffer_size_recv > sizeof(MessageHeader)) {
+		EnumerateCallback *enum_cb =  (EnumerateCallback*)data;
+		if(enum_cb->header.fid == FID_ENUMERATE_CALLBACK) {
+			if(enum_cb->position == '0') {
+				enum_cb->position = '0' + position;
+			}
+		}
+	}
 }
 
 void spi_stack_master_message_loop_return(const char *data, const uint16_t length) {
