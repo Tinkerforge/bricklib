@@ -42,7 +42,7 @@ static const USBDeviceDescriptor device_descriptor = {
     64, // Max size
     0x16D0,
     0x063D,
-    0x100,
+    0x110,
     1, // Manufacturer string descriptor index.
     2, // Product string descriptor index.
     3, // Serial number string descriptor index.

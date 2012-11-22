@@ -328,9 +328,30 @@ static void GetDescriptor(
             TRACE_INFO_WP("Str%d ", indexRDesc);
 
             /* Check if descriptor exists */
+            if (indexRDesc == 0xEE) {
+                // https://github.com/pbatard/libwdi/wiki/WCID-Devices
+                const uint8_t osStringDescriptor[] = {
+                    0x12, // bLength
+                    USBGenericDescriptor_STRING, // bDescriptorType
+                    0x4D, 0x00, 0x53, 0x00, 0x46, 0x00, 0x54, 0x00, 0x31, 0x00, 0x30, 0x00, 0x30, 0x00, // qwSignature
+                    USBGenericRequest_GETMSDESCRIPTOR, // bMS_VendorCode
+                    0x00, // bPad
+                };
+                const uint8_t osStringDescriptorLength = sizeof(osStringDescriptor);
 
-            if (indexRDesc >= numStrings) {
+                /* Adjust length and send descriptor */
+                if (length > osStringDescriptorLength) {
+                    length = osStringDescriptorLength;
+                    terminateWithNull = ((length % pDevice->bMaxPacketSize0) == 0);
+                }
 
+                USBD_Write(0,
+                           osStringDescriptor,
+                           length,
+                           terminateWithNull ? TerminateCtrlInWithNull : 0,
+                           0);
+            }
+            else if (indexRDesc >= numStrings) {
                 USBD_Stall(0);
             }
             else {
@@ -419,6 +440,76 @@ static void GetInterface(
         USBD_Write(0, &(pDriver->pInterfaces[infnum]), 1, 0, 0);
     }
 }
+
+
+/**
+ * Sends the requested USB Microsoft specific descriptor to the host if
+ * available, or STALLs the request.
+ * \param pDriver  Pointer to a USBDDriver instance.
+ * \param index  Index of the requested descriptor.
+ * \param length  Maximum number of bytes to return.
+ */
+// https://github.com/pbatard/libwdi/wiki/WCID-Devices
+static void GetMSDescriptor(
+    const USBDDriver *pDriver,
+    uint16_t indexRDesc,
+    uint32_t length)
+{
+    const USBDeviceDescriptor *pDevice;
+    uint8_t terminateWithNull = 0;
+
+    /* Use different set of descriptors depending on device speed */
+    if (USBD_IsHighSpeed()) {
+        TRACE_DEBUG("HS ");
+        pDevice = pDriver->pDescriptors->pHsDevice;
+    }
+    else {
+        TRACE_DEBUG("FS ");
+        pDevice = pDriver->pDescriptors->pFsDevice;
+    }
+
+    /* Check the descriptor index */
+    switch (indexRDesc) {
+        case 0x0004: { // Extended Compat ID
+            const uint8_t extendedCompatID[] = {
+                0x28, 0x00, 0x00, 0x00, // bLength
+                0x00, 0x01, // bcdVersion
+                0x04, 0x00, // wIndex
+                0x01, // bCount
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Reserved
+                0x00, // bFirstInterfaceNumber
+                0x01, // Reserved
+                0x57, 0x49, 0x4E, 0x55, 0x53, 0x42, 0x00, 0x00, // compatibleID "WINUSB\0\0"
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // subCompatibleID
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // Reserved
+            };
+            const uint8_t extendedCompatIDLength = sizeof(extendedCompatID);
+
+            /* Adjust length and send descriptor */
+            if (length > extendedCompatIDLength) {
+                length = extendedCompatIDLength;
+                terminateWithNull = ((length % pDevice->bMaxPacketSize0) == 0);
+            }
+
+            terminateWithNull = ((length % pDevice->bMaxPacketSize0) == 0);
+
+            USBD_Write(0,
+                       extendedCompatID,
+                       length,
+                       terminateWithNull ? TerminateCtrlInWithNull : 0,
+                       0);
+
+            break;
+        }
+
+        default:
+            TRACE_WARNING(
+                      "USBDDriver_GetMSDescriptor: Unknown descriptor index (%d)\n\r",
+                      indexRDesc);
+            USBD_Stall(0);
+    }
+}
+
 /*------------------------------------------------------------------------------
  *      Exported functions
  *------------------------------------------------------------------------------*/
@@ -654,6 +745,14 @@ void USBDDriver_RequestHandler(
 
         infnum = USBInterfaceRequest_GetInterface(pRequest);
         GetInterface(pDriver, infnum);
+        break;
+
+    case USBGenericRequest_GETMSDESCRIPTOR:
+        TRACE_INFO_WP("gMSDesc ");
+
+        /* Send the requested descriptor */
+        length = USBGenericRequest_GetLength(pRequest);
+        GetMSDescriptor(pDriver, USBGenericRequest_GetIndex(pRequest), length);
         break;
 
     default:
