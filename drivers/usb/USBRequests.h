@@ -130,6 +130,8 @@
 #define USBGenericRequest_SETINTERFACE          11
 /**  SYNCH_FRAME request code. */
 #define USBGenericRequest_SYNCHFRAME            12
+/**  GET_MS_DESCRIPTOR request code. */
+#define USBGenericRequest_GETMSDESCRIPTOR       42
 /**         @}*/
 
 /** \addtogroup usb_request_recipient USB Request Recipients
