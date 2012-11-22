@@ -274,6 +274,7 @@ void spi_stack_master_insert_position(void* data, const uint8_t position) {
 		if(enum_cb->header.fid == FID_ENUMERATE_CALLBACK) {
 			if(enum_cb->position == '0') {
 				enum_cb->position = '0' + position;
+				uid_to_serial_number(com_info.uid, enum_cb->connected_uid);
 			}
 		}
 	}
