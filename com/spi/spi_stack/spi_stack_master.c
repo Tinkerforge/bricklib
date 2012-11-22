@@ -271,7 +271,7 @@ void spi_stack_master_state_machine_loop(void *arg) {
 void spi_stack_master_insert_position(void* data, const uint8_t position) {
 	if(spi_stack_buffer_size_recv > sizeof(MessageHeader)) {
 		EnumerateCallback *enum_cb =  (EnumerateCallback*)data;
-		if(enum_cb->header.fid == FID_ENUMERATE_CALLBACK) {
+		if(enum_cb->header.fid == FID_ENUMERATE_CALLBACK || enum_cb->header.fid == FID_GET_IDENTITY) {
 			if(enum_cb->position == '0') {
 				enum_cb->position = '0' + position;
 				uid_to_serial_number(com_info.uid, enum_cb->connected_uid);

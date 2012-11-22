@@ -131,8 +131,8 @@ typedef struct {
 
 typedef struct {
 	MessageHeader header;
-	char uid[8];
-	char connected_uid[8];
+	char uid[UID_STR_MAX_LENGTH];
+	char connected_uid[UID_STR_MAX_LENGTH];
 	char position;
 	uint8_t version_hw[3];
 	uint8_t version_fw[3];

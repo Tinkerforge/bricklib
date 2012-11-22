@@ -25,9 +25,7 @@
 #include "bricklib/drivers/cmsis/core_cm3.h"
 #include "bricklib/logging/logging.h"
 
-#ifdef BRICK_CAN_BE_MASTER
-extern bool master_first_usb_connection;
-#endif
+bool usb_first_connection = true;
 
 // Invoked after the USB driver has been initialized.
 // Configures the UDP/UDPHS interrupt.
@@ -40,8 +38,6 @@ void USBDCallbacks_Resumed(void) {
 }
 
 void USBDCallbacks_Suspended(void) {
-#ifdef BRICK_CAN_BE_MASTER
-	master_first_usb_connection = true;
-#endif
+	usb_first_connection = true;
 	logi("USBDCallbacks_Suspended\n\r");
 }
