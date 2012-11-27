@@ -27,9 +27,8 @@
 
 #include "config.h"
 
-
-bool i2c_eeprom_master_read_name(Twi *twi, char *name);
-bool i2c_eeprom_master_write_name(Twi *twi, const char *name);
+uint32_t i2c_eeprom_master_read_magic_number(Twi *twi);
+bool i2c_eeprom_master_write_magic_number(Twi *twi);
 
 bool i2c_eeprom_master_read(Twi *twi,
                             const uint16_t internal_address,

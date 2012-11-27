@@ -104,6 +104,7 @@ typedef struct {
 	uint16_t device_identifier;
 } BrickletSettings;
 
+#define BRICKLET_MAGIC_NUMBER (23 | (42 << 8) | (17 << 16) | (99 << 24))
 
 #define END_OF_MEMORY (IFLASH_ADDR + IFLASH_SIZE)
 #if BRICKLET_NUM == 1

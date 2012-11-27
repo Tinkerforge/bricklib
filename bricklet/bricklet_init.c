@@ -260,7 +260,13 @@ bool bricklet_init_plugin(const uint8_t bricklet) {
 
 void bricklet_try_connection(const uint8_t bricklet) {
 	bricklet_select(bricklet);
-	uint32_t uid = i2c_eeprom_master_read_uid(TWI_BRICKLET);
+	const uint32_t magic_number = i2c_eeprom_master_read_magic_number(TWI_BRICKLET);
+	if(magic_number != BRICKLET_MAGIC_NUMBER) {
+		logbleti("Bricklet %c not connected (wrong magic)\n\r", 'a' + bricklet);
+		bricklet_deselect(bricklet);
+		return;
+	}
+	const uint32_t uid = i2c_eeprom_master_read_uid(TWI_BRICKLET);
 	bricklet_deselect(bricklet);
 
 	if(uid == 0) {

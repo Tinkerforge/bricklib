@@ -34,6 +34,7 @@
 #include "bricklib/com/i2c/i2c_eeprom/i2c_eeprom_common.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/bricklet/bricklet_communication.h"
+#include "bricklib/bricklet/bricklet_config.h"
 
 #include "config.h"
 
@@ -160,45 +161,6 @@ bool i2c_eeprom_master_write(Twi *twi,
 	return true;
 }
 
-bool i2c_eeprom_master_read_name(Twi *twi, char *name) {
-	i2c_eeprom_master_read(twi,
-	                       I2C_EEPROM_INTERNAL_ADDRESS_NAME,
-	                       name,
-	                       I2C_EEPROM_PAGE_SIZE);
-
-	if(i2c_eeprom_master_read(twi,
-	                          I2C_EEPROM_INTERNAL_ADDRESS_NAME +
-	                          I2C_EEPROM_PAGE_SIZE,
-	                          name + I2C_EEPROM_PAGE_SIZE,
-	                          I2C_EEPROM_NAME_LENGTH - I2C_EEPROM_PAGE_SIZE)) {
-		logieei("read name %s\n\r", name);
-		return true;
-	}
-
-
-	logieew("could not read name\n\r");
-	return false;
-}
-
-bool i2c_eeprom_master_write_name(Twi *twi, const char *name) {
-	i2c_eeprom_master_write(twi,
-	                        I2C_EEPROM_INTERNAL_ADDRESS_NAME,
-	                        name,
-	                        I2C_EEPROM_PAGE_SIZE);
-
-	if(i2c_eeprom_master_write(twi,
-	                           I2C_EEPROM_INTERNAL_ADDRESS_NAME +
-	                           I2C_EEPROM_PAGE_SIZE,
-	                           name + I2C_EEPROM_PAGE_SIZE,
-	                           I2C_EEPROM_NAME_LENGTH - I2C_EEPROM_PAGE_SIZE)) {
-		logieei("wrote name %s\n\r", name);
-		return true;
-	}
-
-	logieew("could not write name\n\r");
-	return false;
-}
-
 uint32_t i2c_eeprom_master_read_uid(Twi *twi) {
 	uint32_t uid;
 	if(i2c_eeprom_master_read(twi,
@@ -222,6 +184,33 @@ bool i2c_eeprom_master_write_uid(Twi *twi, const uint32_t uid) {
 	}
 
 	logieew("could not write uid\n\r");
+	return false;
+}
+
+uint32_t i2c_eeprom_master_read_magic_number(Twi *twi) {
+	uint32_t magic_number;
+	if(i2c_eeprom_master_read(twi,
+	                          I2C_EEPROM_INTERNAL_ADDRESS_UID,
+	                          (char*)&magic_number,
+	                          I2C_EEPROM_MAGIC_NUMBER_LENGTH)) {
+		logieei("read magic number %u\n\r", uid);
+		return magic_number;
+	}
+
+	logieew("could not read magic number\n\r");
+	return 0;
+}
+
+bool i2c_eeprom_master_write_magic_number(Twi *twi) {
+	uint32_t magic_number = BRICKLET_MAGIC_NUMBER;
+	if(i2c_eeprom_master_write(twi,
+	                           I2C_EEPROM_INTERNAL_ADDRESS_UID,
+	                           (char*)&magic_number,
+	                           I2C_EEPROM_MAGIC_NUMBER_LENGTH)) {
+		logieei("wrote magic number %d\n\r", (uint32_t)magic_number);
+	}
+
+	logieew("could not write magic number\n\r");
 	return false;
 }
 

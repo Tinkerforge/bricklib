@@ -40,6 +40,10 @@ void write_bricklet_plugin(const ComType com, const WriteBrickletPlugin *data) {
 	}
 
 	bricklet_select(port);
+	if(data->position == 0) {
+		i2c_eeprom_master_write_magic_number(TWI_BRICKLET);
+	}
+
 	i2c_eeprom_master_write_plugin(TWI_BRICKLET,
 	                               data->plugin,
 	                               data->position);
