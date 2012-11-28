@@ -190,7 +190,7 @@ bool i2c_eeprom_master_write_uid(Twi *twi, const uint32_t uid) {
 uint32_t i2c_eeprom_master_read_magic_number(Twi *twi) {
 	uint32_t magic_number;
 	if(i2c_eeprom_master_read(twi,
-	                          I2C_EEPROM_INTERNAL_ADDRESS_UID,
+	                          I2C_EEPROM_INTERNAL_ADDRESS_MAGIC_NUMBER,
 	                          (char*)&magic_number,
 	                          I2C_EEPROM_MAGIC_NUMBER_LENGTH)) {
 		logieei("read magic number %u\n\r", uid);
@@ -204,7 +204,7 @@ uint32_t i2c_eeprom_master_read_magic_number(Twi *twi) {
 bool i2c_eeprom_master_write_magic_number(Twi *twi) {
 	uint32_t magic_number = BRICKLET_MAGIC_NUMBER;
 	if(i2c_eeprom_master_write(twi,
-	                           I2C_EEPROM_INTERNAL_ADDRESS_UID,
+	                           I2C_EEPROM_INTERNAL_ADDRESS_MAGIC_NUMBER,
 	                           (char*)&magic_number,
 	                           I2C_EEPROM_MAGIC_NUMBER_LENGTH)) {
 		logieei("wrote magic number %d\n\r", (uint32_t)magic_number);
