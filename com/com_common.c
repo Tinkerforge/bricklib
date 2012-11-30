@@ -199,7 +199,7 @@ void com_return_error(const void *data, const uint8_t ret_length, const uint8_t 
 	memset(ret_data, 0, ret_length);
 	*ret_message = *message;
 	ret_message->length = ret_length;
-	ret_message->error = 1;
+	ret_message->error = error_code;
 
 	send_blocking_with_timeout(ret_data, ret_length, com);
 }

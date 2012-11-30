@@ -54,7 +54,6 @@ extern uint8_t brick_hardware_version[];
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
-	{FID_CALLBACK_AUTHENTICATION_ERROR, (message_handler_func_t)NULL},
 	{FID_GET_CHIP_TEMPERATURE, (message_handler_func_t)get_chip_temperature},
 	{FID_RESET, (message_handler_func_t)reset},
 	COM_MESSAGES_BRICKLET
