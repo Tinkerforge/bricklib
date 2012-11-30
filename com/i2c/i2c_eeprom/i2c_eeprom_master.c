@@ -167,7 +167,7 @@ uint32_t i2c_eeprom_master_read_uid(Twi *twi) {
 	                          I2C_EEPROM_INTERNAL_ADDRESS_UID,
 	                          (char*)&uid,
 	                          I2C_EEPROM_UID_LENGTH)) {
-		logieei("read uid %u\n\r", uid);
+		logieei("read uid %lu\n\r", uid);
 		return uid;
 	}
 
@@ -180,7 +180,7 @@ bool i2c_eeprom_master_write_uid(Twi *twi, const uint32_t uid) {
 	                           I2C_EEPROM_INTERNAL_ADDRESS_UID,
 	                           (char*)&uid,
 	                           I2C_EEPROM_UID_LENGTH)) {
-		logieei("wrote uid %d\n\r", (uint32_t)uid);
+		logieei("wrote uid %lu\n\r", (uint32_t)uid);
 	}
 
 	logieew("could not write uid\n\r");
@@ -193,7 +193,7 @@ uint32_t i2c_eeprom_master_read_magic_number(Twi *twi) {
 	                          I2C_EEPROM_INTERNAL_ADDRESS_MAGIC_NUMBER,
 	                          (char*)&magic_number,
 	                          I2C_EEPROM_MAGIC_NUMBER_LENGTH)) {
-		logieei("read magic number %u\n\r", uid);
+		logieei("read magic number %lu\n\r", magic_number);
 		return magic_number;
 	}
 
@@ -207,7 +207,7 @@ bool i2c_eeprom_master_write_magic_number(Twi *twi) {
 	                           I2C_EEPROM_INTERNAL_ADDRESS_MAGIC_NUMBER,
 	                           (char*)&magic_number,
 	                           I2C_EEPROM_MAGIC_NUMBER_LENGTH)) {
-		logieei("wrote magic number %d\n\r", (uint32_t)magic_number);
+		logieei("wrote magic number %lu\n\r", (uint32_t)magic_number);
 	}
 
 	logieew("could not write magic number\n\r");
