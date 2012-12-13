@@ -166,7 +166,10 @@ BrickletSettings bs[BRICKLET_NUM] = {
 // Declare bricklet context (bc)
 uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4] = {{0}};
 
-static bool bricklet_attached[4] = {false, false, false, false};
+uint8_t bricklet_attached[4] = {BRICKLET_INIT_NO_BRICKLET,
+                                BRICKLET_INIT_NO_BRICKLET,
+                                BRICKLET_INIT_NO_BRICKLET,
+                                BRICKLET_INIT_NO_BRICKLET};
 
 void bricklet_select(const uint8_t bricklet) {
 	bricklet_eeprom_address = bs[bricklet].address;
@@ -224,7 +227,7 @@ void bricklet_write_plugin_to_flash(const char *plugin,
     ENABLE_RESET_BUTTON();
 }
 
-bool bricklet_init_plugin(const uint8_t bricklet) {
+uint8_t bricklet_init_plugin(const uint8_t bricklet) {
 	bricklet_select(bricklet);
 
 	char plugin[PLUGIN_CHUNK_SIZE_STARTUP];
@@ -251,21 +254,31 @@ bool bricklet_init_plugin(const uint8_t bricklet) {
 				0,
 				0);
 
+    for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
+    	memset(bc[i], 0, BRICKLET_CONTEXT_MAX_SIZE);
+    }
+
+    uint8_t protocol_version = 0;
+    baddr[bricklet].entry(BRICKLET_TYPE_PROTOCOL_VERSION, 0, &protocol_version);
+    if(protocol_version != 2) {
+    	logbleti("Bricklet %c plugin has protocol version 1\n\r", 'a' + bricklet);
+    	return BRICKLET_INIT_PROTOCOL_VERSION_1;
+    }
+
 	logbleti("Calling constructor for bricklet %c\n\r", 'a' + bricklet);
 	baddr[bricklet].entry(BRICKLET_TYPE_CONSTRUCTOR, 0, NULL);
-	bricklet_attached[bricklet] = true;
 
-	return true;
+	return BRICKLET_INIT_PROTOCOL_VERSION_2;
 }
 
 void bricklet_try_connection(const uint8_t bricklet) {
 	bricklet_select(bricklet);
-	const uint32_t magic_number = i2c_eeprom_master_read_magic_number(TWI_BRICKLET);
+/*	const uint32_t magic_number = i2c_eeprom_master_read_magic_number(TWI_BRICKLET);
 	if(magic_number != BRICKLET_MAGIC_NUMBER) {
 		logbleti("Bricklet %c not connected (wrong magic)\n\r", 'a' + bricklet);
 		bricklet_deselect(bricklet);
 		return;
-	}
+	}*/
 	const uint32_t uid = i2c_eeprom_master_read_uid(TWI_BRICKLET);
 	bricklet_deselect(bricklet);
 
@@ -274,10 +287,22 @@ void bricklet_try_connection(const uint8_t bricklet) {
 		return;
 	}
 
+	uint32_t plugin_entry;
+	i2c_eeprom_master_read_plugin(TWI_BRICKLET, (char*)&plugin_entry, 0, 4);
+
+	if(plugin_entry == 0xFFFFFFFF || plugin_entry == 0) {
+		logbleti("Bricklet %c does not have a valid plugin\n\r", 'a' + bricklet);
+		return;
+	}
+
 	logbleti("Bricklet %c connected\n\r", 'a' + bricklet);
 
-	if(!bricklet_init_plugin(bricklet)) {
+	bricklet_attached[bricklet] =  bricklet_init_plugin(bricklet);
+	if(bricklet_attached[bricklet] == BRICKLET_INIT_NO_BRICKLET) {
 		logbletw("Could not init Bricklet %c\n\r", 'a' + bricklet);
+		return;
+	} else if(bricklet_attached[bricklet] == BRICKLET_INIT_PROTOCOL_VERSION_1) {
+		logbletw("Bricklet %c has incompatible protocol version\n\r", 'a' + bricklet);
 		return;
 	}
 
@@ -292,7 +317,7 @@ void bricklet_try_connection(const uint8_t bricklet) {
 
 void bricklet_tick_task(const uint8_t tick_type) {
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		if(bricklet_attached[i]) {
+		if(bricklet_attached[i] == BRICKLET_INIT_PROTOCOL_VERSION_2) {
 			uint8_t tt = tick_type;
 			baddr[i].entry(BRICKLET_TYPE_TICK, 0, &tt);
 		}
@@ -318,7 +343,7 @@ void bricklet_init(void) {
 		if(bs[i].pin_select.pio != NULL) {
 			PIO_Configure(&(bs[i].pin_select), 1);
 		}
-		bricklet_attached[i] = false;
+		bricklet_attached[i] = BRICKLET_INIT_NO_BRICKLET;
 	}
 
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {

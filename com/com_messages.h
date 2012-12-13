@@ -36,6 +36,7 @@
 
 #define SIZE_OF_MESSAGE_HEADER 8
 
+#define FID_GET_PROTOCOL1_BRICKLET_NAME 241
 #define FID_GET_CHIP_TEMPERATURE 242
 #define FID_RESET 243
 
@@ -138,11 +139,25 @@ typedef struct {
 	uint16_t device_identifier;
 } __attribute__((__packed__)) GetIdentityReturn;
 
+
+typedef struct {
+	MessageHeader header;
+	char port;
+} __attribute__((__packed__)) GetProtocol1BrickletName;
+
+typedef struct {
+	MessageHeader header;
+	uint8_t protocol_version;
+	uint8_t firmware_version[3];
+	char name[40];
+} __attribute__((__packed__)) GetProtocol1BrickletNameReturn;
+
 const ComMessage* get_com_from_header(const MessageHeader *header);
 uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
 
+void get_protocol1_bricklet_name(const ComType com, const GetProtocol1BrickletName *data);
 void reset(const ComType com, const Reset *data);
 void get_chip_temperature(const ComType com, const GetChipTemperature *data);
 void get_adc_calibration(const ComType com, const GetADCCalibration *data);

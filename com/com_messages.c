@@ -44,8 +44,10 @@ extern int32_t adc_gain_div;
 
 extern ComInfo com_info;
 extern BrickletSettings bs[];
+extern BrickletAddress baddr[];
 
 extern uint8_t brick_hardware_version[];
+extern uint8_t bricklet_attached[];
 
 #ifndef COM_MESSAGES_USER
 #define COM_MESSAGES_USER
@@ -54,6 +56,7 @@ extern uint8_t brick_hardware_version[];
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
+	{FID_GET_PROTOCOL1_BRICKLET_NAME, (message_handler_func_t)get_protocol1_bricklet_name},
 	{FID_GET_CHIP_TEMPERATURE, (message_handler_func_t)get_chip_temperature},
 	{FID_RESET, (message_handler_func_t)reset},
 	COM_MESSAGES_BRICKLET
@@ -88,6 +91,30 @@ void reset(const ComType com, const Reset *data) {
 	// TODO: Protocol V2.0 -> wait until msg is send?
 
 	brick_reset();
+}
+
+
+void get_protocol1_bricklet_name(const ComType com, const GetProtocol1BrickletName *data) {
+	uint8_t port = tolower((uint8_t)data->port) - 'a';
+	if(port >= BRICKLET_NUM) {
+		com_return_error(data, sizeof(GetProtocol1BrickletName), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
+		logblete("Bricklet Port %d does not exist (get_protocol1_bricklet_name)\n\r", port);
+		return;
+	}
+
+	GetProtocol1BrickletNameReturn gp1bnr = MESSAGE_EMPTY_INITIALIZER;
+	gp1bnr.header           = data->header;
+	gp1bnr.header.length    = sizeof(GetProtocol1BrickletNameReturn);
+	gp1bnr.protocol_version = bricklet_attached[port];
+
+	if(gp1bnr.protocol_version == BRICKLET_INIT_PROTOCOL_VERSION_1) {
+		baddr[port].entry(BRICKLET_TYPE_INFO,
+		                  0,
+		                  (uint8_t*)&gp1bnr.firmware_version);
+	}
+
+	send_blocking_with_timeout(&gp1bnr, sizeof(GetProtocol1BrickletNameReturn), com);
+	logbleti("get_protocol1_bricklet_name: %s (%d)\n\r", gp1bnr.name, gp1bnr.protocol_version);
 }
 
 void get_chip_temperature(const ComType com, const GetChipTemperature *data) {

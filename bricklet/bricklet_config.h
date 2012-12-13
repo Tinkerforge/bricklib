@@ -150,6 +150,7 @@ typedef struct {
 #define BRICKLET_TYPE_DESTRUCTOR 4
 #define BRICKLET_TYPE_TICK 8
 #define BRICKLET_TYPE_INFO 16
+#define BRICKLET_TYPE_PROTOCOL_VERSION 32
 
 #if(DEBUG_BRICKLET)
 #define logbletd(str, ...) do{logd("blet: " str, ##__VA_ARGS__);}while(0)
