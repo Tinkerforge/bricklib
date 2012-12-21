@@ -254,9 +254,7 @@ uint8_t bricklet_init_plugin(const uint8_t bricklet) {
 				0,
 				0);
 
-    for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-    	memset(bc[i], 0, BRICKLET_CONTEXT_MAX_SIZE);
-    }
+    memset(bc[bricklet], 0, BRICKLET_CONTEXT_MAX_SIZE);
 
     uint8_t protocol_version = 0;
     baddr[bricklet].entry(BRICKLET_TYPE_PROTOCOL_VERSION, 0, &protocol_version);
