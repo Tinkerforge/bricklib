@@ -91,7 +91,7 @@ void brick_init(void) {
 #endif
 
     com_current = COM_NONE;
-    PIO_InitializeInterrupts(0);
+    PIO_InitializeInterrupts(15);
 
     bricklet_clear_eeproms();
     i2c_eeprom_master_init(TWI_BRICKLET);
