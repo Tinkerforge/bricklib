@@ -77,7 +77,9 @@ const BrickletAPI ba = {
 	&mutex_twi_bricklet,
 	&com_return_error,
 	&com_return_setter,
-	&com_make_default_header
+	&com_make_default_header,
+	&mutex_give_isr,
+	&yield_from_isr
 };
 
 const BrickletAddress baddr[BRICKLET_NUM] = {

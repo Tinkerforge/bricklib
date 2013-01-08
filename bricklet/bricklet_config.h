@@ -75,9 +75,17 @@ typedef struct {
 	                                const uint16_t length);
 	Twid *twid;
 	Mutex *mutex_twi_bricklet;
-	void (*com_return_error)(const void *data, const uint8_t ret_length, uint8_t error_code, ComType com);
+	void (*com_return_error)(const void *data,
+	                         const uint8_t ret_length,
+	                         uint8_t error_code,
+	                         ComType com);
 	void (*com_return_setter)(ComType com, const void *data);
-	void (*com_make_default_header)(void *message, uint32_t uid, uint8_t length, uint8_t fid);
+	void (*com_make_default_header)(void *message,
+	                                uint32_t uid,
+	                                uint8_t length,
+	                                uint8_t fid);
+	bool (*mutex_give_isr)(Mutex mutex, int32_t *higher_prio_task_woken);
+	void (*yield_from_isr)(int32_t higher_prio_task_woken);
 } BrickletAPI;
 
 typedef struct {

@@ -34,5 +34,7 @@ void mutex_init();
 Mutex mutex_create(void);
 bool mutex_take(Mutex mutex, const uint32_t time);
 bool mutex_give(Mutex mutex);
+bool mutex_give_isr(Mutex mutex, int32_t *higher_prio_task_woken);
+void yield_from_isr(int32_t higher_prio_task_woken);
 
 #endif
