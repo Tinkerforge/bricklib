@@ -568,7 +568,6 @@ static void UDP_WritePayload(uint8_t bEndpoint)
 
     // Write packet in the FIFO buffer
     while (size > 0) {
-
         UDP->UDP_FDR[bEndpoint] = *(pTransfer->pData);
         pTransfer->pData++;
         size--;

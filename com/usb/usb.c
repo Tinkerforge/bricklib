@@ -57,8 +57,8 @@
 
 extern const USBDDriverDescriptors driver_descriptors;
 static USBDDriver usbd_driver;
-static unsigned int usb_send_transferred = 0;
-unsigned int usb_recv_transferred = 0;
+static uint32_t usb_send_transferred = 0;
+uint32_t usb_recv_transferred = 0;
 
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
@@ -118,7 +118,14 @@ inline uint16_t usb_send(const void *data, const uint16_t length, uint32_t *opti
 
 	send_status = 0;
 
-	return usb_send_transferred;
+	// We assume that the sending worked out OK if usb_send_transferred is
+	// not equal 0. This is necessary, since USBD_HAL sometimes returns
+	// UINT32_MAX for unknown reasons.
+	if(usb_send_transferred == 0) {
+		return 0;
+	}
+
+	return length;
 }
 
 // usb receive is implemented with a hook in the usb protocol state machine

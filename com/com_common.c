@@ -128,7 +128,7 @@ void com_message_loop(void *parameters) {
 			}
 		}
 
-		//com_debug_message(header);
+		// com_debug_message(header);
 
 		led_rxtx++;
 		mlp->return_func(data, header->length);
