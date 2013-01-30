@@ -109,20 +109,20 @@ __attribute__ ((weak)) void HardFault_HandlerC(uint32_t * hardfault_args)
 	uint32_t *pc = (uint32_t*)stacked_pc;
 
 	logf("\n\n[Hard fault handler]\n\r");
-	logf("R0 = %lux\n\r", stacked_r0);
-	logf("R1 = %lux\n\r", stacked_r1);
-	logf("R2 = %lux\n\r", stacked_r2);
-	logf("R3 = %lux\n\r", stacked_r3);
-	logf("R12 = %lux\n\r", stacked_r12);
-	logf("LR [R14] = %lux  subroutine call return address\n\r", stacked_lr);
-	logf("PC [R15] = %lux (%lux)  program counter\n\r", stacked_pc, *pc);
-	logf("PSR = %lux\n\r", stacked_psr);
-	logf("BFAR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED38))));
-	logf("CFSR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED28))));
-	logf("HFSR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED2C))));
-	logf("DFSR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED30))));
-	logf("AFSR = %lux\n\r", (*((volatile uint32_t *)(0xE000ED3C))));
-	logf("SCB_SHCSR = %lux\n\r", SCB->SHCSR);
+	logf("R0 = %lx\n\r", stacked_r0);
+	logf("R1 = %lx\n\r", stacked_r1);
+	logf("R2 = %lx\n\r", stacked_r2);
+	logf("R3 = %lx\n\r", stacked_r3);
+	logf("R12 = %lx\n\r", stacked_r12);
+	logf("LR [R14] = %lx  subroutine call return address\n\r", stacked_lr);
+	logf("PC [R15] = %lx (%lx)  program counter\n\r", stacked_pc, *pc);
+	logf("PSR = %lx\n\r", stacked_psr);
+	logf("BFAR = %lx\n\r", (*((volatile uint32_t *)(0xE000ED38))));
+	logf("CFSR = %lx\n\r", (*((volatile uint32_t *)(0xE000ED28))));
+	logf("HFSR = %lx\n\r", (*((volatile uint32_t *)(0xE000ED2C))));
+	logf("DFSR = %lx\n\r", (*((volatile uint32_t *)(0xE000ED30))));
+	logf("AFSR = %lx\n\r", (*((volatile uint32_t *)(0xE000ED3C))));
+	logf("SCB_SHCSR = %lx\n\r", SCB->SHCSR);
 #endif
 
     while(1);
