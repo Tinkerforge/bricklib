@@ -213,17 +213,17 @@ void com_return_setter(const ComType com, const void *data) {
 }
 
 void com_debug_message(const MessageHeader *header) {
-	printf("Message UID: %lu", header->uid);
-	printf(", length: %d", header->length);
-	printf(", fid: %d", header->fid);
-	printf(", (seq#, r, a, oo): (%d, %d, %d, %d)", header->sequence_num, header->return_expected, header->authentication, header->other_options);
-	printf(", (e, fu): (%d, %d)\n\r", header->error, header->future_use);
+	logwohd("Message UID: %lu", header->uid);
+	logwohd(", length: %d", header->length);
+	logwohd(", fid: %d", header->fid);
+	logwohd(", (seq#, r, a, oo): (%d, %d, %d, %d)", header->sequence_num, header->return_expected, header->authentication, header->other_options);
+	logwohd(", (e, fu): (%d, %d)\n\r", header->error, header->future_use);
 
-	printf("Message data: [");
+	logwohd("Message data: [");
 
 	uint8_t *data = (uint8_t*)header;
 	for(uint8_t i = 0; i < header->length - 8; i++) {
-		printf("%d ", data[i+8]);
+		logwohd("%d ", data[i+8]);
 	}
-	printf("]\n\r");
+	logwohd("]\n\r");
 }

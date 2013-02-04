@@ -107,6 +107,7 @@ void brick_init(void) {
 }
 
 void brick_reset(void) {
+	logd("brick_reset\n\r");
 	RSTC->RSTC_MR = RSTC_MR_URSTEN |
 	                (10 << RSTC_MR_ERSTL_Pos) |
 	                RSTC_MR_KEY(0xA5);

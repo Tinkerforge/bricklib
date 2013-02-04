@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010-2011 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2013 Olaf Lüke <olaf@tinkerforge.com>
  *
  * logging.h: Logging functionality for lcd and serial console
  *
@@ -81,32 +81,42 @@ void logging_init(void);
 
 #if LOGGING_LEVEL <= LOGGING_DEBUG
 #define logd(str,  ...) do{ printf("<D> " str, ##__VA_ARGS__); }while(0)
+#define logwohd(str,  ...) do{ printf(str, ##__VA_ARGS__); }while(0)
 #else
 #define logd(str,  ...) {}
+#define logwohd(str,  ...) {}
 #endif
 
 #if LOGGING_LEVEL <= LOGGING_INFO
 #define logi(str,  ...) do{ printf("<I> " str, ##__VA_ARGS__); }while(0)
+#define logwohi(str,  ...) do{ printf(str, ##__VA_ARGS__); }while(0)
 #else
 #define logi(str,  ...) {}
+#define logwohi(str,  ...) {}
 #endif
 
 #if LOGGING_LEVEL <= LOGGING_WARNING
 #define logw(str,  ...) do{ printf("<W> " str, ##__VA_ARGS__); }while(0)
+#define logwohw(str,  ...) do{ printf(str, ##__VA_ARGS__); }while(0)
 #else
 #define logw(str,  ...) {}
+#define logwohw(str,  ...) {}
 #endif
 
 #if LOGGING_LEVEL <= LOGGING_ERROR
 #define loge(str,  ...) do{ printf("<E> " str, ##__VA_ARGS__); }while(0)
+#define logwohe(str,  ...) do{ printf(str, ##__VA_ARGS__); }while(0)
 #else
 #define loge(str,  ...) {}
+#define logwohe(str,  ...) {}
 #endif
 
 #if LOGGING_LEVEL <= LOGGING_FATAL
 #define logf(str,  ...) do{ printf("<F> " str, ##__VA_ARGS__); }while(0)
+#define logwohf(str,  ...) do{ printf(str, ##__VA_ARGS__); }while(0)
 #else
 #define logf(str,  ...) {}
+#define logwohf(str,  ...) {}
 #endif
 
 
