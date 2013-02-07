@@ -63,6 +63,8 @@ uint32_t usb_recv_transferred = 0;
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
 
+uint32_t usb_num_send_tries = NUM_SEND_TRIES;
+
 char usb_recv_buffer[DEFAULT_EP_SIZE];
 char usb_send_buffer[DEFAULT_EP_SIZE];
 
@@ -109,7 +111,7 @@ inline uint16_t usb_send(const void *data, const uint16_t length, uint32_t *opti
 		num_tries++;
 		// USBD_Write does not always call callback when USBD_STATUS_SUCCESS
 		// Wait for NUM_SEND_TRIES
-		if(num_tries > NUM_SEND_TRIES) {
+		if(num_tries > usb_num_send_tries) {
 			usb_sequence_number++;
 			send_status = 0;
 			return 0;
