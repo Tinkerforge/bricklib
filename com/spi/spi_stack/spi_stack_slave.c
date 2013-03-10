@@ -162,10 +162,6 @@ void SPI_IrqHandler(void) {
     __enable_irq();
 }
 
-bool spi_stack_slave_is_selected(void) {
-	return !PIO_Get(&spi_slave_pins[3]);
-}
-
 void spi_stack_slave_init(void) {
 	PIO_Configure(spi_slave_pins, PIO_LISTSIZE(spi_slave_pins));
 
