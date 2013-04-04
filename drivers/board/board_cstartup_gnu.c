@@ -36,6 +36,9 @@
 #include "board_lowlevel.h"
 
 #include "bricklib/drivers/cmsis/core_cm3.h"
+#include "bricklib/drivers/wdt/wdt.h"
+#include "bricklib/utility/init.h"
+#include "bricklib/utility/led.h"
 
 /*----------------------------------------------------------------------------
  *        Exported variables

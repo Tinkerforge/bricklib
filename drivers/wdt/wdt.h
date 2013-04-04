@@ -22,10 +22,14 @@
 #ifndef WDT_H
 #define WDT_H
 
+#include <stdint.h>
+
 #define WDT_TIMEOUT_16S 0xFFF
 
 void wdt_start(void);
 void wdt_stop(void);
 void wdt_restart(void);
+bool wdt_has_error(void);
+uint32_t wdt_get_counter(void);
 
 #endif
