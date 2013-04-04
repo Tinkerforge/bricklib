@@ -54,7 +54,6 @@ uint16_t send_blocking_with_timeout_options(const void *data,
 
 	while(length - bytes_send != 0 && trials--) {
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com, options);
-		wdt_restart();
 		taskYIELD();
 	}
 
