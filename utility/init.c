@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2013 Olaf Lüke <olaf@tinkerforge.com>
  *
  * init.c: Implementation of initialization valid for all bricks
  *
@@ -71,7 +71,7 @@ void brick_init(void) {
     set_serial_number_descriptor(sn, MAX_BASE58_STR_SIZE);
     logsi("Unique ID %s (%lu)\n\r\n\r", sn, com_info.uid);
 
-    WDT_Disable(WDT);
+    wdt_start();
     logsi("Watchdog disabled\n\r");
 
     mutex_init();
@@ -172,10 +172,15 @@ void brick_tick_task(void *parameters) {
 	const uint8_t tick_type = *((uint8_t*)parameters);
 	unsigned long last_wake_time = xTaskGetTickCount();
 	while(true) {
+		wdt_restart();
 		tick_task(tick_type);
+		wdt_restart();
 		taskYIELD();
+		wdt_restart();
 		bricklet_tick_task(tick_type);
+		wdt_restart();
 		led_tick_task(tick_type);
+		wdt_restart();
 
 		// 1ms resolution
 		unsigned long tick_count = xTaskGetTickCount();
@@ -183,6 +188,7 @@ void brick_tick_task(void *parameters) {
 			last_wake_time = tick_count - 1;
 		}
 
+		wdt_restart();
 		vTaskDelayUntil(&last_wake_time, 1);
 	}
 }

@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2013 Olaf Lüke <olaf@tinkerforge.com>
  *
  * com_common.c: functions common to all communication protocols
  *
@@ -30,6 +30,7 @@
 #include "bricklib/free_rtos/include/task.h"
 
 #include "bricklib/bricklet/bricklet_config.h"
+#include "bricklib/drivers/wdt/wdt.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/utility/led.h"
 
@@ -53,6 +54,7 @@ uint16_t send_blocking_with_timeout_options(const void *data,
 
 	while(length - bytes_send != 0 && trials--) {
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com, options);
+		wdt_restart();
 		taskYIELD();
 	}
 
@@ -213,6 +215,7 @@ void com_return_setter(const ComType com, const void *data) {
 }
 
 void com_debug_message(const MessageHeader *header) {
+#if LOGGING_LEVEL == LOGGING_DEBUG
 	logwohd("Message UID: %lu", header->uid);
 	logwohd(", length: %d", header->length);
 	logwohd(", fid: %d", header->fid);
@@ -226,4 +229,5 @@ void com_debug_message(const MessageHeader *header) {
 		logwohd("%d ", data[i+8]);
 	}
 	logwohd("]\n\r");
+#endif
 }

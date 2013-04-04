@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2013 Olaf Lüke <olaf@tinkerforge.com>
  *
  * bricklet_init.c: functions for bricklet initialization
  *
@@ -26,6 +26,7 @@
 #include "bricklib/free_rtos/include/FreeRTOS.h"
 #include "bricklib/free_rtos/include/task.h"
 #include "bricklib/drivers/adc/adc.h"
+#include "bricklib/drivers/wdt/wdt.h"
 #include "bricklib/drivers/pio/pio.h"
 #include "bricklib/drivers/pio/pio_it.h"
 
@@ -339,6 +340,7 @@ void bricklet_clear_eeproms(void) {
 }
 
 void bricklet_init(void) {
+	wdt_restart();
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		if(bs[i].pin_select.pio != NULL) {
 			PIO_Configure(&(bs[i].pin_select), 1);

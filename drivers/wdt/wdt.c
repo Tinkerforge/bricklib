@@ -1,133 +1,43 @@
-/* ----------------------------------------------------------------------------
- *         ATMEL Microcontroller Software Support
- * ----------------------------------------------------------------------------
- * Copyright (c) 2009, Atmel Corporation
+/* bricklib
+ * Copyright (C) 2013 Olaf Lüke <olaf@tinkerforge.com>
  *
- * All rights reserved.
+ * wdt.c: Simple watchdog timer implementation
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
  *
- * - Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the disclaimer below.
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
  *
- * Atmel's name may not be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * DISCLAIMER: THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
- * DISCLAIMED. IN NO EVENT SHALL ATMEL BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
- * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * ----------------------------------------------------------------------------
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
  */
-
-/**
- * \file
- *
- * Implementation of Watchdog Timer (WDT) controller.
- *
- */
-
-/** \addtogroup wdt_module Working with WDT
- * The WDT driver provides the interface to configure and use the WDT
- * peripheral.
- *
- * The WDT can be used to prevent system lock-up if the software becomes
- * trapped in a deadlock. It can generate a general reset or a processor
- * reset only. It is clocked by slow clock divided by 128.
- *
- * The WDT is running at reset with 16 seconds watchdog period (slow clock at 32.768 kHz)
- * and external reset generation enabled. The user must either disable it or
- * reprogram it to meet the application requires.
- *
- * To use the WDT, the user could follow these few steps:
- * <ul>
- * <li>Enable watchdog with given mode using \ref WDT_Enable().
- * <li>Restart the watchdog using \ref WDT_Restart() within the watchdog period.
- * </ul>
- *
- * For more accurate information, please look at the WDT section of the
- * Datasheet.
- *
- * \note
- * The Watchdog Mode Register (WDT_MR) can be written only once.\n
- *
- * Related files :\n
- * \ref wdt.c\n
- * \ref wdt.h.\n
- */
-/*@{*/
-/*@}*/
-
-/*---------------------------------------------------------------------------
- *        Headers
- *---------------------------------------------------------------------------*/
 
 #include "config.h"
 #include "wdt.h"
 
-#include <stdint.h>
-
-/*----------------------------------------------------------------------------
- *        Exported functions
- *----------------------------------------------------------------------------*/
-
-/**
- * \brief Enable watchdog with given mode.
- *
- * \note The Watchdog Mode Register (WDT_MR) can be written only once.
- * Only a processor reset resets it.
- *
- * \param dwMode   WDT mode to be set
- */
-extern void WDT_Enable( Wdt* pWDT, uint32_t dwMode )
-{
-    pWDT->WDT_MR = dwMode ;
+// Configures the watchdog timer to 16s (can only be called once).
+void wdt_start(void) {
+	WDT->WDT_MR = WDT_MR_WDV(WDT_TIMEOUT_16S) |
+	              WDT_MR_WDD(WDT_TIMEOUT_16S) |
+	              WDT_MR_WDRSTEN |
+	              WDT_MR_WDRPROC |
+	              WDT_MR_WDDBGHLT |
+	              WDT_MR_WDIDLEHLT;
 }
 
-/**
- * \brief Disable watchdog.
- *
- * \note The Watchdog Mode Register (WDT_MR) can be written only once.
- * Only a processor reset resets it.
- */
-extern void WDT_Disable( Wdt* pWDT )
-{
-    pWDT->WDT_MR = WDT_MR_WDDIS;
+// Stops the watchdog timer (can only be called once).
+void wdt_stop(void) {
+	WDT->WDT_MR = WDT_MR_WDDIS;
 }
 
-/**
- * \brief Watchdog restart.
- */
-extern void WDT_Restart( Wdt* pWDT )
-{
-    pWDT->WDT_CR = 0xA5000001;
-}
-
-/**
- * \brief Watchdog get status.
- */
-extern uint32_t WDT_GetStatus( Wdt* pWDT )
-{
-    return (pWDT->WDT_SR & 0x3) ;
-}
-
-/**
- * \brief Watchdog get period.
- *
- * \param dwMs   desired watchdog period in millisecond.
- */
-extern uint32_t WDT_GetPeriod( uint32_t dwMs )
-{
-    if ( (dwMs < 4) || (dwMs > 16000) )
-    {
-        return 0 ;
-    }
-    return ((dwMs << 8) / 1000) ;
+// Restarts the watchdog timer, has to be called at least every 16s.
+void wdt_restart(void) {
+	WDT->WDT_CR = 0xA5000001;
 }
