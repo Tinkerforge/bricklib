@@ -30,7 +30,7 @@
 Mutex mutex_twi_bricklet;
 
 void mutex_init() {
-	mutex_twi_bricklet = xSemaphoreCreateMutex();
+	 vSemaphoreCreateBinary(mutex_twi_bricklet);
 }
 
 Mutex mutex_create(void) {
