@@ -27,8 +27,10 @@
 #define UID_CHARACTER_SET_LENGTH 60
 #define MAX_BASE58_STR_SIZE 8
 
+#pragma no_long_calls
 __attribute__ ((section (".ramfunc")))
 uint32_t uid_get_uid32(void);
+#pragma long_calls
 
 char uid_get_serial_char_from_num(uint8_t num);
 void uid_to_serial_number(uint32_t value, char *str);
