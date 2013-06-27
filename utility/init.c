@@ -177,6 +177,7 @@ void brick_tick_task(void *parameters) {
 		taskYIELD();
 		bricklet_tick_task(tick_type);
 		led_tick_task(tick_type);
+		usb_detect_task(tick_type);
 
 		// 1ms resolution
 		unsigned long tick_count = xTaskGetTickCount();

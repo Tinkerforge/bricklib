@@ -60,6 +60,8 @@ static USBDDriver usbd_driver;
 static uint32_t usb_send_transferred = 0;
 uint32_t usb_recv_transferred = 0;
 
+bool usb_startup_connected = false;
+static uint8_t usb_detect_task_counter = 0;
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
 
@@ -68,11 +70,7 @@ uint32_t usb_num_send_tries = NUM_SEND_TRIES;
 char usb_recv_buffer[DEFAULT_EP_SIZE];
 char usb_send_buffer[DEFAULT_EP_SIZE];
 
-#ifdef BRICK_CAN_BE_MASTER
-extern bool master_startup_usb_connected;
-#else
-static const Pin pin_usb_detect = PIN_USB_DETECT;
-#endif
+static Pin pin_usb_detect = PIN_USB_DETECT;
 
 uint32_t usb_sequence_number = 0;
 
@@ -163,24 +161,39 @@ bool usb_is_connected(void) {
 }
 
 void usb_detect_configure(void) {
+	 PIO_Configure(&pin_usb_detect, 1);
+	 pin_usb_detect.attribute = PIO_PULLDOWN;
+	 PIO_Configure(&pin_usb_detect, 1);
+	 // We use usb_detect_task instead of interrupt
+/*
 #ifndef BRICK_CAN_BE_MASTER
     // Configure PIO
     PIO_Configure(&pin_usb_detect, 1);
     PIO_ConfigureIt(&pin_usb_detect, usb_isr_vbus);
     PIO_EnableIt(&pin_usb_detect);
-#endif
+#endif*/
+}
+
+void usb_detect_task(const uint8_t tick_type) {
+	if(tick_type == TICK_TASK_TYPE_CALCULATION) {
+		if(usb_startup_connected ^ usb_is_connected()) {
+			usb_detect_task_counter++;
+			if(usb_detect_task_counter >= 250) {
+				usb_isr_vbus(NULL);
+			}
+		} else {
+			usb_detect_task_counter = 0;
+		}
+	}
 }
 
 bool usb_init() {
     if(!usb_is_connected()) {
-#ifdef BRICK_CAN_BE_MASTER
-    	master_startup_usb_connected = false;
-#endif
+    	usb_startup_connected = false;
     	return false;
     }
-#ifdef BRICK_CAN_BE_MASTER
-    master_startup_usb_connected = true;
-#endif
+
+    usb_startup_connected = true;
 
 	send_status = 0;
 	receive_status = 0;

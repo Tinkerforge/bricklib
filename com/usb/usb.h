@@ -51,6 +51,7 @@ uint16_t usb_recv(void *data, const uint16_t length, uint32_t *options);
 
 void usb_isr_vbus(const Pin *pin);
 void usb_detect_configure(void);
+void usb_detect_task(const uint8_t tick_type);
 void usb_configure_clock_48mhz(void);
 bool usb_is_connected(void);
 bool usb_init();
