@@ -27,10 +27,19 @@
 #define UID_CHARACTER_SET_LENGTH 60
 #define MAX_BASE58_STR_SIZE 8
 
+#ifndef __GNUC_PREREQ
+#define __GNUC_PREREQ(major, minor) \
+	((((__GNUC__) << 16) + (__GNUC_MINOR__)) >= (((major) << 16) + (minor)))
+#endif
+
+#if __GNUC_PREREQ(4,7)
 #pragma no_long_calls
+#endif
 __attribute__ ((section (".ramfunc")))
 uint32_t uid_get_uid32(void);
+#if __GNUC_PREREQ(4,7)
 #pragma long_calls
+#endif
 
 char uid_get_serial_char_from_num(uint8_t num);
 void uid_to_serial_number(uint32_t value, char *str);
