@@ -45,6 +45,11 @@ extern ComInfo com_info;
 extern const BrickletAddress baddr[];
 extern BrickletSettings bs[];
 
+extern uint16_t spi_stack_buffer_size_send;
+extern uint16_t spi_stack_buffer_size_recv;
+
+#include "bricklib/drivers/spi/spi.h"
+
 uint16_t send_blocking_with_timeout_options(const void *data,
                                             const uint16_t length,
                                             const ComType com,
@@ -53,6 +58,11 @@ uint16_t send_blocking_with_timeout_options(const void *data,
 	uint32_t trials = com_blocking_trials[com];
 
 	while(length - bytes_send != 0 && trials--) {
+		if(com == COM_SPI_STACK) {
+			if(spi_stack_buffer_size_recv > 0 && spi_stack_buffer_size_send > 0) {
+				SPI_EnableIt(SPI, SPI_IER_RDRF);
+			}
+		}
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com, options);
 		taskYIELD();
 	}

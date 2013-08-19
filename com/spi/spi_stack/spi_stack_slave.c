@@ -50,7 +50,7 @@ extern uint16_t spi_stack_buffer_size_recv;
 static const Pin spi_slave_pins[] = {PINS_SPI, PIN_SPI_SELECT_SLAVE};
 
 void SPI_IrqHandler(void) {
-	if(spi_stack_buffer_size_recv != 0) {
+	if(spi_stack_buffer_size_recv != 0 && spi_stack_buffer_size_send == 0) {
 		return;
 	}
 
@@ -118,8 +118,12 @@ void SPI_IrqHandler(void) {
 
     	// Read
         while((SPI->SPI_SR & SPI_SR_RDRF) == 0);
-        spi_stack_buffer_recv[i-1] = SPI->SPI_RDR;
-        PEARSON(master_checksum, spi_stack_buffer_recv[i-1]);
+        if(spi_stack_buffer_size_recv == 0) {
+        	spi_stack_buffer_recv[i-1] = SPI->SPI_RDR;
+        	PEARSON(master_checksum, spi_stack_buffer_recv[i-1]);
+        } else {
+        	dummy = SPI->SPI_RDR;
+        }
     }
 
     // Write CRC
@@ -128,8 +132,12 @@ void SPI_IrqHandler(void) {
 
 	// Read last data byte
     while((SPI->SPI_SR & SPI_SR_RDRF) == 0);
-    spi_stack_buffer_recv[max_length-1] = SPI->SPI_RDR;
-    PEARSON(master_checksum, spi_stack_buffer_recv[max_length-1]);
+    if(spi_stack_buffer_size_recv == 0) {
+		spi_stack_buffer_recv[max_length-1] = SPI->SPI_RDR;
+		PEARSON(master_checksum, spi_stack_buffer_recv[max_length-1]);
+    } else {
+    	dummy = SPI->SPI_RDR;
+    }
 
 	// Read CRC
     while((SPI->SPI_SR & SPI_SR_RDRF) == 0);
@@ -137,6 +145,10 @@ void SPI_IrqHandler(void) {
 
     // CRC correct?
     uint8_t slave_ack = crc == master_checksum;
+
+    if(spi_stack_buffer_size_recv > 0) {
+    	slave_ack = 0;
+    }
 
 	// Write ACK/NACK
 	while((SPI->SPI_SR & SPI_SR_TDRE) == 0);
@@ -147,9 +159,11 @@ void SPI_IrqHandler(void) {
     uint8_t master_ack = SPI->SPI_RDR;
 
 	// If everything OK, set sizes accordingly
-    if(master_ack == 1 && slave_ack == 1) {
-    	spi_stack_buffer_size_recv = master_length;
+    if(master_ack == 1) {
     	spi_stack_buffer_size_send = 0;
+    }
+    if(slave_ack == 1) {
+    	spi_stack_buffer_size_recv = master_length;
     }
     // Last byte written is 1 or 0 (ack/nack), so there can't be an
     // accidental 0xFF

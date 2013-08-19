@@ -160,19 +160,22 @@ bool spi_stack_master_transceive(void) {
     uint8_t slave_ack = SPI->SPI_RDR;
 
     // If everything is OK, set sizes accordingly
-    if(slave_ack == 1 && master_ack == 1) {
+
+    if(slave_ack == 1) {
     	spi_stack_buffer_size_recv = slave_length;
+    } else {
+    	logspisw("Checksum: Received NACK from Slave\n\r");
+		__enable_irq();
+		return false;
+    }
+
+    if(master_ack == 1) {
     	if(send_length != 0) {
     		spi_stack_buffer_size_send = 0;
     	}
     } else {
-    	if(!master_ack) {
-    		logspisw("Checksum: Master(%d) != Slave(%d)\n\r", crc,
-    		                                                  slave_checksum);
-    	}
-    	if(!slave_ack) {
-    		logspisw("Checksum: Received NACK from Slave\n\r");
-    	}
+    	logspisw("Checksum: Master(%d) != Slave(%d)\n\r", crc,
+    		                                              slave_checksum);
 		__enable_irq();
     	return false;
     }
