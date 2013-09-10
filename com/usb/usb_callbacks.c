@@ -38,6 +38,5 @@ void USBDCallbacks_Resumed(void) {
 }
 
 void USBDCallbacks_Suspended(void) {
-	usb_first_connection = true;
 	logi("USBDCallbacks_Suspended\n\r");
 }
