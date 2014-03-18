@@ -286,3 +286,58 @@ SHA1(const unsigned char *d, size_t n, unsigned char *md)
 
 	return md;
 }
+
+
+void hmac_sha1(uint8_t *secret, int secret_length,
+               uint8_t *data, int data_length,
+               uint8_t digest[SHA1_DIGEST_LENGTH]) {
+	struct sha1_ctxt secret_sha1;
+	struct sha1_ctxt inner_sha1;
+	struct sha1_ctxt outer_sha1;
+	uint8_t secret_digest[SHA1_DIGEST_LENGTH];
+	uint8_t inner_digest[SHA1_DIGEST_LENGTH];
+	uint8_t outer_digest[SHA1_DIGEST_LENGTH];
+	uint8_t ipad[SHA1_BLOCK_LENGTH];
+	uint8_t opad[SHA1_BLOCK_LENGTH];
+	int i;
+
+/*	if (secret_length > SHA1_BLOCK_LENGTH) {
+		sha1_init(&secret_sha1);
+		sha1_update(&secret_sha1, secret, secret_length);
+		sha1_final(&secret_sha1, secret_digest);
+
+		secret = secret_digest;
+		secret_length = SHA1_DIGEST_LENGTH;
+	}*/
+
+	// inner digest
+	for (i = 0; i < secret_length; ++i) {
+		ipad[i] = secret[i] ^ 0x36;
+	}
+
+	for (i = secret_length; i < SHA1_BLOCK_LENGTH; ++i) {
+		ipad[i] = 0x36;
+	}
+
+	sha1_init(&inner_sha1);
+	sha1_loop(&inner_sha1, ipad, SHA1_BLOCK_LENGTH);
+	sha1_loop(&inner_sha1, data, data_length);
+	sha1_result(&inner_sha1, inner_digest);
+
+	// outer digest
+	for (i = 0; i < secret_length; ++i) {
+		opad[i] = secret[i] ^ 0x5C;
+	}
+
+	for (i = secret_length; i < SHA1_BLOCK_LENGTH; ++i) {
+		opad[i] = 0x5C;
+	}
+
+	sha1_init(&outer_sha1);
+	sha1_loop(&outer_sha1, opad, SHA1_BLOCK_LENGTH);
+	sha1_loop(&outer_sha1, inner_digest, SHA1_DIGEST_LENGTH);
+	sha1_result(&outer_sha1, outer_digest);
+
+	memcpy(digest, outer_digest, SHA1_DIGEST_LENGTH);
+}
+

@@ -37,7 +37,13 @@
 
 #include <string.h>
 #include <stdint.h>
+
+#define SHA1_DIGEST_LENGTH 20
+#define SHA1_BLOCK_LENGTH 64
  
 unsigned char* SHA1(const unsigned char *d, size_t n, unsigned char *md);
+void hmac_sha1(uint8_t *secret, int secret_length,
+               uint8_t *data, int data_length,
+               uint8_t digest[SHA1_DIGEST_LENGTH]);
  
 #endif
