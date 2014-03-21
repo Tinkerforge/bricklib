@@ -30,6 +30,5 @@ void wdt_start(void);
 void wdt_stop(void);
 void wdt_restart(void);
 bool wdt_has_error(void);
-uint32_t wdt_get_counter(void);
 
 #endif

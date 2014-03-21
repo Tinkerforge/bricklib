@@ -24,16 +24,8 @@
 
 #include <stdint.h>
 
-uint32_t wdt_counter = 0;
-
 // Configures the watchdog timer to 16s (can only be called once).
 void wdt_start(void) {
-	if(wdt_has_error()) {
-		// If there is an error in the wdt status register the watchdog
-		// timer reached 0 since last call of start
-		wdt_counter++;
-	}
-
 	WDT->WDT_MR = WDT_MR_WDV(WDT_TIMEOUT_16S) |
 	              WDT_MR_WDD(WDT_TIMEOUT_16S) |
 	              WDT_MR_WDFIEN |
@@ -54,8 +46,4 @@ void wdt_restart(void) {
 
 bool wdt_has_error(void) {
 	return (WDT->WDT_SR & (WDT_SR_WDERR | WDT_SR_WDUNF)) != 0;
-}
-
-uint32_t wdt_get_counter(void) {
-	return wdt_counter;
 }
