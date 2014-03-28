@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010-2013 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2014 Olaf Lüke <olaf@tinkerforge.com>
  *
  * init.c: Implementation of initialization valid for all bricks
  *
@@ -103,7 +103,25 @@ void brick_init(void) {
 #endif
     logsi("A/D converter initialized\n\r");
 
+//    brick_enable_brownout_detection();
+
 	bricklet_init();
+}
+
+void SUPC_IrqHandler(void) {
+    loge("SUPC: %x\n\r", SUPC->SUPC_SR);
+    while(1);
+}
+
+
+void brick_enable_brownout_detection(void) {
+	SUPC->SUPC_MR |= SUPC_MR_KEY(0xA5) | SUPC_MR_BODDIS_ENABLE;
+//	SUPC->SUPC_SMMR |= SUPC_SMMR_SMSMPL_CSM | SUPC_SMMR_SMTH_3_2V | SUPC_SMMR_SMIEN_ENABLE;
+	volatile uint32_t tmp = SUPC->SUPC_SR; // clear sms and smos
+	NVIC_DisableIRQ(SUPC_IRQn);
+	NVIC_ClearPendingIRQ(SUPC_IRQn);
+	NVIC_SetPriority(SUPC_IRQn, 0);
+	NVIC_EnableIRQ(SUPC_IRQn);
 }
 
 void brick_reset(void) {

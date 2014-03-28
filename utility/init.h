@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2014 Olaf Lüke <olaf@tinkerforge.com>
  *
  * init.h: Implementation of initialization valid for all bricks
  *
@@ -29,8 +29,11 @@
 #define TICK_TASK_TYPE_MESSAGE 1
 #define TICK_TASK_TYPE_CALCULATION 2
 
+void SUPC_IrqHandler(void);
+
 void brick_init(void);
 void brick_init_new_connection(void);
+void brick_enable_brownout_detection(void);
 void brick_tick_task(void *parameters);
 void brick_init_start_tick_task(void);
 void brick_reset(void);

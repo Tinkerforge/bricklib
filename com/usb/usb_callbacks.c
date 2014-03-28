@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2014 Olaf Lüke <olaf@tinkerforge.com>
  *
  * usb_callbacks.c: USB callback functions
  *
@@ -24,17 +24,25 @@
 #include "config.h"
 #include "bricklib/drivers/cmsis/core_cm3.h"
 #include "bricklib/logging/logging.h"
+#include "bricklib/utility/init.h"
 
 bool usb_first_connection = true;
+
+uint8_t reset_counter = 0;
 
 // Invoked after the USB driver has been initialized.
 // Configures the UDP/UDPHS interrupt.
 void USBDCallbacks_Initialized(void) {
     NVIC_EnableIRQ(UDP_IRQn);
+	logi("USBDCallbacks_Initialized\n\r");
 }
 
 void USBDCallbacks_Resumed(void) {
-	logi("UDP_ENDPOINT_IDLE\n\r");
+	logi("USBDCallbacks_Resumed\n\r");
+	if(!usb_first_connection) {
+		logi("Brick will reset in 255ms\n\r");
+		reset_counter = 1;
+	}
 }
 
 void USBDCallbacks_Suspended(void) {

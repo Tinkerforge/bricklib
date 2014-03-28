@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2014 Olaf Lüke <olaf@tinkerforge.com>
  *
  * usb.c: Communication interface implementation for USB
  *
@@ -54,6 +54,8 @@
 
 #define USB_IN_FUNCTION 1
 #define USB_CALLBACK 2
+
+extern uint8_t reset_counter;
 
 extern const USBDDriverDescriptors driver_descriptors;
 static USBDDriver usbd_driver;
@@ -153,13 +155,9 @@ inline uint16_t usb_recv(void *data, const uint16_t length, uint32_t *options) {
 	return tmp;
 }
 
-void usb_isr_vbus(const Pin *pin) {
-	brick_reset();
-}
-
 bool usb_is_connected(void) {
 #ifdef BRICK_CAN_BE_MASTER
-	return adc_channel_get_data(USB_VOLTAGE_CHANNEL) > USB_VOLTAGE_REFERENCE/2;
+	return adc_channel_get_data(USB_VOLTAGE_CHANNEL) > VOLTAGE_MAX_VALUE*2/3;
 #else
 	return PIO_Get(&pin_usb_detect);
 #endif
@@ -170,21 +168,24 @@ void usb_detect_configure(void) {
 	 pin_usb_detect.attribute = PIO_PULLDOWN;
 	 PIO_Configure(&pin_usb_detect, 1);
 	 // We use usb_detect_task instead of interrupt
-/*
-#ifndef BRICK_CAN_BE_MASTER
-    // Configure PIO
-    PIO_Configure(&pin_usb_detect, 1);
-    PIO_ConfigureIt(&pin_usb_detect, usb_isr_vbus);
-    PIO_EnableIt(&pin_usb_detect);
-#endif*/
 }
 
 void usb_detect_task(const uint8_t tick_type) {
 	if(tick_type == TICK_TASK_TYPE_CALCULATION) {
+		// Reset through usb resume
+		if(reset_counter > 0) {
+			reset_counter++;
+			if(reset_counter == 255) {
+				brick_reset();
+			}
+		}
+
+		// Reset through usb detect
 		if(usb_startup_connected ^ usb_is_connected()) {
 			usb_detect_task_counter++;
 			if(usb_detect_task_counter >= 250) {
-				usb_isr_vbus(NULL);
+				logi("USB detect: %d\n\r", adc_channel_get_data(USB_VOLTAGE_CHANNEL));
+				brick_reset();
 			}
 		} else {
 			usb_detect_task_counter = 0;

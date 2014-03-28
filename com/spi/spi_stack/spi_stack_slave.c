@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2010-2012 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2010-2014 Olaf Lüke <olaf@tinkerforge.com>
  *
  * spi_stack_slave.c: SPI stack slave functionality
  *
@@ -101,13 +101,21 @@ void SPI_IrqHandler(void) {
 
         SPI_EnableIt(SPI, SPI_IER_RDRF);
         __enable_irq();
+        return;
+    }
 
+    // Something is wrong, this size is not allowed
+    if(master_length > SPI_STACK_BUFFER_SIZE) {
+        SPI_EnableIt(SPI, SPI_IER_RDRF);
+        __enable_irq();
         return;
     }
 
     // Length to transceive is maximum of slave and master length
     uint8_t max_length = MIN(MAX(spi_stack_buffer_size_send, master_length),
                              SPI_STACK_BUFFER_SIZE);
+
+
 
     // Exchange data
     for(uint8_t i = 1; i < max_length; i++) {

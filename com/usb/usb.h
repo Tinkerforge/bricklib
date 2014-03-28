@@ -1,5 +1,5 @@
 /* bricklib
- * Copyright (C) 2009-2012 Olaf Lüke <olaf@tinkerforge.com>
+ * Copyright (C) 2009-2014 Olaf Lüke <olaf@tinkerforge.com>
  *
  * usb.h: Communication interface implementation for USB
  *
@@ -49,7 +49,6 @@ void usb_recv_callback(void *arg,
 uint16_t usb_send(const void *data, const uint16_t length, uint32_t *options);
 uint16_t usb_recv(void *data, const uint16_t length, uint32_t *options);
 
-void usb_isr_vbus(const Pin *pin);
 void usb_detect_configure(void);
 void usb_detect_task(const uint8_t tick_type);
 void usb_configure_clock_48mhz(void);
