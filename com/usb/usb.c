@@ -118,7 +118,9 @@ inline uint16_t usb_send(const void *data, const uint16_t length, uint32_t *opti
 			// We sometimes come to this state if the PC/laptop is on suspend to disk.
 			// In that case it seems that the USB is in LOCKED state forever.
 			// So we are cautionary and cancel all IO.
-			USBD_HAL_CancelIo(0xFFFF);
+
+			// TODO: Fixme: Seems to make problems on some Windows versions!
+			//USBD_HAL_CancelIo(0xFFFF);
 			return 0;
 		}
 	}
