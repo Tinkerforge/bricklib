@@ -182,6 +182,9 @@ void usb_detect_task(const uint8_t tick_type) {
 			}
 		}
 
+// Only use USB detect reset on Master Brick
+// It makes problems on other Bricks and has little use
+#ifdef BRICK_CAN_BE_MASTER
 		// Reset through usb detect
 		if(usb_startup_connected ^ usb_is_connected()) {
 			usb_detect_task_counter++;
@@ -192,6 +195,7 @@ void usb_detect_task(const uint8_t tick_type) {
 		} else {
 			usb_detect_task_counter = 0;
 		}
+#endif
 	}
 }
 
