@@ -27,6 +27,12 @@
 #define TASK_DELAY_MS(ms) vTaskDelay(ms/portTICK_RATE_MS)
 #define TASK_DELAY_UNTIL_MS(last, ms) vTaskDelayUntil(last, ms/portTICK_RATE_MS)
 
+// SLEEP_NS is not perfect, exact values are:
+// "PUSH {R0}\n" -> 2 cycles
+// "MOV R0, %0\n" -> 1 cycles
+// "SUBS R0, #1\n" -> 1 cycles
+// "BNE.N 1b\n" -> 2 cycles if taken, 1 otherwise
+// "POP {R0}\n" -> 2 cycles
 #define SLEEP_NS(x) \
 	do { \
 		uint32_t i = (((BOARD_MCK)/1000000)*(x))/3000; \
