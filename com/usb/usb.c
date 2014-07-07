@@ -181,9 +181,10 @@ void usb_detect_task(const uint8_t tick_type) {
 				brick_reset();
 			}
 		}
-
-// Only use USB detect reset on Master Brick
-// It makes problems on other Bricks and has little use
+/*
+// Remove USB hotplug feature completely,
+// It is only useful in a small amount of cases
+// and it seems to make problems every now and then...
 #ifdef BRICK_CAN_BE_MASTER
 		// Reset through usb detect
 		if(usb_startup_connected ^ usb_is_connected()) {
@@ -195,7 +196,7 @@ void usb_detect_task(const uint8_t tick_type) {
 		} else {
 			usb_detect_task_counter = 0;
 		}
-#endif
+#endif */
 	}
 }
 
