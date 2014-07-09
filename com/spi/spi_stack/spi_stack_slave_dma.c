@@ -131,6 +131,8 @@ void spi_stack_slave_handle_irq_recv(void) {
 		spi_stack_slave_reset_recv_dma_buffer();
 		return;
 	} else {
+		// If the Master behaves as specified this else branch
+		// can't be reached
 		logspise("We received packet while recv buffer full, throwing away message\n\r");
 		spi_stack_slave_reset_recv_dma_buffer();
 		return;
@@ -140,6 +142,8 @@ void spi_stack_slave_handle_irq_recv(void) {
 void spi_stack_slave_handle_irq_send(void) {
 	// If we have something to send we will immediately give it to the DMA
 	if(spi_stack_buffer_size_send > 0) {
+		// We are done, send buffer can now be given to dma
+
 		const uint8_t length = spi_stack_buffer_size_send + SPI_STACK_EMPTY_MESSAGE_LENGTH;
 
 		// Set preamble, length and data
@@ -150,9 +154,9 @@ void spi_stack_slave_handle_irq_send(void) {
 		}
 
 		// If recv buffer is not empty we are busy
-		if(spi_stack_buffer_size_recv > 0)
+		if(spi_stack_buffer_size_recv > 0) {
 			spi_dma_buffer_send[SPI_STACK_INFO(length)] = SPI_STACK_INFO_BUSY;
-		else {
+		} else {
 			spi_dma_buffer_send[SPI_STACK_INFO(length)] = 0;
 		}
 
@@ -164,11 +168,25 @@ void spi_stack_slave_handle_irq_send(void) {
 		         spi_dma_buffer_send[SPI_STACK_INFO(length)],
 		         spi_dma_buffer_send[SPI_STACK_CHECKSUM(length)]);
 
-		// Everything is copied, we can set the buffer free again
-		spi_stack_buffer_size_send = 0;
 
-		// We are done, send buffer can now be given to dma
-		spi_stack_slave_reset_send_dma_buffer();
+		// If we had an over- or under-run in the meantime we have to abort the
+		// sending of data.
+		volatile uint32_t status = SPI->SPI_SR;
+		if(!(status & (SPI_SR_OVRES | SPI_SR_UNDES))) {
+			// We are done, send buffer can now be given to dma
+			spi_stack_slave_reset_send_dma_buffer();
+
+			// Wait for one byte to be transfered and check again.
+			// We have a very unlikely race condition here that we
+			// need to check for. One byte at 8MHz takes exactly 1us.
+			SLEEP_US(1);
+
+			status = SPI->SPI_SR;
+			if(!(status & (SPI_SR_OVRES | SPI_SR_UNDES))) {
+				// Everything is copied and seems OK, we can set the buffer free again
+				spi_stack_buffer_size_send = 0;
+			}
+		}
 		return;
 	} else if(spi_stack_buffer_size_recv > 0) {
 		// if we don't have anything to send and the recv buffer is full,
@@ -193,7 +211,7 @@ void spi_stack_slave_handle_irq_send(void) {
 }
 
 void SPI_IrqHandler(void) {
-	const uint32_t status = SPI->SPI_SR;
+	volatile uint32_t status = SPI->SPI_SR;
 
 	if(status & SPI_SR_NSSR) {
 		logspisd("NSSR: Status(%x), RCR(%d), TCR(%d)\n\r", status, SPI->SPI_RCR, SPI->SPI_TCR);
@@ -206,6 +224,21 @@ void SPI_IrqHandler(void) {
 			return;
 		}
 
+		// If an overrun or underrun occurred, we can't be sure that there is not currently
+		// another transmission in progress.
+		// We wait for a max time of approximately 1ms.
+		int32_t counter = 64*1000;
+		if(status & (SPI_SR_OVRES | SPI_SR_UNDES)) {
+			status = SPI->SPI_SR;
+			do{
+				counter--;
+				if(counter <= 0) {
+					return;
+				}
+				status = SPI->SPI_SR;
+			}while(!(status & SPI_SR_NSSR));
+		}
+
 		// Reset relevant SPI hardware, just in case we had some funny bit offset or similar
 	    SPI_Disable(SPI);
 	    SPI->SPI_CR = SPI_CR_SWRST;
@@ -215,6 +248,10 @@ void SPI_IrqHandler(void) {
 		SPI->SPI_PTCR = SPI_PTCR_RXTDIS;
 		SPI->SPI_PTCR = SPI_PTCR_TXTDIS;
 		SPI_EnableIt(SPI, SPI_IER_NSSR);
+
+		// Set preamble to something invalid, so we can't accidentally
+		// send old data again
+		spi_dma_buffer_send[SPI_STACK_PREAMBLE] = 0;
 
 		// Handle recv and send buffer handling
 		spi_stack_slave_handle_irq_recv();
@@ -248,8 +285,9 @@ void spi_stack_slave_init(void) {
     SPI->SPI_PTCR = SPI_PTCR_RXTDIS | SPI_PTCR_TXTDIS;
 
     spi_stack_slave_reset_recv_dma_buffer();
+    spi_stack_slave_handle_irq_send();
 
-    // Call interrupt on data in rx buffer
+    // Call interrupt on end of slave select
     SPI_EnableIt(SPI, SPI_IER_NSSR);
 }
 
