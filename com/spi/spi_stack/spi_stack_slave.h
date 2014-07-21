@@ -26,8 +26,6 @@
 
 #include "bricklib/com/com_messages.h"
 
-void SPI_IrqHandler(void);
-
 void spi_stack_slave_init(void);
 void spi_stack_slave_message_loop(void *parameters);
 void spi_stack_slave_message_loop_return(const char *data, const uint16_t length);

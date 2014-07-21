@@ -19,7 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "spi_stack_slave.h"
+#include "spi_stack_slave_dma.h"
 
 #include "bricklib/drivers/pio/pio.h"
 #include "bricklib/drivers/pio/pio_it.h"
@@ -38,30 +38,16 @@
 #include "spi_stack_common_dma.h"
 #include "config.h"
 
-extern uint8_t spi_stack_buffer_recv[SPI_STACK_BUFFER_SIZE];
-extern uint8_t spi_stack_buffer_send[SPI_STACK_BUFFER_SIZE];
+extern uint8_t spi_stack_buffer_recv[SPI_STACK_MAX_MESSAGE_LENGTH];
+extern uint8_t spi_stack_buffer_send[SPI_STACK_MAX_MESSAGE_LENGTH];
 
 // Recv and send buffer size for SPI stack (written by spi_stack_send/recv)
 extern uint16_t spi_stack_buffer_size_send;
 extern uint16_t spi_stack_buffer_size_recv;
 
+extern uint32_t led_rxtx;
+
 static const Pin spi_slave_pins[] = {PINS_SPI, PIN_SPI_SELECT_SLAVE};
-
-
-#define SPI_STACK_EMPTY_MESSAGE_LENGTH 4
-#define SPI_STACK_MAX_MESSAGE_LENGTH   84
-#define SPI_STACK_MESSAGE_LENGTH_MIN   12
-#define SPI_STACK_PREAMBLE_VALUE       0xAA
-
-#define SPI_STACK_PREAMBLE         0
-#define SPI_STACK_LENGTH           1
-#define SPI_STACK_INFO(length)     ((length) -2)
-#define SPI_STACK_CHECKSUM(length) ((length) -1)
-
-#define SPI_STACK_INFO_BUSY        (1 << 0)
-
-#define SPI_STACK_EMPTY_BUSY_MESSAGE_CHECKSUM     0x22
-#define SPI_STACK_EMPTY_NOT_BUSY_MESSAGE_CHECKSUM 0xF0
 
 uint8_t spi_dma_buffer_recv[SPI_STACK_MAX_MESSAGE_LENGTH];
 uint8_t spi_dma_buffer_send[SPI_STACK_MAX_MESSAGE_LENGTH];
@@ -78,13 +64,13 @@ void spi_stack_slave_reset_recv_dma_buffer(void) {
 	// Reuse old data
 	spi_dma_buffer_recv[SPI_STACK_PREAMBLE] = 0;
     SPI->SPI_RPR = (uint32_t)spi_dma_buffer_recv;
-    SPI->SPI_RCR = 84;
+    SPI->SPI_RCR = SPI_STACK_MAX_MESSAGE_LENGTH;
 	SPI->SPI_PTCR = SPI_PTCR_RXTEN;
 }
 
 void spi_stack_slave_reset_send_dma_buffer(void) {
     SPI->SPI_TPR = (uint32_t)spi_dma_buffer_send;
-    SPI->SPI_TCR = 84;
+    SPI->SPI_TCR = SPI_STACK_MAX_MESSAGE_LENGTH;
 	SPI->SPI_PTCR = SPI_PTCR_TXTEN;
 }
 
@@ -210,7 +196,7 @@ void spi_stack_slave_handle_irq_send(void) {
 	spi_stack_slave_reset_send_dma_buffer();
 }
 
-void SPI_IrqHandler(void) {
+void spi_stack_slave_irq(void) {
 	volatile uint32_t status = SPI->SPI_SR;
 
 	if(status & SPI_SR_NSSR) {
@@ -301,4 +287,43 @@ void spi_stack_slave_message_loop(void *parameters) {
 	mlp.com_type    = COM_SPI_STACK;
 	mlp.return_func = spi_stack_slave_message_loop_return;
 	com_message_loop(&mlp);
+}
+
+uint16_t spi_stack_slave_send(const void *data, const uint16_t length, uint32_t *options) {
+	if(spi_stack_buffer_size_send > 0) {
+		return 0;
+	}
+
+	led_rxtx++;
+
+	uint16_t send_length = MIN(length, SPI_STACK_BUFFER_SIZE);
+
+	memcpy(spi_stack_buffer_send, data, send_length);
+	spi_stack_buffer_size_send = send_length;
+
+	return send_length;
+}
+
+uint16_t spi_stack_slave_recv(void *data, const uint16_t length, uint32_t *options) {
+	if(spi_stack_buffer_size_recv == 0) {
+		return 0;
+	}
+
+	led_rxtx++;
+
+	static uint16_t recv_pointer = 0;
+
+	uint16_t recv_length = MIN(length, spi_stack_buffer_size_recv);
+
+	memcpy(data, spi_stack_buffer_recv + recv_pointer, recv_length);
+
+	if(spi_stack_buffer_size_recv - recv_length == 0) {
+		recv_pointer = 0;
+	} else {
+		recv_pointer += recv_length;
+	}
+
+	spi_stack_buffer_size_recv -= recv_length;
+
+	return recv_length;
 }

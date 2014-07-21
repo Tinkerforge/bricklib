@@ -28,7 +28,7 @@
 
 static uint8_t spi_stack_select_last_num = 0;
 
-Pin spi_select_master[8] = {PINS_SPI_SELECT_MASTER};
+Pin spi_select_master[SPI_ADDRESS_MAX] = {PINS_SPI_SELECT_MASTER};
 
 void spi_stack_select(const uint8_t num) {
 	if(num >= SPI_ADDRESS_MIN && num <= SPI_ADDRESS_MAX) {

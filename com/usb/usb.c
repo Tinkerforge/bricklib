@@ -56,6 +56,7 @@
 #define USB_CALLBACK 2
 
 extern uint8_t reset_counter;
+extern ComInfo com_info;
 
 extern const USBDDriverDescriptors driver_descriptors;
 static USBDDriver usbd_driver;
@@ -63,7 +64,6 @@ static uint32_t usb_send_transferred = 0;
 uint32_t usb_recv_transferred = 0;
 
 bool usb_startup_connected = false;
-static uint8_t usb_detect_task_counter = 0;
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
 
@@ -205,6 +205,8 @@ bool usb_init() {
     	usb_startup_connected = false;
     	return false;
     }
+
+	com_info.current = COM_USB;
 
     usb_startup_connected = true;
 

@@ -19,7 +19,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "spi_stack_common.h"
+#include "spi_stack_common_dma.h"
 
 #include "bricklib/free_rtos/include/FreeRTOS.h"
 #include "bricklib/free_rtos/include/task.h"
@@ -36,21 +36,34 @@
 
 #include "spi_stack_select.h"
 #include "spi_stack_slave_dma.h"
+#include "spi_stack_master_dma.h"
 #include "config.h"
 
-extern uint32_t led_rxtx;
-
 // Recv and send buffer for SPI stack (written by spi_stack_send/recv)
-uint8_t spi_stack_buffer_recv[SPI_STACK_BUFFER_SIZE] = {0};
-uint8_t spi_stack_buffer_send[SPI_STACK_BUFFER_SIZE] = {0};
+uint8_t spi_stack_buffer_recv[SPI_STACK_MAX_MESSAGE_LENGTH] = {0};
+uint8_t spi_stack_buffer_send[SPI_STACK_MAX_MESSAGE_LENGTH] = {0};
 
 // Recv and send buffer size for SPI stack (written by spi_stack_send/recv)
 uint16_t spi_stack_buffer_size_send = 0;
 uint16_t spi_stack_buffer_size_recv = 0;
 
-int8_t spi_stack_send_to = -1;
 
-extern ComInfo com_info;
+
+#ifdef BRICK_CAN_BE_MASTER
+extern uint8_t master_mode;
+#endif
+
+void SPI_IrqHandler(void) {
+#ifdef BRICK_CAN_BE_MASTER
+	if(master_mode & MASTER_MODE_MASTER) {
+		spi_stack_master_irq();
+	} else if(master_mode & MASTER_MODE_SLAVE) {
+		spi_stack_slave_irq();
+	}
+#else
+	spi_stack_slave_irq();
+#endif
+}
 
 uint8_t spi_stack_calculate_pearson(const uint8_t *data, const uint8_t length) {
 	uint8_t checksum = 0;
@@ -62,62 +75,29 @@ uint8_t spi_stack_calculate_pearson(const uint8_t *data, const uint8_t length) {
 }
 
 uint16_t spi_stack_send(const void *data, const uint16_t length, uint32_t *options) {
-	if(spi_stack_buffer_size_send > 0) {
+#ifdef BRICK_CAN_BE_MASTER
+	if(master_mode & MASTER_MODE_MASTER) {
+		return spi_stack_master_send(data, length, options);
+	} else if(master_mode & MASTER_MODE_SLAVE) {
+		return spi_stack_slave_send(data, length, options);
+	} else {
 		return 0;
 	}
-
-	if(options && *options >= SPI_ADDRESS_MIN && *options <= com_info.last_stack_address) {
-		spi_stack_send_to = *options;
-	} else {
-		spi_stack_send_to = -1;
-	}
-
-	led_rxtx++;
-
-	uint16_t send_length = MIN(length, SPI_STACK_BUFFER_SIZE);
-
-	memcpy(spi_stack_buffer_send, data, send_length);
-	spi_stack_buffer_size_send = send_length;
-
-	// IF the SPI DMA TX buffer is currently disabled,
-	// we should now be able to copy the new data to DMA directly.
-	// We can do this easily by "simulating" the irq.
-/*	if(!(SPI->SPI_PTSR & SPI_PTSR_TXTEN)) {
-		printf("sss\n\r");
-		spi_stack_slave_handle_irq_send();
-	}*/
-
-	return send_length;
+#else
+	return spi_stack_slave_send(data, length, options);
+#endif
 }
 
 uint16_t spi_stack_recv(void *data, const uint16_t length, uint32_t *options) {
-	if(spi_stack_buffer_size_recv == 0) {
+#ifdef BRICK_CAN_BE_MASTER
+	if(master_mode & MASTER_MODE_MASTER) {
+		return spi_stack_master_recv(data, length, options);
+	} else if(master_mode & MASTER_MODE_SLAVE) {
+		return spi_stack_slave_recv(data, length, options);
+	} else {
 		return 0;
 	}
-
-	led_rxtx++;
-
-	static uint16_t recv_pointer = 0;
-
-	uint16_t recv_length = MIN(length, spi_stack_buffer_size_recv);
-
-	memcpy(data, spi_stack_buffer_recv + recv_pointer, recv_length);
-
-	if(spi_stack_buffer_size_recv - recv_length == 0) {
-		recv_pointer = 0;
-	} else {
-		recv_pointer += recv_length;
-	}
-
-	spi_stack_buffer_size_recv -= recv_length;
-
-/*	// IF the SPI DMA RX buffer is currently disabled,
-	// we need to check if we have to copy the old DMA buffer.
-	// We can do this easily buy "simulating" the irq.
-	if(!(SPI->SPI_PTSR & SPI_PTSR_RXTEN)) {
-		printf("ssr\n\r");
-		spi_stack_slave_handle_irq_recv();
-	}*/
-
-	return recv_length;
+#else
+	return spi_stack_slave_recv(data, length, options);
+#endif
 }

@@ -1,7 +1,7 @@
 /* bricklib
  * Copyright (C) 2014 Olaf Lüke <olaf@tinkerforge.com>
  *
- * spi_stack_slave_dma.h: SPI stack slave functionality with DMA
+ * spi_stack_select_dma.c: Functions to select participant in stack (with DMA)
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,23 +19,29 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#ifndef SPI_SLAVE_H
-#define SPI_SLAVE_H
+#include "spi_stack_select.h"
+#include "spi_stack_common.h"
+
+#include "bricklib/drivers/pio/pio.h"
 
 #include <stdint.h>
 
-#include "bricklib/com/com_messages.h"
-void SPI_IrqHandler(void);
-void spi_stack_slave_irq(void);
+static uint8_t spi_stack_select_last_num = 0;
 
-void spi_stack_slave_handle_irq_send(void);
-void spi_stack_slave_handle_irq_recv(void);
+Pin spi_select_master[SPI_ADDRESS_MAX] = {PINS_SPI_SELECT_MASTER};
 
-void spi_stack_slave_init(void);
-void spi_stack_slave_message_loop(void *parameters);
-void spi_stack_slave_message_loop_return(const char *data, const uint16_t length);
+extern int32_t spi_stack_deselect_time;
 
-uint16_t spi_stack_slave_send(const void *data, const uint16_t length, uint32_t *options);
-uint16_t spi_stack_slave_recv(void *data, const uint16_t length, uint32_t *options);
+void spi_stack_select(const uint8_t num) {
+	if(num >= SPI_ADDRESS_MIN && num <= SPI_ADDRESS_MAX) {
+		PIO_Clear(&spi_select_master[num-1]);
+		spi_stack_select_last_num = num;
+	}
+}
 
-#endif
+void spi_stack_deselect() {
+	PIO_Set(&spi_select_master[spi_stack_select_last_num-1]);
+	spi_stack_select_last_num = 0;
+
+	spi_stack_deselect_time = SysTick->VAL;
+}
