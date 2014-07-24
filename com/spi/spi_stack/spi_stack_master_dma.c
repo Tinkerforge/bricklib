@@ -23,27 +23,27 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "bricklib/drivers/spi/spi.h"
-#include "bricklib/drivers/pio/pio.h"
-#include "bricklib/drivers/pio/pio_it.h"
-#include "bricklib/drivers/cmsis/core_cm3.h"
 #include <stdbool.h>
-#include "bricklib/free_rtos/include/FreeRTOS.h"
-#include "bricklib/free_rtos/include/task.h"
 
-#include "bricklib/utility/util_definitions.h"
-#include "bricklib/utility/pearson_hash.h"
-#include "bricklib/drivers/crc/crc.h"
 #include "bricklib/com/com_common.h"
 #include "bricklib/com/com_messages.h"
 #include "bricklib/com/i2c/i2c_eeprom/i2c_eeprom_master.h"
+#include "bricklib/drivers/cmsis/core_cm3.h"
+#include "bricklib/drivers/crc/crc.h"
 #include "bricklib/drivers/uid/uid.h"
+#include "bricklib/drivers/spi/spi.h"
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/pio/pio_it.h"
+#include "bricklib/free_rtos/include/FreeRTOS.h"
+#include "bricklib/free_rtos/include/task.h"
+#include "bricklib/utility/util_definitions.h"
+#include "bricklib/utility/pearson_hash.h"
+
 #include "extensions/rs485/rs485_low_level.h"
 
 #include "spi_stack_select.h"
 #include "spi_stack_common_dma.h"
 #include "config.h"
-
 #include "routing.h"
 
 #define SPI_DLYBCS(delay, mc) ((uint32_t)((mc/1000000) * delay) << 24)
@@ -196,7 +196,6 @@ SPIStackMasterTransceiveInfo spi_stack_master_start_transceive(const uint8_t *da
 		}
 	}
 
-
 	if(spi_stack_buffer_size_recv > 0) {
 		// The receive buffer is not empty, we can not transceive!
 		__enable_irq();
@@ -316,8 +315,13 @@ void spi_stack_master_irq(void) {
 
 			// Commented out code below is for debugging wrong checksum problems.
 			// This should only be needed during initial development, we leave it here just in case.
-			/*
-			printf("spi packet (%d): preamble(%d), length(%d), info(%d), checksum(%d)\n\r", stack_address_current, spi_stack_buffer_recv[SPI_STACK_PREAMBLE],  spi_stack_buffer_recv[SPI_STACK_LENGTH], spi_stack_buffer_recv[SPI_STACK_INFO(length)], spi_stack_buffer_recv[SPI_STACK_CHECKSUM(length)]);
+/*
+			logwohe("spi packet (%d): preamble(%d), length(%d), info(%d), checksum(%d)\n\r",
+					stack_address_current,
+					spi_stack_buffer_recv[SPI_STACK_PREAMBLE],
+					spi_stack_buffer_recv[SPI_STACK_LENGTH],
+					spi_stack_buffer_recv[SPI_STACK_INFO(length)],
+					spi_stack_buffer_recv[SPI_STACK_CHECKSUM(length)]);
 
 			MessageHeader *header = ((MessageHeader*)(spi_stack_buffer_recv+2));
 
