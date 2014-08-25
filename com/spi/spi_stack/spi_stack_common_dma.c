@@ -47,8 +47,6 @@ uint8_t spi_stack_buffer_send[SPI_STACK_MAX_MESSAGE_LENGTH] = {0};
 uint16_t spi_stack_buffer_size_send = 0;
 uint16_t spi_stack_buffer_size_recv = 0;
 
-
-
 #ifdef BRICK_CAN_BE_MASTER
 extern uint8_t master_mode;
 #endif
@@ -63,6 +61,20 @@ void SPI_IrqHandler(void) {
 #else
 	spi_stack_slave_irq();
 #endif
+}
+
+void spi_stack_increase_slave_seq(uint8_t *seq) {
+	*seq = *seq + (1 << 3);
+	if(*seq > SPI_STACK_INFO_SEQUENCE_SLAVE_MASK) {
+		*seq = 1 << 3;
+	}
+}
+
+void spi_stack_increase_master_seq(uint8_t *seq) {
+	*seq = *seq + 1;
+	if(*seq > SPI_STACK_INFO_SEQUENCE_MASTER_MASK) {
+		*seq = 0;
+	}
 }
 
 uint8_t spi_stack_calculate_pearson(const uint8_t *data, const uint8_t length) {

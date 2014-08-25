@@ -54,25 +54,27 @@
 
 
 // Speed of SPI clock
-#define SPI_CLOCK 8000000 // 8 Mhz
+#define SPI_CLOCK 9000000 // 9 Mhz
 
 #define SPI_STACK_EMPTY_MESSAGE_LENGTH 4
 #define SPI_STACK_MAX_MESSAGE_LENGTH   84
+
 #define SPI_STACK_MESSAGE_LENGTH_MIN   12
 #define SPI_STACK_PREAMBLE_VALUE       0xAA
 
-#define SPI_STACK_PREAMBLE         0
-#define SPI_STACK_LENGTH           1
-#define SPI_STACK_INFO(length)     ((length) -2)
-#define SPI_STACK_CHECKSUM(length) ((length) -1)
+#define SPI_STACK_PREAMBLE                  0
+#define SPI_STACK_LENGTH                    1
+#define SPI_STACK_INFO(length)              ((length) -2)
+#define SPI_STACK_CHECKSUM(length)          ((length) -1)
 
-#define SPI_STACK_INFO_BUSY        (1 << 0)
-
-#define SPI_STACK_EMPTY_BUSY_MESSAGE_CHECKSUM     0x22
-#define SPI_STACK_EMPTY_NOT_BUSY_MESSAGE_CHECKSUM 0xF0
-
+#define SPI_STACK_INFO_BUSY                 (1 << 6)
+#define SPI_STACK_INFO_SEQUENCE_MASTER_MASK (0x7)
+#define SPI_STACK_INFO_SEQUENCE_SLAVE_MASK  (0x38)
 
 void spi_stack_slave_irq(void);
+
+void spi_stack_increase_slave_seq(uint8_t *seq);
+void spi_stack_increase_master_seq(uint8_t *seq);
 
 uint8_t spi_stack_calculate_pearson(const uint8_t *data, const uint8_t length);
 uint16_t spi_stack_send(const void *data, const uint16_t length, uint32_t *options);

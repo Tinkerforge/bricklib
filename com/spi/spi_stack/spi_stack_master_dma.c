@@ -63,17 +63,28 @@ extern ComInfo com_info;
 
 extern uint32_t led_rxtx;
 
+uint8_t spi_stack_master_master_seq[SPI_ADDRESS_MAX] = {0};
+uint8_t spi_stack_master_slave_seq[SPI_ADDRESS_MAX] = {0};
+
 // Note that stack address is "1 based" (0 is master of stack)
 // while slave_status is 0 based, don't forget the -1!
-SPIStackMasterSlaveStatus slave_status[SPI_ADDRESS_MAX];
+SPIStackMasterSlaveStatus slave_status[SPI_ADDRESS_MAX] = {
+	SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY,
+	SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY
+};
+
 uint8_t stack_address_counter = 1;
-uint8_t stack_address_current = 0;
+uint8_t stack_address_current = 1;
 uint8_t stack_address_broadcast = 0;
 SPIStackMasterTransceiveState transceive_state = TRANSCEIVE_STATE_MESSAGE_EMPTY;
 
 int32_t spi_stack_deselect_time = 0;
 
 void spi_stack_master_init(void) {
+	// Set starting sequence number to something that slave does not expect
+	// (default for slave is 0)
+	//spi_stack_master_seq = 1;
+
 	for(uint8_t i = 0; i < SPI_ADDRESS_MAX; i++) {
 		slave_status[i] = SLAVE_STATUS_ABSENT;
 	}
@@ -150,6 +161,16 @@ void spi_stack_master_reset_recv_dma_buffer(void) {
 }
 
 void spi_stack_master_reset_send_dma_buffer(void) {
+	const uint8_t length = spi_stack_buffer_send[SPI_STACK_LENGTH];
+	const uint8_t mask = SPI_STACK_INFO_SEQUENCE_SLAVE_MASK | SPI_STACK_INFO_SEQUENCE_MASTER_MASK;
+	const uint8_t value = spi_stack_master_slave_seq[stack_address_current-1] | spi_stack_master_master_seq[stack_address_current-1];
+	const uint8_t pos = SPI_STACK_INFO(length);
+
+	if((spi_stack_buffer_send[pos] & mask) != value) {
+		spi_stack_buffer_send[pos] = (spi_stack_buffer_send[pos] & (~mask)) | value;
+		spi_stack_buffer_send[SPI_STACK_CHECKSUM(length)] = spi_stack_calculate_pearson(spi_stack_buffer_send, length-1);
+	}
+
     SPI->SPI_TPR = (uint32_t)spi_stack_buffer_send;
     SPI->SPI_TCR = SPI_STACK_MAX_MESSAGE_LENGTH;
 }
@@ -172,7 +193,8 @@ void spi_stack_master_disable_dma(void) {
 void spi_stack_master_make_empty_send_packet(void) {
 	spi_stack_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 	spi_stack_buffer_send[SPI_STACK_LENGTH] = SPI_STACK_EMPTY_MESSAGE_LENGTH;
-	spi_stack_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = 0; // Master is never busy
+	// Master is never busy
+	spi_stack_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = 0 | spi_stack_master_master_seq[stack_address_current-1] | spi_stack_master_slave_seq[stack_address_current-1];
 	spi_stack_buffer_send[SPI_STACK_CHECKSUM(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_calculate_pearson(spi_stack_buffer_send, SPI_STACK_EMPTY_MESSAGE_LENGTH-1);
 
 	spi_stack_buffer_size_send = 0;
@@ -206,7 +228,6 @@ SPIStackMasterTransceiveInfo spi_stack_master_start_transceive(const uint8_t *da
 		if(stack_address == 0) { // We are called with sa = 0 if nothing is to send
 			// There is nothing to send,
 			// we send a message with empty payload (4 byte)
-			spi_stack_master_make_empty_send_packet();
 
 			// Since there is nothing to send we can ask the slaves round robin
 			stack_address_counter++;
@@ -216,7 +237,9 @@ SPIStackMasterTransceiveInfo spi_stack_master_start_transceive(const uint8_t *da
 
 			stack_address_current = stack_address_counter;
 
+			spi_stack_master_make_empty_send_packet();
 			spi_stack_master_enable_dma();
+
 			__enable_irq();
 			return TRANSCEIVE_INFO_SEND_EMPTY_MESSAGE;
 		}
@@ -236,7 +259,7 @@ SPIStackMasterTransceiveInfo spi_stack_master_start_transceive(const uint8_t *da
 
 			spi_stack_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 			spi_stack_buffer_send[SPI_STACK_LENGTH] = length + SPI_STACK_EMPTY_MESSAGE_LENGTH;
-			spi_stack_buffer_send[SPI_STACK_INFO(spi_stack_buffer_send[SPI_STACK_LENGTH])] = 0; // Master is never busy
+			spi_stack_buffer_send[SPI_STACK_INFO(spi_stack_buffer_send[SPI_STACK_LENGTH])] = 0 | spi_stack_master_master_seq[stack_address_current-1] | spi_stack_master_slave_seq[stack_address_current-1]; // Master is never busy
 
 			for(uint8_t i = 0; i < length; i++) {
 				spi_stack_buffer_send[i+2] = data[i];
@@ -360,20 +383,33 @@ void spi_stack_master_irq(void) {
 			}
 		}
 
-		spi_stack_buffer_size_send = 0;
+		// If the sequence number is the same as the last time, we already
+		// handled this response, we don't handle it again in this case
+		if((spi_stack_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_SLAVE_MASK) != spi_stack_master_slave_seq[stack_address_current-1]) {
+			spi_stack_master_slave_seq[stack_address_current-1] = spi_stack_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_SLAVE_MASK;
 
-		if(length == SPI_STACK_EMPTY_MESSAGE_LENGTH) {
-			// We didn't receive anything, there is nothing to copy anywhere
-		} else {
-			for(uint8_t i = 0; i < length-SPI_STACK_EMPTY_MESSAGE_LENGTH; i++) {
-				spi_stack_buffer_recv[i] = spi_stack_buffer_recv[i+2];
+			if(length == SPI_STACK_EMPTY_MESSAGE_LENGTH) {
+				// We didn't receive anything, there is nothing to copy anywhere
+			} else {
+				for(uint8_t i = 0; i < length-SPI_STACK_EMPTY_MESSAGE_LENGTH; i++) {
+					spi_stack_buffer_recv[i] = spi_stack_buffer_recv[i+2];
+				}
+
+				spi_stack_buffer_size_recv = length-SPI_STACK_EMPTY_MESSAGE_LENGTH;
+
+				// Insert stack position (In case of Enumerate or GetIdentity.
+				// The SPI Slave can not know its position in the stack.
+				spi_stack_master_insert_position(spi_stack_buffer_recv, stack_address_current);
 			}
+		}
 
-			spi_stack_buffer_size_recv = length-SPI_STACK_EMPTY_MESSAGE_LENGTH;
-
-			// Insert stack position (In case of Enumerate or GetIdentity.
-			// The SPI Slave can not know its position in the stack.
-			spi_stack_master_insert_position(spi_stack_buffer_recv, stack_address_current);
+		// If the slave received our last message or we didn't send anything anyway, we can increase sequence number
+		if(((spi_stack_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_MASTER_MASK) != spi_stack_master_master_seq[stack_address_current-1]) && (spi_stack_buffer_size_send > 0)) {
+			transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
+			return;
+		} else {
+			spi_stack_increase_master_seq(&spi_stack_master_master_seq[stack_address_current-1]);
+			spi_stack_buffer_size_send = 0;
 		}
 
 		transceive_state = TRANSCEIVE_STATE_MESSAGE_EMPTY;
@@ -413,7 +449,6 @@ uint16_t spi_stack_master_send(const void *data, const uint16_t length, uint32_t
 
 	// If the stack address is in the options, we use it
 	if(options && *options >= SPI_ADDRESS_MIN && *options <= com_info.last_stack_address) {
-		//SLEEP_US(20);
 		if(spi_stack_master_start_transceive(data, length, *options) != TRANSCEIVE_INFO_SEND_OK) {
 			return 0;
 		}

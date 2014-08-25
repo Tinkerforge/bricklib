@@ -52,6 +52,9 @@ static const Pin spi_slave_pins[] = {PINS_SPI, PIN_SPI_SELECT_SLAVE};
 uint8_t spi_dma_buffer_recv[SPI_STACK_MAX_MESSAGE_LENGTH];
 uint8_t spi_dma_buffer_send[SPI_STACK_MAX_MESSAGE_LENGTH];
 
+uint8_t spi_stack_slave_master_seq = 0;
+uint8_t spi_stack_slave_slave_seq = 0;
+
 // Packet:
 // Byte 0: Preamble
 // Byte 1: Length == n+2
@@ -69,6 +72,16 @@ void spi_stack_slave_reset_recv_dma_buffer(void) {
 }
 
 void spi_stack_slave_reset_send_dma_buffer(void) {
+	const uint8_t length = spi_dma_buffer_send[SPI_STACK_LENGTH];
+	const uint8_t mask = SPI_STACK_INFO_SEQUENCE_SLAVE_MASK | SPI_STACK_INFO_SEQUENCE_MASTER_MASK;
+	const uint8_t value = spi_stack_slave_slave_seq | spi_stack_slave_master_seq;
+	const uint8_t pos = SPI_STACK_INFO(length);
+
+	if((spi_dma_buffer_send[pos] & mask) != value) {
+		spi_dma_buffer_send[pos] = (spi_dma_buffer_send[pos] & (~mask)) | value;
+		spi_dma_buffer_send[SPI_STACK_CHECKSUM(length)] = spi_stack_calculate_pearson(spi_dma_buffer_send, length-1);
+	}
+
     SPI->SPI_TPR = (uint32_t)spi_dma_buffer_send;
     SPI->SPI_TCR = SPI_STACK_MAX_MESSAGE_LENGTH;
 	SPI->SPI_PTCR = SPI_PTCR_TXTEN;
@@ -77,7 +90,6 @@ void spi_stack_slave_reset_send_dma_buffer(void) {
 void spi_stack_slave_handle_irq_recv(void) {
 	// Check preamble
 	if(spi_dma_buffer_recv[SPI_STACK_PREAMBLE] != SPI_STACK_PREAMBLE_VALUE) {
-		logspisd("Could not find preamble\n\r");
 		spi_stack_slave_reset_recv_dma_buffer();
 		return;
 	}
@@ -85,7 +97,16 @@ void spi_stack_slave_handle_irq_recv(void) {
 	// Check length
 	const uint8_t length = spi_dma_buffer_recv[SPI_STACK_LENGTH];
 	if(length == SPI_STACK_EMPTY_MESSAGE_LENGTH) {
-		logspisd("Empty message (recv)\n\r");
+		//logspisd("Empty message (recv)\n\r");
+
+		// Check if last slave sequence number that the master has seen is the same as the last one we send.
+		if((spi_dma_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_SLAVE_MASK) == spi_stack_slave_slave_seq) {
+			// We set the preamble in the send buffer to zero to show that a new message can be send.
+			spi_dma_buffer_send[0] = 0;
+			spi_stack_increase_slave_seq(&spi_stack_slave_slave_seq);
+		}
+
+		spi_stack_slave_master_seq = spi_dma_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_MASTER_MASK;
 		spi_stack_slave_reset_recv_dma_buffer();
 		return;
 	}
@@ -107,6 +128,25 @@ void spi_stack_slave_handle_irq_recv(void) {
 		return;
 	}
 
+	// Check if last slave sequence number that the master has seen is the same as the last one we send.
+	if((spi_dma_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_SLAVE_MASK) == spi_stack_slave_slave_seq) {
+		// We set the preamble in the send buffer to zero to show that a new message can be send.
+		spi_dma_buffer_send[0] = 0;
+		spi_stack_increase_slave_seq(&spi_stack_slave_slave_seq);
+	}
+
+	// Check if master sequence number is the same as the last one we have seen. In this case we ignore the message
+	// to make sure that we don't handle a message two times.
+	if((spi_dma_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_MASTER_MASK) == spi_stack_slave_master_seq) {
+		logspisw("Received same master sequence number two times: %x\n\r",
+		         spi_stack_slave_master_seq);
+
+		spi_stack_slave_reset_recv_dma_buffer();
+		return;
+	} else {
+		spi_stack_slave_master_seq = spi_dma_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_MASTER_MASK;
+	}
+
 	// Everything seems OK, can we copy the DMA buffer?
 	if(spi_stack_buffer_size_recv == 0) {
 		for(uint8_t j = 0; j < length - SPI_STACK_EMPTY_MESSAGE_LENGTH; j++) {
@@ -126,10 +166,14 @@ void spi_stack_slave_handle_irq_recv(void) {
 }
 
 void spi_stack_slave_handle_irq_send(void) {
-	// If we have something to send we will immediately give it to the DMA
-	if(spi_stack_buffer_size_send > 0) {
-		// We are done, send buffer can now be given to dma
-
+	// If the preamble is still set in the dma buffer, we did have
+	// an checksum error or similar and we need to send the message again.
+	// Otherwise the recv code would have overwritten the preamble
+	if(spi_dma_buffer_send[0] == SPI_STACK_PREAMBLE_VALUE) {
+		spi_stack_slave_reset_send_dma_buffer();
+		return;
+	} else if(spi_stack_buffer_size_send > 0) {
+		// If we have something to send we will immediately give it to the DMA
 		const uint8_t length = spi_stack_buffer_size_send + SPI_STACK_EMPTY_MESSAGE_LENGTH;
 
 		// Set preamble, length and data
@@ -141,9 +185,9 @@ void spi_stack_slave_handle_irq_send(void) {
 
 		// If recv buffer is not empty we are busy
 		if(spi_stack_buffer_size_recv > 0) {
-			spi_dma_buffer_send[SPI_STACK_INFO(length)] = SPI_STACK_INFO_BUSY;
+			spi_dma_buffer_send[SPI_STACK_INFO(length)] = SPI_STACK_INFO_BUSY | spi_stack_slave_slave_seq | spi_stack_slave_master_seq;
 		} else {
-			spi_dma_buffer_send[SPI_STACK_INFO(length)] = 0;
+			spi_dma_buffer_send[SPI_STACK_INFO(length)] = 0 | spi_stack_slave_slave_seq | spi_stack_slave_master_seq;
 		}
 
 		// Calculate checksum
@@ -179,8 +223,8 @@ void spi_stack_slave_handle_irq_send(void) {
 		// we have to give the DMA an empty packet with BUSY flag set.
 		spi_dma_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 		spi_dma_buffer_send[SPI_STACK_LENGTH] = SPI_STACK_EMPTY_MESSAGE_LENGTH;
-		spi_dma_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = SPI_STACK_INFO_BUSY;
-		spi_dma_buffer_send[SPI_STACK_CHECKSUM(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = SPI_STACK_EMPTY_BUSY_MESSAGE_CHECKSUM;
+		spi_dma_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = SPI_STACK_INFO_BUSY | spi_stack_slave_slave_seq | spi_stack_slave_master_seq;
+		spi_dma_buffer_send[SPI_STACK_CHECKSUM(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_calculate_pearson(spi_dma_buffer_send, SPI_STACK_EMPTY_MESSAGE_LENGTH-1);
 
 		spi_stack_slave_reset_send_dma_buffer();
 		return;
@@ -190,8 +234,8 @@ void spi_stack_slave_handle_irq_send(void) {
 	// In this case we have to send and empty message with busy flag unset
 	spi_dma_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 	spi_dma_buffer_send[SPI_STACK_LENGTH] = SPI_STACK_EMPTY_MESSAGE_LENGTH;
-	spi_dma_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = 0;
-	spi_dma_buffer_send[SPI_STACK_CHECKSUM(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = SPI_STACK_EMPTY_NOT_BUSY_MESSAGE_CHECKSUM;
+	spi_dma_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = 0 | spi_stack_slave_slave_seq | spi_stack_slave_master_seq;
+	spi_dma_buffer_send[SPI_STACK_CHECKSUM(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_calculate_pearson(spi_dma_buffer_send, SPI_STACK_EMPTY_MESSAGE_LENGTH-1);
 
 	spi_stack_slave_reset_send_dma_buffer();
 }
@@ -200,7 +244,7 @@ void spi_stack_slave_irq(void) {
 	volatile uint32_t status = SPI->SPI_SR;
 
 	if(status & SPI_SR_NSSR) {
-		logspisd("NSSR: Status(%x), RCR(%d), TCR(%d)\n\r", status, SPI->SPI_RCR, SPI->SPI_TCR);
+		//logspisd("NSSR: Status(%x), RCR(%d), TCR(%d)\n\r", status, SPI->SPI_RCR, SPI->SPI_TCR);
 
 		// Either read or transmit DMA buffer are not empty, this can mean two things:
 		// 1. We had a glitch in the slave select pin
@@ -222,7 +266,7 @@ void spi_stack_slave_irq(void) {
 					return;
 				}
 				status = SPI->SPI_SR;
-			}while(!(status & SPI_SR_NSSR));
+			} while(!(status & SPI_SR_NSSR));
 		}
 
 		// Reset relevant SPI hardware, just in case we had some funny bit offset or similar
@@ -234,10 +278,6 @@ void spi_stack_slave_irq(void) {
 		SPI->SPI_PTCR = SPI_PTCR_RXTDIS;
 		SPI->SPI_PTCR = SPI_PTCR_TXTDIS;
 		SPI_EnableIt(SPI, SPI_IER_NSSR);
-
-		// Set preamble to something invalid, so we can't accidentally
-		// send old data again
-		spi_dma_buffer_send[SPI_STACK_PREAMBLE] = 0;
 
 		// Handle recv and send buffer handling
 		spi_stack_slave_handle_irq_recv();
@@ -271,7 +311,13 @@ void spi_stack_slave_init(void) {
     SPI->SPI_PTCR = SPI_PTCR_RXTDIS | SPI_PTCR_TXTDIS;
 
     spi_stack_slave_reset_recv_dma_buffer();
-    spi_stack_slave_handle_irq_send();
+
+	spi_dma_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
+	spi_dma_buffer_send[SPI_STACK_LENGTH] = SPI_STACK_EMPTY_MESSAGE_LENGTH;
+	spi_dma_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = 0 | spi_stack_slave_slave_seq | spi_stack_slave_master_seq;
+	spi_dma_buffer_send[SPI_STACK_CHECKSUM(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_calculate_pearson(spi_dma_buffer_send, SPI_STACK_EMPTY_MESSAGE_LENGTH-1);
+
+	spi_stack_slave_reset_send_dma_buffer();
 
     // Call interrupt on end of slave select
     SPI_EnableIt(SPI, SPI_IER_NSSR);
