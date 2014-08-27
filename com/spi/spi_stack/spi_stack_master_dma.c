@@ -69,8 +69,8 @@ uint8_t spi_stack_master_slave_seq[SPI_ADDRESS_MAX] = {0};
 // Note that stack address is "1 based" (0 is master of stack)
 // while slave_status is 0 based, don't forget the -1!
 SPIStackMasterSlaveStatus slave_status[SPI_ADDRESS_MAX] = {
-	SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY,
-	SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY, SLAVE_STATUS_AVAILABLE_BUSY
+	SLAVE_STATUS_AVAILABLE, SLAVE_STATUS_AVAILABLE, SLAVE_STATUS_AVAILABLE, SLAVE_STATUS_AVAILABLE,
+	SLAVE_STATUS_AVAILABLE, SLAVE_STATUS_AVAILABLE, SLAVE_STATUS_AVAILABLE, SLAVE_STATUS_AVAILABLE
 };
 
 uint8_t stack_address_counter = 1;
@@ -245,15 +245,7 @@ SPIStackMasterTransceiveInfo spi_stack_master_start_transceive(const uint8_t *da
 		}
 
 		stack_address_current = stack_address;
-		if(slave_status[stack_address-1] == SLAVE_STATUS_AVAILABLE_BUSY) {
-			// The slave currently can't receive another message
-			// we send a message with empty payload (4 byte)
-			spi_stack_master_make_empty_send_packet();
-
-			spi_stack_master_enable_dma();
-			__enable_irq();
-			return TRANSCEIVE_INFO_SEND_NOTHING_BUSY;
-		} else if(slave_status[stack_address-1] == SLAVE_STATUS_AVAILABLE) {
+		if(slave_status[stack_address-1] == SLAVE_STATUS_AVAILABLE) {
 			// The send buffer is empty, there is something to send
 			// and the slave is ready to receive data, that means we can copy the data!
 
@@ -307,7 +299,6 @@ void spi_stack_master_irq(void) {
 			// if the slave is too busy to fill the DMA buffers fast enough.
 			// If we did try to send something we need to try again.
 
-			slave_status[stack_address_current-1] = SLAVE_STATUS_AVAILABLE_BUSY;
 			if(spi_stack_buffer_size_send > 0) {
 				transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
 			} else {
@@ -322,7 +313,6 @@ void spi_stack_master_irq(void) {
 		    (length > SPI_STACK_MAX_MESSAGE_LENGTH))) {
 			logspise("Received packet with malformed length: %d\n\r", length);
 
-			slave_status[stack_address_current-1] = SLAVE_STATUS_AVAILABLE_BUSY;
 			if(spi_stack_buffer_size_send > 0) {
 				transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
 			} else {
@@ -362,25 +352,12 @@ void spi_stack_master_irq(void) {
 			}
 			logwohe("]\n\r");*/
 
-			slave_status[stack_address_current-1] = SLAVE_STATUS_AVAILABLE_BUSY;
-
 			if(spi_stack_buffer_size_send > 0) {
 				transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
 			} else {
 				transceive_state = TRANSCEIVE_STATE_MESSAGE_EMPTY;
 			}
 			return;
-		}
-
-		if(spi_stack_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_BUSY) {
-			slave_status[stack_address_current-1] = SLAVE_STATUS_AVAILABLE_BUSY;
-		} else {
-			// If we send data we have to assume that the slave is busy now
-			if(spi_stack_buffer_size_send > 0) {
-				slave_status[stack_address_current-1] = SLAVE_STATUS_AVAILABLE_BUSY;
-			} else {
-				slave_status[stack_address_current-1] = SLAVE_STATUS_AVAILABLE;
-			}
 		}
 
 		// If the sequence number is the same as the last time, we already

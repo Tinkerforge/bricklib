@@ -29,7 +29,6 @@
 typedef enum {
 	SLAVE_STATUS_ABSENT = 0,
 	SLAVE_STATUS_AVAILABLE,
-	SLAVE_STATUS_AVAILABLE_BUSY
 } SPIStackMasterSlaveStatus;
 
 typedef enum {

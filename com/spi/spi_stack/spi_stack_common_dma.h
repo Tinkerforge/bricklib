@@ -67,7 +67,6 @@
 #define SPI_STACK_INFO(length)              ((length) -2)
 #define SPI_STACK_CHECKSUM(length)          ((length) -1)
 
-#define SPI_STACK_INFO_BUSY                 (1 << 6)
 #define SPI_STACK_INFO_SEQUENCE_MASTER_MASK (0x7)
 #define SPI_STACK_INFO_SEQUENCE_SLAVE_MASK  (0x38)
 
