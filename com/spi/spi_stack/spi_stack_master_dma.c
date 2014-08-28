@@ -63,7 +63,7 @@ extern ComInfo com_info;
 
 extern uint32_t led_rxtx;
 
-uint8_t spi_stack_master_master_seq[SPI_ADDRESS_MAX] = {0};
+uint8_t spi_stack_master_master_seq[SPI_ADDRESS_MAX] = {1, 1, 1, 1, 1, 1, 1, 1};
 uint8_t spi_stack_master_slave_seq[SPI_ADDRESS_MAX] = {0};
 
 // Note that stack address is "1 based" (0 is master of stack)
@@ -193,8 +193,7 @@ void spi_stack_master_disable_dma(void) {
 void spi_stack_master_make_empty_send_packet(void) {
 	spi_stack_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 	spi_stack_buffer_send[SPI_STACK_LENGTH] = SPI_STACK_EMPTY_MESSAGE_LENGTH;
-	// Master is never busy
-	spi_stack_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = 0 | spi_stack_master_master_seq[stack_address_current-1] | spi_stack_master_slave_seq[stack_address_current-1];
+	spi_stack_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_master_master_seq[stack_address_current-1] | spi_stack_master_slave_seq[stack_address_current-1];
 	spi_stack_buffer_send[SPI_STACK_CHECKSUM(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_calculate_pearson(spi_stack_buffer_send, SPI_STACK_EMPTY_MESSAGE_LENGTH-1);
 
 	spi_stack_buffer_size_send = 0;
@@ -374,7 +373,7 @@ void spi_stack_master_irq(void) {
 
 				spi_stack_buffer_size_recv = length-SPI_STACK_EMPTY_MESSAGE_LENGTH;
 
-				// Insert stack position (In case of Enumerate or GetIdentity.
+				// Insert stack position (in case of Enumerate or GetIdentity).
 				// The SPI Slave can not know its position in the stack.
 				spi_stack_master_insert_position(spi_stack_buffer_recv, stack_address_current);
 			}
