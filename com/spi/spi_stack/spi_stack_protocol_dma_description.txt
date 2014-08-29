@@ -1,0 +1,46 @@
+Tinkerforge SPI Protocol Version RED
+
+* General description
+ * Optimzied for DMA usage
+ * Guaranteed delivery of packets
+
+* Packet size always 84 bytes
+ * Tinkerforge packet max 80 byte
+ * Header 2 bytes
+ * footer 2 bytes
+ * If Tinkerforge packet is smaller then 80 byte, everything after footer is ignored by receiver
+
+* Packet structure:
+ * Byte 0: Preamble = 0xAA
+ * Byte 1: Length = n+2
+ * Byte 2 to n: Payload
+ * Byte n+1: Info (slave sequence, master sequence)
+  * Bit 0-2: Master sequence number (MSN)
+  * Bit 3-5: Slave sequence number (SSN)
+  * Bit 6-7: Currently unused
+ * Byte n+2: Checksum over bytes 0 to n+1 (Pearson Hash)
+
+* Protocol as Master:
+ * Master Sequence Number:
+  * Start with MSN = 1
+  * Increment MSN if Slave received last send packet (this is the case if the slave send us a message with our current MSN) or if we send an empty packet
+ * Slave Sequence Number:
+  * Start with SSN = 0
+  * If we receive a packet with current SSN, discard packet (the packet was handled already)
+  * If we receive a packet with new SSN and checksum is OK: Set current SSN to SSN of packet
+ * Errors
+  * If we receive a packet that is somehow broken (wrong checksum, invalid length, etc) we discard the received packet and do not update SSN
+ * Timings
+  * SPI speed: ~9MHz
+  * Time between two subsequent selects of the same slave should be at least 10us
+
+Protocol as Slave:
+ * Master Sequence Number:
+  * Start with MSN = 0
+  * If we receive a packet with current MSN, discard packet (the packet was handled already)
+  * If we receive a packet with new MSN and checksum is OK: Set current MSN to MSN of packet
+ * Slave Sequence Number:
+  * Start with SSN = 0
+  * Increment SSN if master received last send packet (this is the case if the master send us a message with our current SSN) or if we send an empty packet
+ * Errors
+  * If we receive a packet that is somehow broken (wrong checksum, invalid length, etc) we discard the received packet and do _not_ update MSN
