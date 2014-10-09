@@ -159,7 +159,12 @@ inline uint16_t usb_recv(void *data, const uint16_t length, uint32_t *options) {
 
 bool usb_is_connected(void) {
 #ifdef BRICK_CAN_BE_MASTER
-	return adc_channel_get_data(USB_VOLTAGE_CHANNEL) > VOLTAGE_MAX_VALUE*2/3;
+    if(master_get_hardware_version() > 20) {
+        // Master V2.1 detects usb with GND
+        return adc_channel_get_data(USB_VOLTAGE_CHANNEL) < VOLTAGE_MAX_VALUE*1/3;
+    } else {
+        return adc_channel_get_data(USB_VOLTAGE_CHANNEL) > VOLTAGE_MAX_VALUE*2/3;
+    }
 #else
 	return PIO_Get(&pin_usb_detect);
 #endif
