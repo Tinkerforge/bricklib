@@ -64,6 +64,7 @@ static uint32_t usb_send_transferred = 0;
 uint32_t usb_recv_transferred = 0;
 
 bool usb_startup_connected = false;
+static uint8_t usb_detect_task_counter = 0;
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
 
@@ -186,22 +187,22 @@ void usb_detect_task(const uint8_t tick_type) {
 				brick_reset();
 			}
 		}
-/*
-// Remove USB hotplug feature completely,
-// It is only useful in a small amount of cases
-// and it seems to make problems every now and then...
+
+// Enable USB hotplug only for master >= 2.1
 #ifdef BRICK_CAN_BE_MASTER
-		// Reset through usb detect
-		if(usb_startup_connected ^ usb_is_connected()) {
-			usb_detect_task_counter++;
-			if(usb_detect_task_counter >= 250) {
-				logi("USB detect: %d\n\r", adc_channel_get_data(USB_VOLTAGE_CHANNEL));
-				brick_reset();
+		if(master_get_hardware_version() > 20) {
+			// Reset through usb detect
+			if(usb_startup_connected ^ usb_is_connected()) {
+				usb_detect_task_counter++;
+				if(usb_detect_task_counter >= 250) {
+					logi("USB detect: %d\n\r", adc_channel_get_data(USB_VOLTAGE_CHANNEL));
+					brick_reset();
+				}
+			} else {
+				usb_detect_task_counter = 0;
 			}
-		} else {
-			usb_detect_task_counter = 0;
 		}
-#endif */
+#endif
 	}
 }
 
