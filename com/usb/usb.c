@@ -188,8 +188,9 @@ void usb_detect_task(const uint8_t tick_type) {
 			}
 		}
 
-// Enable USB hotplug only for master >= 2.1
-#ifdef BRICK_CAN_BE_MASTER
+// Disable USB hotplug completely for now, it seems that it can still
+// make problems under some circumstances (depending on ambient temperature).
+#if 0
 		if(master_get_hardware_version() > 20) {
 			// Reset through usb detect
 			if(usb_startup_connected ^ usb_is_connected()) {
