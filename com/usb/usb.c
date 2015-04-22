@@ -64,7 +64,6 @@ static uint32_t usb_send_transferred = 0;
 uint32_t usb_recv_transferred = 0;
 
 bool usb_startup_connected = false;
-static uint8_t usb_detect_task_counter = 0;
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
 
@@ -208,11 +207,6 @@ void usb_detect_task(const uint8_t tick_type) {
 }
 
 bool usb_init() {
-    if(!usb_is_connected()) {
-    	usb_startup_connected = false;
-    	return false;
-    }
-
 	com_info.current = COM_USB;
 
     usb_startup_connected = true;
@@ -225,15 +219,14 @@ bool usb_init() {
     USBDDriver_Initialize(&usbd_driver, &driver_descriptors, 0);
     USBD_Init();
 
+    USBD_Connect();
+
     // Check current level on VBus
     if(usb_is_connected()) {
-        USBD_Connect();
-    } else {
-        USBD_Disconnect();
-        return false;
+    	return true;
     }
 
-	return true;
+	return false;
 }
 
 void usb_message_loop_return(const char *data, const uint16_t length) {

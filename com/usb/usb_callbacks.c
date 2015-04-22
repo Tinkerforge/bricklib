@@ -47,4 +47,8 @@ void USBDCallbacks_Resumed(void) {
 
 void USBDCallbacks_Suspended(void) {
 	logi("USBDCallbacks_Suspended\n\r");
+	if(!usb_first_connection) {
+		logi("Brick will reset in 255ms\n\r");
+		reset_counter = 1;
+	}
 }
