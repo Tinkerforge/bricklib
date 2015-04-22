@@ -36,6 +36,10 @@
 
 #define SIZE_OF_MESSAGE_HEADER 8
 
+#define FID_ENABLE_STATUS_LED 238
+#define FID_DISABLE_STATUS_LED 239
+#define FID_IS_STATUS_LED_ENABLED 240
+
 #define FID_GET_PROTOCOL1_BRICKLET_NAME 241
 #define FID_GET_CHIP_TEMPERATURE 242
 #define FID_RESET 243
@@ -72,6 +76,23 @@ typedef struct {
 	uint8_t type;
 	message_handler_func_t reply_func;
 } ComMessage;
+
+typedef struct {
+	MessageHeader header;
+} __attribute__((__packed__)) EnableStatusLED;
+
+typedef struct {
+	MessageHeader header;
+} __attribute__((__packed__)) DisableStatusLED;
+
+typedef struct {
+	MessageHeader header;
+} __attribute__((__packed__)) IsStatusLEDEnabled;
+
+typedef struct {
+	MessageHeader header;
+	bool enabled;
+} __attribute__((__packed__)) IsStatusLEDEnabledReturn;
 
 typedef struct {
 	MessageHeader header;
@@ -156,6 +177,10 @@ const ComMessage* get_com_from_header(const MessageHeader *header);
 uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
+
+void enable_status_led(const ComType com, const EnableStatusLED *data);
+void disable_status_led(const ComType com, const DisableStatusLED *data);
+void is_status_led_enabled(const ComType com, const IsStatusLEDEnabled *data);
 
 void get_protocol1_bricklet_name(const ComType com, const GetProtocol1BrickletName *data);
 void reset(const ComType com, const Reset *data);

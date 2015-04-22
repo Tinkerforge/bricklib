@@ -30,6 +30,8 @@
 
 #include "bricklib/utility/util_definitions.h"
 
+bool led_status_is_enabled = true;
+
 #ifdef LED_STD_BLUE
 uint32_t led_rxtx = 0;
 uint8_t led_counter = 0;
@@ -99,53 +101,59 @@ void led_blink(const uint8_t led_num, const uint32_t delay) {
 // If standard blue led is present, use it for rxtx signaling
 void led_tick_task(const uint8_t tick_type) {
 #ifdef LED_STD_BLUE
-	if(led_counter > 0) {
-		led_counter++;
-		if(led_counter == LED_RXTX_OFF) {
-			led_on(LED_STD_BLUE);
-		}
+	if(led_status_is_enabled) {
+		if(led_counter > 0) {
+			led_counter++;
+			if(led_counter == LED_RXTX_OFF) {
+				led_on(LED_STD_BLUE);
+			}
 
-		if(led_counter == LED_RXTX_RESTART) {
-			led_counter = 0;
+			if(led_counter == LED_RXTX_RESTART) {
+				led_counter = 0;
+			}
+		} else if(led_rxtx > LED_RXTX_NUM) {
+			led_off(LED_STD_BLUE);
+			led_counter++;
+			led_rxtx = 0;
 		}
-	} else if(led_rxtx > LED_RXTX_NUM) {
-		led_off(LED_STD_BLUE);
-		led_counter++;
-		led_rxtx = 0;
 	}
 #endif
 
 #ifdef LED_EXT_BLUE_3
-	if(led_ext3_counter > 0) {
-		led_ext3_counter++;
-		if(led_ext3_counter == LED_RXTX_OFF) {
-			led_on(LED_EXT_BLUE_3);
-		}
+	if(led_status_is_enabled) {
+		if(led_ext3_counter > 0) {
+			led_ext3_counter++;
+			if(led_ext3_counter == LED_RXTX_OFF) {
+				led_on(LED_EXT_BLUE_3);
+			}
 
-		if(led_ext3_counter == LED_RXTX_RESTART) {
-			led_ext3_counter = 0;
+			if(led_ext3_counter == LED_RXTX_RESTART) {
+				led_ext3_counter = 0;
+			}
+		} else if(led_ext3_rxtx > LED_RXTX_NUM) {
+			led_off(LED_EXT_BLUE_3);
+			led_ext3_counter++;
+			led_ext3_rxtx = 0;
 		}
-	} else if(led_ext3_rxtx > LED_RXTX_NUM) {
-		led_off(LED_EXT_BLUE_3);
-		led_ext3_counter++;
-		led_ext3_rxtx = 0;
 	}
 #endif
 
 #ifdef LED_EXT_BLUE_1
-	if(led_ext1_counter > 0) {
-		led_ext1_counter++;
-		if(led_ext1_counter == LED_RXTX_OFF) {
-			led_on(LED_EXT_BLUE_1);
-		}
+	if(led_status_is_enabled) {
+		if(led_ext1_counter > 0) {
+			led_ext1_counter++;
+			if(led_ext1_counter == LED_RXTX_OFF) {
+				led_on(LED_EXT_BLUE_1);
+			}
 
-		if(led_ext1_counter == LED_RXTX_RESTART) {
-			led_ext1_counter = 0;
+			if(led_ext1_counter == LED_RXTX_RESTART) {
+				led_ext1_counter = 0;
+			}
+		} else if(led_ext1_rxtx > LED_RXTX_NUM) {
+			led_off(LED_EXT_BLUE_1);
+			led_ext1_counter++;
+			led_ext1_rxtx = 0;
 		}
-	} else if(led_ext1_rxtx > LED_RXTX_NUM) {
-		led_off(LED_EXT_BLUE_1);
-		led_ext1_counter++;
-		led_ext1_rxtx = 0;
 	}
 #endif
 }

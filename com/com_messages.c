@@ -25,6 +25,7 @@
 #include "bricklib/drivers/usb/USBD.h"
 
 #include "bricklib/utility/init.h"
+#include "bricklib/utility/led.h"
 #include "bricklib/logging/logging.h"
 #include "bricklib/drivers/pio/pio.h"
 #include "bricklib/drivers/adc/adc.h"
@@ -48,6 +49,7 @@ extern BrickletAddress baddr[];
 
 extern uint8_t brick_hardware_version[];
 extern uint8_t bricklet_attached[];
+extern bool led_status_is_enabled;
 
 #ifndef COM_MESSAGES_USER
 #define COM_MESSAGES_USER
@@ -56,6 +58,9 @@ extern uint8_t bricklet_attached[];
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
+	{FID_ENABLE_STATUS_LED, (message_handler_func_t)enable_status_led},
+	{FID_DISABLE_STATUS_LED, (message_handler_func_t)disable_status_led},
+	{FID_IS_STATUS_LED_ENABLED, (message_handler_func_t)is_status_led_enabled},
 	{FID_GET_PROTOCOL1_BRICKLET_NAME, (message_handler_func_t)get_protocol1_bricklet_name},
 	{FID_GET_CHIP_TEMPERATURE, (message_handler_func_t)get_chip_temperature},
 	{FID_RESET, (message_handler_func_t)reset},
@@ -93,6 +98,44 @@ void reset(const ComType com, const Reset *data) {
 	brick_reset();
 }
 
+void enable_status_led(const ComType com, const EnableStatusLED *data) {
+	led_status_is_enabled = true;
+#ifdef LED_STD_BLUE
+	led_on(LED_STD_BLUE);
+#endif
+
+	logd("enable_status_led\n\r");
+	com_return_setter(com, data);
+}
+
+void disable_status_led(const ComType com, const DisableStatusLED *data) {
+	led_status_is_enabled = false;
+#ifdef LED_STD_BLUE
+	led_off(LED_STD_BLUE);
+#endif
+
+#ifdef LED_EXT_BLUE_3
+	led_off(LED_EXT_BLUE_3);
+#endif
+
+#ifdef LED_EXT_BLUE_1
+	led_off(LED_EXT_BLUE_3);
+#endif
+
+	logd("disable_status_led\n\r");
+	com_return_setter(com, data);
+}
+
+void is_status_led_enabled(const ComType com, const IsStatusLEDEnabled *data) {
+	IsStatusLEDEnabledReturn isleder;
+
+	isleder.header        = data->header;
+	isleder.header.length = sizeof(IsStatusLEDEnabledReturn);
+	isleder.enabled       = led_status_is_enabled;
+
+	logd("is_status_led_enabled: %d\n\r", isleder.enabled);
+	send_blocking_with_timeout(&isleder, sizeof(IsStatusLEDEnabledReturn), com);
+}
 
 void get_protocol1_bricklet_name(const ComType com, const GetProtocol1BrickletName *data) {
 	uint8_t port = tolower((uint8_t)data->port) - 'a';
