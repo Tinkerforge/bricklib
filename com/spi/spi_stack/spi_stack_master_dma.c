@@ -298,11 +298,7 @@ void spi_stack_master_irq(void) {
 			// if the slave is too busy to fill the DMA buffers fast enough.
 			// If we did try to send something we need to try again.
 
-			if(spi_stack_buffer_size_send > 0) {
-				transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
-			} else {
-				transceive_state = TRANSCEIVE_STATE_MESSAGE_EMPTY;
-			}
+			transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
 			return;
 		}
 
@@ -312,11 +308,7 @@ void spi_stack_master_irq(void) {
 		    (length > SPI_STACK_MAX_MESSAGE_LENGTH))) {
 			logspise("Received packet with malformed length: %d\n\r", length);
 
-			if(spi_stack_buffer_size_send > 0) {
-				transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
-			} else {
-				transceive_state = TRANSCEIVE_STATE_MESSAGE_EMPTY;
-			}
+			transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
 			return;
 		}
 
@@ -351,11 +343,7 @@ void spi_stack_master_irq(void) {
 			}
 			logwohe("]\n\r");*/
 
-			if(spi_stack_buffer_size_send > 0) {
-				transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
-			} else {
-				transceive_state = TRANSCEIVE_STATE_MESSAGE_EMPTY;
-			}
+			transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
 			return;
 		}
 
