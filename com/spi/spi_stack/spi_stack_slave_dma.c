@@ -118,12 +118,12 @@ void spi_stack_slave_handle_irq_recv(void) {
 	}
 
 	// Check if last slave sequence number that the master has seen is the same as the last one we send.
-	// or if we didn't send anything. In both cases we can send another message and we can incerease the
+	// or if we didn't send anything. In both cases we can send another message and we can increase the
 	// slave sequence number
 	if(((spi_dma_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_SLAVE_MASK) == spi_stack_slave_slave_seq) ||
 	   (spi_dma_buffer_send[SPI_STACK_LENGTH] == SPI_STACK_EMPTY_MESSAGE_LENGTH)) {
 		// We set the preamble in the send buffer to zero to show that a new message can be send.
-		spi_dma_buffer_send[0] = 0;
+		spi_dma_buffer_send[SPI_STACK_PREAMBLE] = 0;
 		spi_stack_increase_slave_seq(&spi_stack_slave_slave_seq);
 	}
 
@@ -164,7 +164,7 @@ void spi_stack_slave_handle_irq_send(void) {
 	// If the preamble is still set in the dma buffer, we did have
 	// an checksum error or similar and we need to send the message again.
 	// Otherwise the recv code would have overwritten the preamble
-	if(spi_dma_buffer_send[0] == SPI_STACK_PREAMBLE_VALUE) {
+	if(spi_dma_buffer_send[SPI_STACK_PREAMBLE] == SPI_STACK_PREAMBLE_VALUE) {
 		spi_stack_slave_reset_send_dma_buffer();
 		return;
 	} else if(spi_stack_buffer_size_send > 0) {
