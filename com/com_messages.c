@@ -119,7 +119,7 @@ void disable_status_led(const ComType com, const DisableStatusLED *data) {
 #endif
 
 #ifdef LED_EXT_BLUE_1
-	led_off(LED_EXT_BLUE_3);
+	led_off(LED_EXT_BLUE_1);
 #endif
 
 	logd("disable_status_led\n\r");
