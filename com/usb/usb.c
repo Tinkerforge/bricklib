@@ -207,8 +207,6 @@ void usb_detect_task(const uint8_t tick_type) {
 }
 
 bool usb_init() {
-	com_info.current = COM_USB;
-
     usb_startup_connected = true;
 
 	send_status = 0;

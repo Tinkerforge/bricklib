@@ -394,6 +394,14 @@ void spi_stack_master_insert_position(void* data, const uint8_t position) {
 }
 
 void spi_stack_master_message_loop_return(const char *data, const uint16_t length) {
+	// To be backward compatible to older firmwares we do not send
+	// "enumerate callback available" through to an ethernet socket
+	if(((EnumerateCallback*)data)->header.fid == FID_ENUMERATE_CALLBACK &&
+	   ((EnumerateCallback*)data)->enumeration_type == ENUMERATE_TYPE_ADDED &&
+	   com_info.current == COM_ETHERNET) {
+		return;
+	}
+
 	send_blocking_with_timeout(data, length, com_info.current);
 }
 
@@ -458,7 +466,11 @@ uint16_t spi_stack_master_recv(void *data, const uint16_t length, uint32_t *opti
 		// Use recv loop to trigger regular SPI transmits.
 		// It will scale automatically with the utilization of the Master
 		// and we don't need a SPI recv loop anymore, sweet!
-		spi_stack_master_start_transceive(NULL, 0, 0);
+		if(com_info.current != COM_NONE) {
+			// No need to send data over SPI if there is no connection to
+			// any of the interfaces yet
+			spi_stack_master_start_transceive(NULL, 0, 0);
+		}
 		return 0;
 	}
 
