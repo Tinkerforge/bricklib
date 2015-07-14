@@ -395,7 +395,7 @@ void spi_stack_master_insert_position(void* data, const uint8_t position) {
 
 void spi_stack_master_message_loop_return(const char *data, const uint16_t length) {
 	// To be backward compatible to older firmwares we do not send
-	// "enumerate callback available" through to an ethernet socket
+	// "enumerate-added callback" through to an ethernet socket
 	if(((EnumerateCallback*)data)->header.fid == FID_ENUMERATE_CALLBACK &&
 	   ((EnumerateCallback*)data)->enumeration_type == ENUMERATE_TYPE_ADDED &&
 	   com_info.current == COM_ETHERNET) {
