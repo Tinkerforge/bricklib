@@ -33,7 +33,8 @@ typedef enum {
 	COM_CHIBI     = 3,
 	COM_RS485     = 4,
 	COM_WIFI      = 5,
-	COM_ETHERNET  = 6
+	COM_ETHERNET  = 6,
+	COM_WIFI2     = 7,
 } ComType;
 
 typedef enum {
@@ -58,6 +59,7 @@ typedef struct {
 #define SEND_BLOCKING_TRIALS_RS485      SEND_BLOCKING_TRIALS
 #define SEND_BLOCKING_TRIALS_WIFI       SEND_BLOCKING_TRIALS
 #define SEND_BLOCKING_TRIALS_ETHERNET   SEND_BLOCKING_TRIALS
+#define SEND_BLOCKING_TRIALS_WIFI2      SEND_BLOCKING_TRIALS
 
 // Not beeing able to send over chibi is expected (communication partner out
 // of range). Thus we don't want to wait too long.
