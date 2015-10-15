@@ -79,6 +79,7 @@ bool com_route_message_brick(const char *data, const uint16_t length, const ComT
 void com_route_message_from_pc(const char *data, const uint16_t length, const ComType com);
 void com_return_error(const void *data, const uint8_t ret_length, const uint8_t error_code, const ComType com);
 void com_return_setter(const ComType com, const void *data);
+void com_forward_message(const ComType com, const MessageHeader *data);
 void com_debug_message(const MessageHeader *header);
 
 #endif

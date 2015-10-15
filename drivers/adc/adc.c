@@ -65,7 +65,9 @@ uint32_t adc_gain_div = ADC_MAX_VALUE;
 // Maximum trigger frequency is 2.404kHz
 
 void adc_init(void) {
+#ifndef ADC_NO_CALIBRATION
 	adc_read_calibration_from_flash();
+#endif
 
     // Enable peripheral clock
     PMC->PMC_PCER0 = 1 << ID_ADC;
@@ -86,6 +88,39 @@ void adc_init(void) {
 void adc_start_periodic_conversion(void) {
 	ADC->ADC_MR |= ADC_MR_FREERUN_ON;
 }
+
+
+uint16_t adc_channel_get_data(const uint8_t c) {
+	int32_t value;
+#ifdef BRICK_CAN_BE_MASTER
+	uint32_t orig_value = ADC->ADC_CDR[c]*10;
+	if(orig_value == ADC_MAX_VALUE*10) {
+		return ADC_MAX_VALUE;
+	} else if(orig_value == 0) {
+		return 0;
+	}
+
+	if(adc_gain_div > ADC_MAX_VALUE) {
+		value = ((int32_t)(adc_gain_mul*orig_value/adc_gain_div) + adc_offset + 5)/10;
+	} else {
+		value = adc_gain_mul*ADC->ADC_CDR[c]/adc_gain_div + adc_offset;
+	}
+#else
+	value = adc_gain_mul*ADC->ADC_CDR[c]/adc_gain_div + adc_offset;
+#endif
+
+	if(value < 0) {
+		return 0;
+	}
+	if(value > ADC_MAX_VALUE) {
+		return ADC_MAX_VALUE;
+	}
+
+	return (uint16_t)value;
+}
+
+
+#ifndef ADC_NO_CALIBRATION
 
 void adc_read_calibration_from_flash(void) {
 	// If adc values are set before this is called we don't read values
@@ -136,34 +171,6 @@ void adc_write_calibration_to_flash(void) {
     ENABLE_RESET_BUTTON();
 }
 
-uint16_t adc_channel_get_data(const uint8_t c) {
-	int32_t value;
-#ifdef BRICK_CAN_BE_MASTER
-	uint32_t orig_value = ADC->ADC_CDR[c]*10;
-	if(orig_value == ADC_MAX_VALUE*10) {
-		return ADC_MAX_VALUE;
-	} else if(orig_value == 0) {
-		return 0;
-	}
-
-	if(adc_gain_div > ADC_MAX_VALUE) {
-		value = ((int32_t)(adc_gain_mul*orig_value/adc_gain_div) + adc_offset + 5)/10;
-	} else {
-		value = adc_gain_mul*ADC->ADC_CDR[c]/adc_gain_div + adc_offset;
-	}
-#else
-	value = adc_gain_mul*ADC->ADC_CDR[c]/adc_gain_div + adc_offset;
-#endif
-
-	if(value < 0) {
-		return 0;
-	}
-	if(value > ADC_MAX_VALUE) {
-		return ADC_MAX_VALUE;
-	}
-
-	return (uint16_t)value;
-}
 
 void adc_set_calibration(const int32_t offset, const uint32_t gain_mul, const uint32_t gain_div) {
 	adc_offset = offset;
@@ -200,6 +207,8 @@ void adc_calibrate(const uint8_t c) {
 	}
 
 }
+
+#endif
 
 void adc_enable_temperature_sensor(void) {
 	ADC->ADC_ACR |= ADC_ACR_TSON;

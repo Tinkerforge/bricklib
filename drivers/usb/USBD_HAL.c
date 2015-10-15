@@ -807,7 +807,9 @@ static void UDP_EndpointHandler(uint8_t bEndpoint)
 			wPacketSize = (uint16_t) (status >> 16);
 			TRACE_DEBUG_WP("%d ", wPacketSize);
 
+#ifndef USB_NO_BRICK_HOOK
 			if(bEndpoint != OUT_EP) {
+#endif
 				UDP_ReadPayload(bEndpoint, wPacketSize);
 
 				UDP_ClearRxFlag(bEndpoint);
@@ -822,9 +824,11 @@ static void UDP_EndpointHandler(uint8_t bEndpoint)
 					}
 					UDP_EndOfTransfer(bEndpoint, USBD_STATUS_SUCCESS);
 				}
+#ifndef USB_NO_BRICK_HOOK
 			} else {
 				usb_custom_read_hook(status);
 			}
+#endif
 
         }
     }
@@ -1057,6 +1061,7 @@ static inline uint8_t UDP_Read(uint8_t  bEndpoint,
     return USBD_STATUS_SUCCESS;
 }
 
+#ifndef USB_NO_BRICK_HOOK
 // brick hooks
 extern char usb_recv_buffer[DEFAULT_EP_SIZE];
 extern unsigned int usb_recv_transferred;
@@ -1083,6 +1088,7 @@ void usb_custom_read_hook(uint32_t status) {
 		endpoints[OUT_EP].state = UDP_ENDPOINT_IDLE;
 	}
 }
+#endif
 
 void usb_set_read_endpoint_state_to_receiving(void) {
 	endpoints[OUT_EP].state = UDP_ENDPOINT_RECEIVING;

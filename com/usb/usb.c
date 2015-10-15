@@ -72,7 +72,9 @@ uint32_t usb_num_send_tries = NUM_SEND_TRIES;
 char usb_recv_buffer[DEFAULT_EP_SIZE];
 char usb_send_buffer[DEFAULT_EP_SIZE];
 
+#ifdef PIN_USB_DETECT
 static Pin pin_usb_detect = PIN_USB_DETECT;
+#endif
 
 uint32_t usb_sequence_number = 0;
 
@@ -159,22 +161,28 @@ inline uint16_t usb_recv(void *data, const uint16_t length, uint32_t *options) {
 
 bool usb_is_connected(void) {
 #ifdef BRICK_CAN_BE_MASTER
+#ifdef BRICK_IS_BRIDGE
+	return true;
+#else
     if(master_get_hardware_version() > 20) {
         // Master V2.1 detects usb with GND
         return adc_channel_get_data(USB_VOLTAGE_CHANNEL) < VOLTAGE_MAX_VALUE*1/3;
     } else {
         return adc_channel_get_data(USB_VOLTAGE_CHANNEL) > VOLTAGE_MAX_VALUE*2/3;
     }
+#endif
 #else
 	return PIO_Get(&pin_usb_detect);
 #endif
 }
 
 void usb_detect_configure(void) {
+#ifdef PIN_USB_DETECT
 	 PIO_Configure(&pin_usb_detect, 1);
 	 pin_usb_detect.attribute = PIO_PULLDOWN;
 	 PIO_Configure(&pin_usb_detect, 1);
 	 // We use usb_detect_task instead of interrupt
+#endif
 }
 
 void usb_detect_task(const uint8_t tick_type) {

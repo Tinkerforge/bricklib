@@ -23,6 +23,7 @@
 #define WDT_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define WDT_TIMEOUT_16S 0xFFF
 

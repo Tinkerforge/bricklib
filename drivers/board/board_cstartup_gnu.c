@@ -75,9 +75,12 @@ void ResetException( void ) ;
 
 // Olaf: Added
 // FreeRTOS prototypes
+
+#ifndef SYSTICK_WITHOUT_FREERTOS
 extern void xPortPendSVHandler(void);
 extern void xPortSysTickHandler(void);
 extern void vPortSVCHandler(void);
+#endif
 
 
 
@@ -99,11 +102,23 @@ IntFunc exception_table[] = {
     BusFault_Handler,
     UsageFault_Handler,
     0, 0, 0, 0,         /* Reserved */
+#ifdef SYSTICK_WITHOUT_FREERTOS
+    0,
+#else
     vPortSVCHandler,
+#endif
     DebugMon_Handler,
     0,                  /* Reserved  */
+#ifdef SYSTICK_WITHOUT_FREERTOS
+    0,
+#else
     xPortPendSVHandler,
+#endif
+#ifdef SYSTICK_WITHOUT_FREERTOS
+    SysTick_Handler,
+#else
     xPortSysTickHandler,
+#endif
 
     /* Configurable interrupts  */
     SUPC_IrqHandler,    /* 0  Supply Controller */

@@ -30,6 +30,12 @@
 #define COM_EXTENSIONS
 #endif
 
+#ifdef BRICK_EXCLUDE_SPI_STACK
+	#define spi_stack_init no_init
+	#define spi_stack_send no_send
+	#define spi_stack_recv no_recv
+#endif
+
 ComInfo com_info = {
 	0,
 	COM_NONE,

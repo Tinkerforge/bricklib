@@ -56,10 +56,12 @@ void brick_init(void) {
 
     led_init();
 	led_on(LED_STD_BLUE);
+#ifdef LED_STD_RED
 #if LOGGING_LEVEL == LOGGING_NONE
 	led_off(LED_STD_RED);
 #else
 	led_on(LED_STD_RED);
+#endif
 #endif
 	logsi("LEDs initialized\n\r");
 
@@ -102,8 +104,6 @@ void brick_init(void) {
 	adc_start_periodic_conversion();
 #endif
     logsi("A/D converter initialized\n\r");
-
-//    brick_enable_brownout_detection();
 
 	bricklet_init();
 }

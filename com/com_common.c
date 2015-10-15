@@ -35,7 +35,9 @@
 #include "bricklib/utility/led.h"
 
 #ifdef BRICK_CAN_BE_MASTER
+#ifndef BRICK_EXCLUDE_BRICKD
 #include "routing.h"
+#endif
 #endif
 
 extern uint32_t led_rxtx;
@@ -139,7 +141,9 @@ void com_message_loop(void *parameters) {
 void com_route_message_from_pc(const char *data, const uint16_t length, const ComType com) {
 	if(!com_route_message_brick(data, length, com)) {
 #ifdef BRICK_CAN_BE_MASTER
+#ifndef BRICK_EXCLUDE_BRICKD
 		routing_master_from_pc(data, length, com);
+#endif
 #endif
 	}
 }
@@ -210,6 +214,15 @@ void com_return_setter(const ComType com, const void *data) {
 		MessageHeader ret = *((MessageHeader*)data);
 		ret.length = sizeof(MessageHeader);
 		send_blocking_with_timeout(&ret, sizeof(MessageHeader), com);
+	}
+}
+
+void com_forward_message(const ComType com, const MessageHeader *data) {
+	logd("com forward from %d (fid %d)\n\r", com, data->fid);
+	if(com == COM_WIFI2) {
+		send_blocking_with_timeout(data, data->length, COM_USB);
+	} else {
+		send_blocking_with_timeout(data, data->length, COM_WIFI2);
 	}
 }
 
