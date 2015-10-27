@@ -171,13 +171,6 @@ void adc_write_calibration_to_flash(void) {
     ENABLE_RESET_BUTTON();
 }
 
-
-void adc_set_calibration(const int32_t offset, const uint32_t gain_mul, const uint32_t gain_div) {
-	adc_offset = offset;
-	adc_gain_mul = gain_mul;
-	adc_gain_div = gain_div;
-}
-
 void adc_calibrate(const uint8_t c) {
 	bool was_enabled = false;
 	if(adc_channel_is_enabled(c)) {
@@ -209,6 +202,12 @@ void adc_calibrate(const uint8_t c) {
 }
 
 #endif
+
+void adc_set_calibration(const int32_t offset, const uint32_t gain_mul, const uint32_t gain_div) {
+	adc_offset = offset;
+	adc_gain_mul = gain_mul;
+	adc_gain_div = gain_div;
+}
 
 void adc_enable_temperature_sensor(void) {
 	ADC->ADC_ACR |= ADC_ACR_TSON;
