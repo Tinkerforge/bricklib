@@ -128,11 +128,12 @@ static void ComputeLockRange( uint32_t dwStart, uint32_t dwEnd, uint32_t *pdwAct
     wNumPagesInRegion = IFLASH_LOCK_REGION_SIZE / IFLASH_PAGE_SIZE ;
     wActualStartPage = wStartPage - (wStartPage % wNumPagesInRegion) ;
     wActualEndPage = wEndPage ;
+    wActualEndPage += wNumPagesInRegion - (wEndPage % wNumPagesInRegion) ;
 
-    if ( (wEndPage % wNumPagesInRegion) != 0 )
-    {
-        wActualEndPage += wNumPagesInRegion - (wEndPage % wNumPagesInRegion) ;
+    if ( wActualEndPage > IFLASH_NB_OF_PAGES ) {
+        wActualEndPage = IFLASH_NB_OF_PAGES;
     }
+
     // Store actual page numbers
     EFC_ComputeAddress( pStartEfc, wActualStartPage, 0, pdwActualStart ) ;
     EFC_ComputeAddress( pEndEfc, wActualEndPage, 0, pdwActualEnd ) ;
