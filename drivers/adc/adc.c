@@ -89,6 +89,11 @@ void adc_start_periodic_conversion(void) {
 	ADC->ADC_MR |= ADC_MR_FREERUN_ON;
 }
 
+void adc_stop_periodic_conversion(void) {
+	const uint32_t mode = ADC->ADC_MR;
+	ADC->ADC_MR = mode & (~ADC_MR_FREERUN_ON);
+}
+
 
 uint16_t adc_channel_get_data(const uint8_t c) {
 	int32_t value;
