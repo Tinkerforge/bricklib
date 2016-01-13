@@ -349,8 +349,7 @@ void bricklet_init(void) {
 	if(!IS_SAM3()) {
 		// EFC_FCMD_EPA = 0x07
 		if(BRICKLET_NUM == 2) {
-			uint32_t ret = EFC_PerformCommand(EFC, 0x07, (((256-16)/16) << 4) | 2, 0);
-			//printf("erase all: %d\n\r", ret);
+			EFC_PerformCommand(EFC, 0x07, (((256-16)/16) << 4) | 2, 0);
 		} else if(BRICKLET_NUM == 4) {
 			EFC_PerformCommand(EFC, 0x07, (((512-32)/32) << 5) | 3, 0);
 		}
