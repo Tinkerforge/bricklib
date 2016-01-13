@@ -7710,17 +7710,25 @@ typedef struct {
 #define IRAM_SIZE 0x4000
 #elif defined sam3s2
 #define IFLASH_SIZE 0x20000
-#define IFLASH_PAGE_SIZE              (256) /* Internal FLASH 0 Page Size: 256 bytes */
-#define IFLASH_LOCK_REGION_SIZE     (16384) /* Internal FLASH 0 Lock Region Size: 16 Kbytes */
-#define IFLASH_NB_OF_PAGES            (512) /* Internal FLASH 0 Number of Pages: 512 */
-#define IFLASH_NB_OF_LOCK_BITS          (8) /* Internal FLASH 0 Number of Lock Bits: 8 */
+#define IFLASH_PAGE_SIZE_SAM3         (256) /* Internal FLASH 0 Page Size: 256 bytes */
+#define IFLASH_PAGE_SIZE_SAM4         (512) /* Internal FLASH 0 Page Size: 256 bytes */
+#define IFLASH_LOCK_REGION_SIZE_SAM3 (16384) /* Internal FLASH 0 Lock Region Size: 16 Kbytes */
+#define IFLASH_LOCK_REGION_SIZE_SAM4 (8192) /* Internal FLASH 0 Lock Region Size: 16 Kbytes */
+#define IFLASH_NB_OF_PAGES_SAM3       (512) /* Internal FLASH 0 Number of Pages: 512 */
+#define IFLASH_NB_OF_PAGES_SAM4       (256) /* Internal FLASH 0 Number of Pages: 512 */
+#define IFLASH_NB_OF_LOCK_BITS_SAM3     (8) /* Internal FLASH 0 Number of Lock Bits: 8 */
+#define IFLASH_NB_OF_LOCK_BITS_SAM4    (16) /* Internal FLASH 0 Number of Lock Bits: 8 */
 #define IRAM_SIZE 0x8000
 #elif defined sam3s4
 #define IFLASH_SIZE 0x40000
-#define IFLASH_PAGE_SIZE              (256) /* Internal FLASH 0 Page Size: 256 bytes */
-#define IFLASH_LOCK_REGION_SIZE     (16384) /* Internal FLASH 0 Lock Region Size: 16 Kbytes */
-#define IFLASH_NB_OF_PAGES           (1024) /* Internal FLASH 0 Number of Pages: 1024 */
-#define IFLASH_NB_OF_LOCK_BITS         (16) /* Internal FLASH 0 Number of Lock Bits: 16 */
+#define IFLASH_PAGE_SIZE_SAM3         (256) /* Internal FLASH 0 Page Size: 256 bytes */
+#define IFLASH_PAGE_SIZE_SAM4         (512) /* Internal FLASH 0 Page Size: 256 bytes */
+#define IFLASH_LOCK_REGION_SIZE_SAM3 (16384) /* Internal FLASH 0 Lock Region Size: 16 Kbytes */
+#define IFLASH_LOCK_REGION_SIZE_SAM4 (8192) /* Internal FLASH 0 Lock Region Size: 16 Kbytes */
+#define IFLASH_NB_OF_PAGES_SAM3      (1024) /* Internal FLASH 0 Number of Pages: 1024 */
+#define IFLASH_NB_OF_PAGES_SAM4       (512) /* Internal FLASH 0 Number of Pages: 1024 */
+#define IFLASH_NB_OF_LOCK_BITS_SAM3    (16) /* Internal FLASH 0 Number of Lock Bits: 16 */
+#define IFLASH_NB_OF_LOCK_BITS_SAM4    (32) /* Internal FLASH 0 Number of Lock Bits: 16 */
 #define IRAM_SIZE 0xC000
 #else
   #error Library does not support the specified device.

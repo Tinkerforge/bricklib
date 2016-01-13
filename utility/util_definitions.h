@@ -101,4 +101,8 @@
 		REG_RSTC_MR = (REG_RSTC_MR | RSTC_MR_KEY(0xA5)) | RSTC_MR_URSTEN; \
 	} while(0)
 
+// Test for SAM3S2B and SAM3S4C to test if it is SAM3.
+// Otherwise we assume that it is SAM4.
+#define IS_SAM3() (REG_CHIPID_CIDR == 0x289A0760 || REG_CHIPID_CIDR == 0x28A00960)
+
 #endif

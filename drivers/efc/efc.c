@@ -77,6 +77,7 @@
 #include <stddef.h>
 
 #include "bricklib/utility/trace.h"
+#include "bricklib/utility/util_definitions.h"
 /*----------------------------------------------------------------------------
  *        Exported functions
  *----------------------------------------------------------------------------*/
@@ -153,6 +154,8 @@ extern uint32_t EFC_GetResult( Efc* efc )
  */
 extern void EFC_TranslateAddress( Efc** ppEfc, uint32_t dwAddress, uint16_t* pwPage, uint16_t* pwOffset )
 {
+	const uint32_t IFLASH_PAGE_SIZE = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
+
     Efc *pEfc ;
     uint16_t wPage ;
     uint16_t wOffset ;
@@ -192,6 +195,8 @@ extern void EFC_TranslateAddress( Efc** ppEfc, uint32_t dwAddress, uint16_t* pwP
  */
 extern void EFC_ComputeAddress( Efc *efc, uint16_t wPage, uint16_t wOffset, uint32_t *pdwAddress )
 {
+	const uint32_t IFLASH_PAGE_SIZE = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
+	const uint32_t IFLASH_NB_OF_PAGES = IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4;
     uint32_t dwAddress ;
 	
     assert( efc ) ;
@@ -218,6 +223,8 @@ extern void EFC_ComputeAddress( Efc *efc, uint16_t wPage, uint16_t wOffset, uint
  */
 extern void EFC_StartCommand( Efc* efc, uint32_t dwCommand, uint32_t dwArgument )
 {
+	const uint32_t IFLASH_NB_OF_PAGES = IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4;
+
     /* Check command & argument */
     switch ( dwCommand )
     {

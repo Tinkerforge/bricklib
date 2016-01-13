@@ -23,6 +23,7 @@
 
 #include <string.h>
 #include "bricklib/drivers/flash/flashd.h"
+#include "bricklib/drivers/efc/efc.h"
 #include "bricklib/free_rtos/include/FreeRTOS.h"
 #include "bricklib/free_rtos/include/task.h"
 #include "bricklib/drivers/adc/adc.h"
@@ -213,7 +214,7 @@ void bricklet_write_asc_to_flash(const uint8_t bricklet) {
 void bricklet_write_plugin_to_flash(const char *plugin,
 	                                const uint8_t position,
 	                                const uint8_t bricklet,
-	                                const uint8_t chunk_size) {
+	                                const uint16_t chunk_size) {
 	// Disable all irqs before plugin is written to flash.
 	// While writing to flash there can't be any other access to the flash
 	// (e.g. via interrupts).
@@ -223,8 +224,6 @@ void bricklet_write_plugin_to_flash(const char *plugin,
     // Write plugin to flash
     uint16_t add = position*chunk_size;
     FLASHD_Write(baddr[bricklet].plugin + add, plugin, chunk_size);
-
-
 
     __enable_irq();
     ENABLE_RESET_BUTTON();
@@ -237,13 +236,7 @@ uint8_t bricklet_init_plugin(const uint8_t bricklet) {
 
 	const uint16_t end = BRICKLET_PLUGIN_MAX_SIZE/PLUGIN_CHUNK_SIZE_STARTUP - 1;
 
-	// Unlock flash region
-    FLASHD_Unlock(baddr[bricklet].plugin,
-	              baddr[bricklet].plugin + BRICKLET_PLUGIN_MAX_SIZE,
-				  0,
-				  0);
-
-	for(int position = 0; position < end; position++) {
+	for(uint16_t position = 0; position < end; position++) {
 		i2c_eeprom_master_read_plugin(TWI_BRICKLET, plugin, position, PLUGIN_CHUNK_SIZE_STARTUP);
 		bricklet_write_plugin_to_flash(plugin, position, bricklet, PLUGIN_CHUNK_SIZE_STARTUP);
 	}
@@ -251,15 +244,10 @@ uint8_t bricklet_init_plugin(const uint8_t bricklet) {
 	bricklet_deselect(bricklet);
 	bricklet_write_asc_to_flash(bricklet);
 
-    // Lock flash and enable irqs again
-    FLASHD_Lock(baddr[bricklet].plugin,
-                baddr[bricklet].plugin + BRICKLET_PLUGIN_MAX_SIZE,
-				0,
-				0);
-
     memset(bc[bricklet], 0, BRICKLET_CONTEXT_MAX_SIZE);
 
     uint8_t protocol_version = 0;
+
     baddr[bricklet].entry(BRICKLET_TYPE_PROTOCOL_VERSION, 0, &protocol_version);
     if(protocol_version != 2) {
     	logbleti("Bricklet %c plugin has protocol version 1\n\r", 'a' + bricklet);
@@ -349,7 +337,34 @@ void bricklet_init(void) {
 		bricklet_attached[i] = BRICKLET_INIT_NO_BRICKLET;
 	}
 
+	EFC_SetWaitState(EFC, 6);
+
+	// Unlock flash region for all Bricklet plugins
+	FLASHD_Unlock(END_OF_MEMORY - BRICKLET_PLUGIN_MAX_SIZE*BRICKLET_NUM,
+	              END_OF_MEMORY,
+				  0,
+				  0);
+
+	// On SAM4 we have to erase the flash here, the EFC_FCMD_EWP command does not work...
+	if(!IS_SAM3()) {
+		// EFC_FCMD_EPA = 0x07
+		if(BRICKLET_NUM == 2) {
+			uint32_t ret = EFC_PerformCommand(EFC, 0x07, (((256-16)/16) << 4) | 2, 0);
+			//printf("erase all: %d\n\r", ret);
+		} else if(BRICKLET_NUM == 4) {
+			EFC_PerformCommand(EFC, 0x07, (((512-32)/32) << 5) | 3, 0);
+		}
+	}
+
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		bricklet_try_connection(i);
 	}
+
+    // Lock flash again
+    FLASHD_Lock(END_OF_MEMORY - BRICKLET_PLUGIN_MAX_SIZE*BRICKLET_NUM,
+                END_OF_MEMORY,
+				0,
+				0);
+
+	EFC_SetWaitState(EFC, 2);
 }

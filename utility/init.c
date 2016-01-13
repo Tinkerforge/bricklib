@@ -53,6 +53,7 @@ void brick_init(void) {
 
 	logsi("Booting %d\n\r", BRICK_DEVICE_IDENTIFIER);
 	logsi("Compiled on %s %s\n\r", __DATE__, __TIME__);
+	logsi("Processor family %s\n\r", IS_SAM3() ? "SAM3S" : "SAM4S");
 
     led_init();
 	led_on(LED_STD_BLUE);

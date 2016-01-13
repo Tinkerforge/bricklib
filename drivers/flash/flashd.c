@@ -82,12 +82,14 @@
 #include <assert.h>
 
 #include "bricklib/utility/trace.h"
+#include "bricklib/utility/util_definitions.h"
 /*----------------------------------------------------------------------------
  *        Local variables
  *----------------------------------------------------------------------------*/
 
 //static NO_INIT uint8_t _aucPageBuffer[IFLASH_PAGE_SIZE] ;
-static uint32_t _adwPageBuffer[IFLASH_PAGE_SIZE/4] ;
+
+static uint32_t _adwPageBuffer[MAX(IFLASH_PAGE_SIZE_SAM3, IFLASH_PAGE_SIZE_SAM4)/4] ;
 static uint8_t* _aucPageBuffer = (uint8_t*)_adwPageBuffer;
 static uint32_t _dwUseIAP ;
 
@@ -112,6 +114,10 @@ static uint32_t _dwUseIAP ;
  */
 static void ComputeLockRange( uint32_t dwStart, uint32_t dwEnd, uint32_t *pdwActualStart, uint32_t *pdwActualEnd )
 {
+	const uint32_t IFLASH_PAGE_SIZE = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
+	const uint32_t IFLASH_NB_OF_PAGES = IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4;
+	const uint32_t IFLASH_LOCK_REGION_SIZE = IS_SAM3() ? IFLASH_LOCK_REGION_SIZE_SAM3 : IFLASH_LOCK_REGION_SIZE_SAM4;
+
     Efc* pStartEfc ;
     Efc* pEndEfc ;
     uint16_t wStartPage ;
@@ -208,6 +214,8 @@ extern uint32_t FLASHD_Erase( uint32_t dwAddress )
  */
 extern uint32_t FLASHD_Write( uint32_t dwAddress, const void *pvBuffer, uint32_t dwSize )
 {
+	const uint32_t IFLASH_PAGE_SIZE = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
+
     Efc* pEfc ;
     uint16_t page ;
     uint16_t offset ;
@@ -256,11 +264,16 @@ extern uint32_t FLASHD_Write( uint32_t dwAddress, const void *pvBuffer, uint32_t
             sizeTmp -= 4;
         }
 
-        /* Send writing command */
-        dwError = EFC_PerformCommand( pEfc, EFC_FCMD_EWP, page, _dwUseIAP ) ;
-        if ( dwError )
-        {
-            return dwError ;
+       	// On SAM3 we do erase and write page here.
+       	// On SAM4 we can't use EWP, we erased pages before, we only use WP here.
+       	if(IS_SAM3()) {
+       		dwError = EFC_PerformCommand(pEfc, EFC_FCMD_EWP, page, _dwUseIAP);
+       	} else {
+       		dwError = EFC_PerformCommand(pEfc, EFC_FCMD_WP, page, _dwUseIAP);
+       	}
+
+        if (dwError) {
+            return dwError;
         }
 
         /* Progression */
@@ -285,6 +298,9 @@ extern uint32_t FLASHD_Write( uint32_t dwAddress, const void *pvBuffer, uint32_t
  */
 extern uint32_t FLASHD_Lock( uint32_t start, uint32_t end, uint32_t *pActualStart, uint32_t *pActualEnd )
 {
+	const uint32_t IFLASH_PAGE_SIZE = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
+	const uint32_t IFLASH_LOCK_REGION_SIZE = IS_SAM3() ? IFLASH_LOCK_REGION_SIZE_SAM3 : IFLASH_LOCK_REGION_SIZE_SAM4;
+
     Efc *pEfc ;
     uint32_t actualStart, actualEnd ;
     uint16_t startPage, endPage ;
@@ -331,6 +347,9 @@ extern uint32_t FLASHD_Lock( uint32_t start, uint32_t end, uint32_t *pActualStar
  */
 extern uint32_t FLASHD_Unlock( uint32_t start, uint32_t end, uint32_t *pActualStart, uint32_t *pActualEnd )
 {
+	const uint32_t IFLASH_PAGE_SIZE = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
+	const uint32_t IFLASH_LOCK_REGION_SIZE = IS_SAM3() ? IFLASH_LOCK_REGION_SIZE_SAM3 : IFLASH_LOCK_REGION_SIZE_SAM4;
+
     Efc* pEfc ;
     uint32_t actualStart, actualEnd ;
     uint16_t startPage, endPage ;
@@ -373,6 +392,9 @@ extern uint32_t FLASHD_Unlock( uint32_t start, uint32_t end, uint32_t *pActualSt
  */
 extern uint32_t FLASHD_IsLocked( uint32_t start, uint32_t end )
 {
+	const uint32_t IFLASH_PAGE_SIZE = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
+	const uint32_t IFLASH_LOCK_REGION_SIZE = IS_SAM3() ? IFLASH_LOCK_REGION_SIZE_SAM3 : IFLASH_LOCK_REGION_SIZE_SAM4;
+
     Efc *pEfc ;
     uint16_t startPage, endPage ;
     uint8_t startRegion, endRegion ;
