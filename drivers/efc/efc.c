@@ -196,11 +196,10 @@ extern void EFC_TranslateAddress( Efc** ppEfc, uint32_t dwAddress, uint16_t* pwP
 extern void EFC_ComputeAddress( Efc *efc, uint16_t wPage, uint16_t wOffset, uint32_t *pdwAddress )
 {
 	const uint32_t IFLASH_PAGE_SIZE = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
-	const uint32_t IFLASH_NB_OF_PAGES = IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4;
     uint32_t dwAddress ;
 	
     assert( efc ) ;
-    assert( wPage <= IFLASH_NB_OF_PAGES ) ;
+    assert( wPage <= (IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4IFLASH_NB_OF_PAGES) ) ;
     assert( wOffset < IFLASH_PAGE_SIZE ) ;
 	
     /* Compute address */
@@ -223,8 +222,6 @@ extern void EFC_ComputeAddress( Efc *efc, uint16_t wPage, uint16_t wOffset, uint
  */
 extern void EFC_StartCommand( Efc* efc, uint32_t dwCommand, uint32_t dwArgument )
 {
-	const uint32_t IFLASH_NB_OF_PAGES = IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4;
-
     /* Check command & argument */
     switch ( dwCommand )
     {
@@ -234,7 +231,7 @@ extern void EFC_StartCommand( Efc* efc, uint32_t dwCommand, uint32_t dwArgument 
         case EFC_FCMD_EWPL:
         case EFC_FCMD_SLB:
         case EFC_FCMD_CLB:
-            assert( dwArgument < IFLASH_NB_OF_PAGES ) ;
+            assert( dwArgument < (IFLASH_NB_OF_PAGES = IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4) ) ;
         break ;
 
         case EFC_FCMD_SFB:
