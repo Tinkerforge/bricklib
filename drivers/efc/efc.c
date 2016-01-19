@@ -199,7 +199,7 @@ extern void EFC_ComputeAddress( Efc *efc, uint16_t wPage, uint16_t wOffset, uint
     uint32_t dwAddress ;
 	
     assert( efc ) ;
-    assert( wPage <= (IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4IFLASH_NB_OF_PAGES) ) ;
+    assert( wPage <= (IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4) ) ;
     assert( wOffset < IFLASH_PAGE_SIZE ) ;
 	
     /* Compute address */
@@ -231,7 +231,7 @@ extern void EFC_StartCommand( Efc* efc, uint32_t dwCommand, uint32_t dwArgument 
         case EFC_FCMD_EWPL:
         case EFC_FCMD_SLB:
         case EFC_FCMD_CLB:
-            assert( dwArgument < (IFLASH_NB_OF_PAGES = IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4) ) ;
+            assert( dwArgument < (IS_SAM3() ? IFLASH_NB_OF_PAGES_SAM3 : IFLASH_NB_OF_PAGES_SAM4) ) ;
         break ;
 
         case EFC_FCMD_SFB:
