@@ -230,6 +230,7 @@ void bricklet_write_plugin_to_flash(const char *plugin,
 }
 
 uint8_t bricklet_init_plugin(const uint8_t bricklet) {
+	const uint32_t PLUGIN_CHUNK_SIZE_STARTUP = IS_SAM3() ? IFLASH_PAGE_SIZE_SAM3 : IFLASH_PAGE_SIZE_SAM4;
 	bricklet_select(bricklet);
 
 	char plugin[PLUGIN_CHUNK_SIZE_STARTUP];

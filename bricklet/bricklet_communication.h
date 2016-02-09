@@ -27,7 +27,6 @@
 #include "bricklib/com/com.h"
 
 #define PLUGIN_CHUNK_SIZE 32
-#define PLUGIN_CHUNK_SIZE_STARTUP (128*4)
 
 #define FID_WRITE_BRICKLET_NAME 244
 #define FID_READ_BRICKLET_NAME 245
