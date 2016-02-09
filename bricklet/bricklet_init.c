@@ -338,7 +338,9 @@ void bricklet_init(void) {
 		bricklet_attached[i] = BRICKLET_INIT_NO_BRICKLET;
 	}
 
-	EFC_SetWaitState(EFC, 6);
+	if(!IS_SAM3()) {
+		EFC_SetWaitState(EFC, 6);
+	}
 
 	// Unlock flash region for all Bricklet plugins
 	FLASHD_Unlock(END_OF_MEMORY - BRICKLET_PLUGIN_MAX_SIZE*BRICKLET_NUM,
@@ -366,5 +368,8 @@ void bricklet_init(void) {
 				0,
 				0);
 
-	EFC_SetWaitState(EFC, 2);
+	// Only change wait states on SAM4, because this makes a SAM3 hang for unknown reasons
+	if(!IS_SAM3()) {
+		EFC_SetWaitState(EFC, 2);
+	}
 }
