@@ -235,7 +235,7 @@ uint8_t bricklet_init_plugin(const uint8_t bricklet) {
 
 	char plugin[PLUGIN_CHUNK_SIZE_STARTUP];
 
-	const uint16_t end = BRICKLET_PLUGIN_MAX_SIZE/PLUGIN_CHUNK_SIZE_STARTUP - 1;
+	const uint16_t end = BRICKLET_PLUGIN_MAX_SIZE/PLUGIN_CHUNK_SIZE_STARTUP;
 
 	for(uint16_t position = 0; position < end; position++) {
 		i2c_eeprom_master_read_plugin(TWI_BRICKLET, plugin, position, PLUGIN_CHUNK_SIZE_STARTUP);
