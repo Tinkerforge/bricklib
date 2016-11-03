@@ -286,10 +286,12 @@ void bricklet_try_connection(const uint8_t bricklet) {
 	bricklet_deselect(bricklet);
 
 	if(uid == 0) {
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 		bricklet_co_mcu_init(bricklet);
 		bricklet_attached[bricklet] = BRICKLET_INIT_CO_MCU;
 		bs[bricklet].uid = 0;
 		bs[bricklet].device_identifier = 0;
+#endif
 		return;
 	}
 
