@@ -266,7 +266,7 @@ void enumerate(const ComType com, const Enumerate *data) {
 
 	// Enumerate Bricklet
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		if(bs[i].uid == 0) {
+		if(bs[i].uid == 0 || bricklet_attached[i] == BRICKLET_INIT_CO_MCU) {
 			continue;
 		}
 
@@ -303,7 +303,7 @@ void get_identity(const ComType com, const GetIdentity *data) {
 		gir.device_identifier = BRICK_DEVICE_IDENTIFIER;
 	} else {
 		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-			if(bs[i].uid == data->header.uid) {
+			if(bs[i].uid == data->header.uid && bricklet_attached[i] != BRICKLET_INIT_CO_MCU) {
 				memset(gir.uid, '\0', UID_STR_MAX_LENGTH);
 				uid_to_serial_number(bs[i].uid, gir.uid);
 

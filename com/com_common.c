@@ -30,6 +30,7 @@
 #include "bricklib/free_rtos/include/task.h"
 
 #include "bricklib/bricklet/bricklet_config.h"
+#include "bricklib/bricklet/bricklet_co_mcu.h"
 #include "bricklib/drivers/wdt/wdt.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/utility/led.h"
@@ -46,6 +47,7 @@ extern uint32_t com_blocking_trials[];
 extern ComInfo com_info;
 extern const BrickletAddress baddr[];
 extern BrickletSettings bs[];
+extern uint8_t bricklet_attached[];
 
 uint16_t send_blocking_with_timeout_options(const void *data,
                                             const uint16_t length,
@@ -158,6 +160,12 @@ bool com_route_message_brick(const char *data, const uint16_t length, const ComT
 			com_message->reply_func(com, (void*)data);
 		}
 
+		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
+			if(bricklet_attached[i] == BRICKLET_INIT_CO_MCU) {
+				bricklet_co_mcu_send(i, (void*)data, length);
+			}
+		}
+
 		return false;
 	} else if(header->uid == com_info.uid) {
 		const ComMessage *com_message = get_com_from_header(header);
@@ -173,7 +181,9 @@ bool com_route_message_brick(const char *data, const uint16_t length, const ComT
 
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		if(bs[i].uid == header->uid) {
-			if(header->fid == FID_GET_IDENTITY) {
+			if(bricklet_attached[i] == BRICKLET_INIT_CO_MCU) {
+				bricklet_co_mcu_send(i, (void*)data, length);
+			} else if(header->fid == FID_GET_IDENTITY) {
 				const ComMessage *com_message = get_com_from_header(header);
 				if(com_message != NULL && com_message->reply_func != NULL) {
 					com_message->reply_func(com, (void*)data);

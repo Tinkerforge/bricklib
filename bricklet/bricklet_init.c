@@ -36,9 +36,11 @@
 #include "bricklib/com/i2c/i2c_clear_bus.h"
 #include "bricklib/bricklet/bricklet_communication.h"
 #include "bricklib/utility/util_definitions.h"
+#include "bricklib/utility/init.h"
 
 #include "config.h"
 #include "bricklet_config.h"
+#include "bricklet_co_mcu.h"
 
 // Includes for bricklet api
 #include "bricklib/drivers/twi/twid.h" // TWID_Read, TWID_Write
@@ -170,10 +172,20 @@ BrickletSettings bs[BRICKLET_NUM] = {
 // Declare bricklet context (bc)
 uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4] = {{0}};
 
-uint8_t bricklet_attached[4] = {BRICKLET_INIT_NO_BRICKLET,
-                                BRICKLET_INIT_NO_BRICKLET,
-                                BRICKLET_INIT_NO_BRICKLET,
-                                BRICKLET_INIT_NO_BRICKLET};
+uint8_t bricklet_attached[BRICKLET_NUM] = {
+	#if BRICKLET_NUM > 0
+		BRICKLET_INIT_NO_BRICKLET,
+	#endif
+	#if BRICKLET_NUM > 1
+		BRICKLET_INIT_NO_BRICKLET,
+	#endif
+	#if BRICKLET_NUM > 2
+		BRICKLET_INIT_NO_BRICKLET,
+	#endif
+	#if BRICKLET_NUM > 3
+		BRICKLET_INIT_NO_BRICKLET
+	#endif
+};
 
 void bricklet_select(const uint8_t bricklet) {
 	bricklet_eeprom_address = bs[bricklet].address;
@@ -274,7 +286,10 @@ void bricklet_try_connection(const uint8_t bricklet) {
 	bricklet_deselect(bricklet);
 
 	if(uid == 0) {
-		logbleti("Bricklet %c not connected\n\r", 'a' + bricklet);
+		bricklet_co_mcu_init(bricklet);
+		bricklet_attached[bricklet] = BRICKLET_INIT_CO_MCU;
+		bs[bricklet].uid = 0;
+		bs[bricklet].device_identifier = 0;
 		return;
 	}
 
@@ -308,9 +323,21 @@ void bricklet_try_connection(const uint8_t bricklet) {
 
 void bricklet_tick_task(const uint8_t tick_type) {
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		if(bricklet_attached[i] == BRICKLET_INIT_PROTOCOL_VERSION_2) {
-			uint8_t tt = tick_type;
-			baddr[i].entry(BRICKLET_TYPE_TICK, 0, &tt);
+		switch(bricklet_attached[i]) {
+			case BRICKLET_INIT_PROTOCOL_VERSION_2: {
+				uint8_t tt = tick_type;
+				baddr[i].entry(BRICKLET_TYPE_TICK, 0, &tt);
+				break;
+			}
+
+			case BRICKLET_INIT_CO_MCU: {
+				if(tick_type == TICK_TASK_TYPE_MESSAGE) {
+					bricklet_co_mcu_poll(i);
+				}
+				break;
+			}
+
+			default: break;
 		}
 	}
 }

@@ -47,6 +47,7 @@
 #define FID_GET_ADC_CALIBRATION 250
 #define FID_ADC_CALIBRATE 251
 #define FID_STACK_ENUMERATE 252
+#define FID_CO_MCU_ENUMERATE 252
 #define FID_ENUMERATE_CALLBACK 253
 #define FID_ENUMERATE 254
 #define FID_GET_IDENTITY 255
@@ -121,6 +122,10 @@ typedef struct {
 	MessageHeader header;
 	char bricklet_port;
 } __attribute__((packed)) ADCCalibrate;
+
+typedef struct {
+	MessageHeader header;
+} __attribute__((packed)) CoMCUEnumerate;
 
 typedef struct {
 	MessageHeader header;
