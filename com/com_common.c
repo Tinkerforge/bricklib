@@ -30,7 +30,11 @@
 #include "bricklib/free_rtos/include/task.h"
 
 #include "bricklib/bricklet/bricklet_config.h"
+
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 #include "bricklib/bricklet/bricklet_co_mcu.h"
+#endif
+
 #include "bricklib/drivers/wdt/wdt.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/utility/led.h"
@@ -160,11 +164,13 @@ bool com_route_message_brick(const char *data, const uint16_t length, const ComT
 			com_message->reply_func(com, (void*)data);
 		}
 
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 			if(bricklet_attached[i] == BRICKLET_INIT_CO_MCU) {
 				bricklet_co_mcu_send(i, (void*)data, length);
 			}
 		}
+#endif
 
 		return false;
 	} else if(header->uid == com_info.uid) {
@@ -181,9 +187,13 @@ bool com_route_message_brick(const char *data, const uint16_t length, const ComT
 
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		if(bs[i].uid == header->uid) {
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 			if(bricklet_attached[i] == BRICKLET_INIT_CO_MCU) {
 				bricklet_co_mcu_send(i, (void*)data, length);
-			} else if(header->fid == FID_GET_IDENTITY) {
+			} else 
+#endif
+				
+			if(header->fid == FID_GET_IDENTITY) {
 				const ComMessage *com_message = get_com_from_header(header);
 				if(com_message != NULL && com_message->reply_func != NULL) {
 					com_message->reply_func(com, (void*)data);

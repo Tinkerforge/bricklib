@@ -40,7 +40,9 @@
 
 #include "config.h"
 #include "bricklet_config.h"
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 #include "bricklet_co_mcu.h"
+#endif
 
 // Includes for bricklet api
 #include "bricklib/drivers/twi/twid.h" // TWID_Read, TWID_Write
@@ -332,12 +334,14 @@ void bricklet_tick_task(const uint8_t tick_type) {
 				break;
 			}
 
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 			case BRICKLET_INIT_CO_MCU: {
 				if(tick_type == TICK_TASK_TYPE_MESSAGE) {
 					bricklet_co_mcu_poll(i);
 				}
 				break;
 			}
+#endif
 
 			default: break;
 		}
