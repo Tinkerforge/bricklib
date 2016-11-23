@@ -235,15 +235,15 @@ uint8_t TWID_Read(
             /* Wait for byte then read and store it*/
             timeout = 0;
             while( !TWI_ByteReceived(pTwi) && (++timeout<TWITIMEOUTMAX) ) {
-            	if(pTwi->TWI_SR & TWI_SR_NACK) {
-            		return 0;
-            	}
+                if(pTwi->TWI_SR & TWI_SR_NACK) {
+                    return 0;
+                }
             }
             if (timeout == TWITIMEOUTMAX) {
                 TRACE_ERROR("TWID Timeout BR\n\r");
                 *pData++ = 0;
             } else {
-				*pData++ = TWI_ReadByte(pTwi);
+                *pData++ = TWI_ReadByte(pTwi);
             }
             num--;
         }
