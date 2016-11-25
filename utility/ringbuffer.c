@@ -52,15 +52,20 @@ bool ringbuffer_is_full(Ringbuffer *rb) {
 }
 
 bool ringbuffer_add(Ringbuffer *rb, const uint8_t data) {
-	if(ringbuffer_is_full(rb)) {
-		rb->overflows++;
-		return false;
-	}
-
 	rb->buffer[rb->end] = data;
 	rb->end++;
 	if(rb->end >= rb->size) {
 		rb->end = 0;
+	}
+
+	if(rb->end == rb->start) {
+		rb->overflows++;
+		if(rb->end == 0) {
+			rb->end = rb->size-1;
+		} else {
+			rb->end--;
+		}
+		return false;
 	}
 
 	return true;
