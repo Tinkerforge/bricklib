@@ -295,7 +295,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 				if(checksum != data) {
 					bricklet_co_mcu_handle_error(bricklet_num);
 					logw("Error in STATE_ACK_CHECKSUM\n\r");
-					break;
+					return;
 				}
 
 				uint8_t last_sequence_number_seen_by_slave = (data_sequence_number & 0xF0) >> 4;
@@ -335,8 +335,8 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 
 				if(checksum != data) {
 					bricklet_co_mcu_handle_error(bricklet_num);
-					logw("Error in STATE_MESSAGE_CHECKSUM (chk, rcv): %d != %d\n\r", checksum, data);
-					break;
+					logw("Error in STATE_MESSAGE_CHECKSUM (chk, rcv): %x != %x\n\r", checksum, data);
+					return;
 				}
 
 				uint8_t last_sequence_number_seen_by_slave = (data_sequence_number & 0xF0) >> 4;
@@ -354,7 +354,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 					CO_MCU_DATA(bricklet_num)->last_sequence_number_seen = message_sequence_number;
 					bricklet_co_mcu_new_message(message, message_position, com_info.current, bricklet_num);
 				}
-				break;
+				return;
 			}
 		}
 	}
