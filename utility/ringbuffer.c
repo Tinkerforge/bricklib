@@ -1,4 +1,4 @@
-/* bricklib2
+/* bricklib
  * Copyright (C) 2016 Olaf Lüke <olaf@tinkerforge.com>
  *
  * ringbuffer.c: General ringbuffer implementation
@@ -20,6 +20,8 @@
  */
 
 #include "ringbuffer.h"
+
+#include "bricklib/utility/util_definitions.h"
 
 #include <stdio.h>
 
@@ -65,10 +67,12 @@ bool ringbuffer_add(Ringbuffer *rb, const uint8_t data) {
 }
 
 void ringbuffer_remove(Ringbuffer *rb, const uint16_t num) {
-	if(ringbuffer_get_used(rb) <= num) {
-		rb->start = rb->end;
-	} else {
-		rb->start = (rb->start + num) % rb->size;
+	// Make sure that we don't remove more then is available in the buffer
+	uint16_t incr = MIN(ringbuffer_get_used(rb), num);
+
+	rb->start += incr;
+	if(rb->start >= rb->size) {
+		rb->start -= rb->size;
 	}
 }
 
