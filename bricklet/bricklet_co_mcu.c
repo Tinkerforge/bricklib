@@ -34,7 +34,7 @@
 #define BUFFER_SIZE_SEND 80
 #define BUFFER_SIZE_RECV 152
 #define POLL_BYTES_MAX_SUCCESSIVE_ZEROS 10
-#define BUFFER_SEND_ACK_TIMEOUT 25 // in ms
+#define BUFFER_SEND_ACK_TIMEOUT 20 // in ms
 #define MAX_TRIES_IF_NOT_CONNECTED 100
 
 #define PROTOCOL_OVERHEAD 3 // 3 byte overhead for Brick <-> Bricklet protocol
