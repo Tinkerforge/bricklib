@@ -145,7 +145,7 @@ uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, 
 
 	uint8_t recv = 0;
 
-	for(int8_t i = 7; i >= 0; i--) {
+	for(int8_t i = 7; i >= 1; i--) { // Go through all but the last bit
 		pin_clk->PIO_CODR = pin_clk_mask;
 		if((value >> i) & 1) {
 			pin_mosi->PIO_SODR = pin_mosi_mask;
@@ -153,7 +153,7 @@ uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, 
 			pin_mosi->PIO_CODR = pin_mosi_mask;
 		}
 
-		SLEEP_NS(SLEEP_HALF_BIT_NS); // TODO: Use TimerCounter or similar for sleep here
+		SLEEP_NS(SLEEP_HALF_BIT_NS); // TODO: Use TimerCounter or similar for more accurate sleep here?
 		if(pin_miso->PIO_PDSR & pin_miso_mask) {
 			recv |= (1 << i);
 		}
@@ -161,6 +161,25 @@ uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, 
 		pin_clk->PIO_SODR = pin_clk_mask;
 		SLEEP_NS(SLEEP_HALF_BIT_NS);
 	}
+
+	// We unroll the last element of the loop and remove
+	// the last sleep. The code that runs between each byte
+	// takes enough time for a half bit if communication
+	// if speed is >= 400khz
+
+	pin_clk->PIO_CODR = pin_clk_mask;
+	if((value >> 0) & 1) {
+		pin_mosi->PIO_SODR = pin_mosi_mask;
+	} else {
+		pin_mosi->PIO_CODR = pin_mosi_mask;
+	}
+
+	SLEEP_NS(SLEEP_HALF_BIT_NS);
+	if(pin_miso->PIO_PDSR & pin_miso_mask) {
+		recv |= (1 << 0);
+	}
+
+	pin_clk->PIO_SODR = pin_clk_mask;
 
 	return recv;
 }
