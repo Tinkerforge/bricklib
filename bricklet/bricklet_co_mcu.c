@@ -129,11 +129,9 @@ void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 
 void bricklet_co_mcu_spibb_select(const uint8_t bricklet_num) {
 	SPI_SS(bricklet_num).pio->PIO_CODR = SPI_SS(bricklet_num).mask;
-	SLEEP_US(3);
 }
 
 void bricklet_co_mcu_spibb_deselect(const uint8_t bricklet_num) {
-	SLEEP_US(3);
 	SPI_SS(bricklet_num).pio->PIO_SODR = SPI_SS(bricklet_num).mask;
 }
 
