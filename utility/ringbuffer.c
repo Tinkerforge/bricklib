@@ -48,7 +48,7 @@ bool ringbuffer_is_empty(Ringbuffer *rb) {
 }
 
 bool ringbuffer_is_full(Ringbuffer *rb) {
-	return ringbuffer_get_free(rb) < 2;
+	return ringbuffer_get_free(rb) < 1;
 }
 
 bool ringbuffer_add(Ringbuffer *rb, const uint8_t data) {
