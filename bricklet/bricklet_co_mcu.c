@@ -33,7 +33,6 @@
 
 #define BUFFER_SIZE_SEND 80
 #define BUFFER_SIZE_RECV 154
-#define POLL_BYTES_MAX_SUCCESSIVE_ZEROS 10
 #define BUFFER_SEND_ACK_TIMEOUT 20 // in ms
 #define MAX_TRIES_IF_NOT_CONNECTED 100
 
@@ -230,6 +229,23 @@ void bricklet_co_mcu_handle_error(const uint8_t bricklet_num) {
 	while(ringbuffer_get(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, &data));
 }
 
+uint16_t bricklet_co_mcu_check_missing_length(const uint8_t bricklet_num) {
+	// Peak into the buffer to get the message length.
+	// Only call this before or after bricklet_co_mcu_check_recv.
+	Ringbuffer *rb = &CO_MCU_DATA(bricklet_num)->ringbuffer_recv;
+	while(rb->start != rb->end) {
+		if(rb->buffer[rb->start] == 0) {
+			ringbuffer_remove(rb, 1);
+			continue;
+		}
+
+		// TODO: Sanity check length here already?
+		return rb->buffer[rb->start] - ringbuffer_get_used(rb);
+	}
+
+	return 0;
+}
+
 void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 	uint8_t message[MAX_TFP_MESSAGE_LENGTH];
 	uint16_t message_position = 0;
@@ -411,27 +427,18 @@ void bricklet_co_mcu_poll(const uint8_t bricklet_num) {
 			PEARSON(checksum, data_to_send);
 		}
 
-
 		CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout = BUFFER_SEND_ACK_TIMEOUT;
 
 		bricklet_co_mcu_transceive(bricklet_num, checksum);
 	} else {
-		uint8_t number_of_successive_zeros = 0;
-		for(uint8_t i = 0; i < ringbuffer_get_free(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv); i++) {
-			uint8_t value = bricklet_co_mcu_transceive(bricklet_num, 0);
-			if(value == 0) {
-				number_of_successive_zeros++;
-				uint8_t max_poll = POLL_BYTES_MAX_SUCCESSIVE_ZEROS;
-				if(!CO_MCU_DATA(bricklet_num)->availability.access.got_message) {
-					// If we have never seen a message from this Bricklet,
-					// we only poll one byte
-					max_poll = 1;
-				}
-				if(number_of_successive_zeros >= max_poll) {
-					break;
-				}
-			} else {
-				number_of_successive_zeros = 0;
+		const uint16_t free = ringbuffer_get_free(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv);
+		for(uint8_t i = 0; i < free; i++) {
+			bricklet_co_mcu_transceive(bricklet_num, 0);
+
+			// If the missing length is 0 we either have a complete message or the
+			// Bricklet did not have any data to send (buffer was empty and we got a 0)
+			if(bricklet_co_mcu_check_missing_length(bricklet_num) == 0) {
+				break;
 			}
 		}
 	}
