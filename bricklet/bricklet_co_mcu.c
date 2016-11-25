@@ -32,7 +32,7 @@
 #include <string.h>
 
 #define BUFFER_SIZE_SEND 80
-#define BUFFER_SIZE_RECV 152
+#define BUFFER_SIZE_RECV 154
 #define POLL_BYTES_MAX_SUCCESSIVE_ZEROS 10
 #define BUFFER_SEND_ACK_TIMEOUT 20 // in ms
 #define MAX_TRIES_IF_NOT_CONNECTED 100
@@ -65,7 +65,6 @@ typedef struct {
 	uint8_t buffer_send_length;
 	int16_t buffer_send_ack_timeout;
 	Ringbuffer ringbuffer_recv;
-	CoMCURecvState state;
 	uint8_t current_sequence_number;
 	uint8_t last_sequence_number_seen;
 	uint8_t buffer_send[BUFFER_SIZE_SEND];
@@ -242,20 +241,23 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 	uint8_t data_sequence_number = 0;
 	uint8_t data_length = 0;
 
+	// We only remove data from the ringbuffer if we processed a message,
+	// so the state always starts as "STATE_START".
+	CoMCURecvState state = STATE_START;
 	for(uint16_t i = start; i < start+used; i++) {
 		const uint16_t index = i % BUFFER_SIZE_RECV;
 		const uint8_t data = CO_MCU_DATA(bricklet_num)->buffer_recv[index];
 		num_to_remove_from_ringbuffer++;
 
-		switch(CO_MCU_DATA(bricklet_num)->state) {
+		switch(state) {
 			case STATE_START: {
 				checksum = 0;
 				message_position = 0;
 
 				if(data == PROTOCOL_OVERHEAD) {
-					CO_MCU_DATA(bricklet_num)->state = STATE_ACK_SEQUENCE_NUMBER;
+					state = STATE_ACK_SEQUENCE_NUMBER;
 				} else if(data >= MIN_TFP_MESSAGE_LENGTH && data <= MAX_TFP_MESSAGE_LENGTH) {
-					CO_MCU_DATA(bricklet_num)->state = STATE_MESSAGE_SEQUENCE_NUMBER;
+					state = STATE_MESSAGE_SEQUENCE_NUMBER;
 				} else if(data == 0) {
 					ringbuffer_remove(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, 1);
 					num_to_remove_from_ringbuffer--;
@@ -265,7 +267,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 					// or 0, something has gone wrong!
 					bricklet_co_mcu_handle_error(bricklet_num);
 					logw("Error in STATE_START\n\r");
-					break;
+					return;
 				}
 
 				data_length = data;
@@ -281,14 +283,14 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 			case STATE_ACK_SEQUENCE_NUMBER: {
 				data_sequence_number = data;
 				PEARSON(checksum, data_sequence_number);
-				CO_MCU_DATA(bricklet_num)->state = STATE_ACK_CHECKSUM;
+				state = STATE_ACK_CHECKSUM;
 				break;
 			}
 
 			case STATE_ACK_CHECKSUM: {
 				// Whatever happens here, we will go to start again and remove
 				// data from ringbuffer
-				CO_MCU_DATA(bricklet_num)->state = STATE_START;
+				state = STATE_START;
 				ringbuffer_remove(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, num_to_remove_from_ringbuffer);
 				num_to_remove_from_ringbuffer = 0;
 
@@ -310,7 +312,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 			case STATE_MESSAGE_SEQUENCE_NUMBER: {
 				data_sequence_number = data;
 				PEARSON(checksum, data_sequence_number);
-				CO_MCU_DATA(bricklet_num)->state = STATE_MESSAGE_DATA;
+				state = STATE_MESSAGE_DATA;
 				break;
 			}
 
@@ -321,7 +323,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 				PEARSON(checksum, data);
 
 				if(message_position == data_length-PROTOCOL_OVERHEAD) {
-					CO_MCU_DATA(bricklet_num)->state = STATE_MESSAGE_CHECKSUM;
+					state = STATE_MESSAGE_CHECKSUM;
 				}
 				break;
 			}
@@ -329,7 +331,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 			case STATE_MESSAGE_CHECKSUM: {
 				// Whatever happens here, we will go to start again and remove
 				// data from ringbuffer
-				CO_MCU_DATA(bricklet_num)->state = STATE_START;
+				state = STATE_START;
 				ringbuffer_remove(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, num_to_remove_from_ringbuffer);
 				num_to_remove_from_ringbuffer = 0;
 
@@ -358,8 +360,6 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 			}
 		}
 	}
-
-	CO_MCU_DATA(bricklet_num)->state = STATE_START;
 }
 
 uint8_t bricklet_co_mcu_get_sequence_byte(const uint8_t bricklet_num, const bool increase) {
