@@ -74,10 +74,10 @@ extern BrickletSettings bs[BRICKLET_NUM];
 extern uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4];
 extern ComInfo com_info;
 
-#define SPI_MISO(i) (bs[i].pin1_ad)
-#define SPI_SS(i)   (bs[i].pin2_da)
-#define SPI_CLK(i)  (bs[i].pin3_pwm)
-#define SPI_MOSI(i) (bs[i].pin4_io)
+#define SPI_SS(i)   (bs[i].pin1_ad)
+#define SPI_CLK(i)  (bs[i].pin2_da)
+#define SPI_MOSI(i) (bs[i].pin3_pwm)
+#define SPI_MISO(i) (bs[i].pin4_io)
 
 #define CO_MCU_DATA(i) ((CoMCUData*)(bc[i]))
 
