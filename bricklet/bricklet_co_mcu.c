@@ -40,6 +40,8 @@
 #define PROTOCOL_OVERHEAD 3 // 3 byte overhead for Brick <-> Bricklet protocol
 #define MIN_TFP_MESSAGE_LENGTH (8 + PROTOCOL_OVERHEAD)
 #define MAX_TFP_MESSAGE_LENGTH (80 + PROTOCOL_OVERHEAD)
+#define BAUDRATE 400000
+#define SLEEP_HALF_BIT_NS (((1000*1000*1000/2)/BAUDRATE) - 200) // We subtract 200ns for setting of pins etc
 
 typedef enum {
 	STATE_START,
@@ -155,13 +157,13 @@ uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, 
 			pin_mosi->PIO_CODR = pin_mosi_mask;
 		}
 
-		SLEEP_US(1); // TODO: Use TimerCounter or similar for sleep here
+		SLEEP_NS(SLEEP_HALF_BIT_NS); // TODO: Use TimerCounter or similar for sleep here
 		if(pin_miso->PIO_PDSR & pin_miso_mask) {
 			recv |= (1 << i);
 		}
 
 		pin_clk->PIO_SODR = pin_clk_mask;
-		SLEEP_US(1);
+		SLEEP_NS(SLEEP_HALF_BIT_NS);
 	}
 
 	return recv;
