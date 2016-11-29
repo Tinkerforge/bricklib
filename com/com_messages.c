@@ -26,15 +26,23 @@
 
 #include "bricklib/utility/init.h"
 #include "bricklib/utility/led.h"
+#include "bricklib/utility/util_definitions.h"
 #include "bricklib/logging/logging.h"
 #include "bricklib/drivers/pio/pio.h"
 #include "bricklib/drivers/adc/adc.h"
+
 #include "bricklib/bricklet/bricklet_communication.h"
 #include "bricklib/bricklet/bricklet_config.h"
 #include "bricklib/bricklet/bricklet_init.h"
 
 #ifdef BRICK_CAN_BE_MASTER
 #include "extensions/extension_init.h"
+#endif
+
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+#include "bricklib/bricklet/bricklet_co_mcu.h"
+extern uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4];
+extern uint32_t bricklet_spitfp_baudrate[BRICKLET_NUM];
 #endif
 
 #include "com_common.h"
@@ -45,6 +53,7 @@ extern int32_t adc_gain_div;
 
 extern ComInfo com_info;
 extern BrickletSettings bs[];
+
 extern BrickletAddress baddr[];
 
 extern uint8_t brick_hardware_version[];
@@ -58,6 +67,17 @@ extern bool led_status_is_enabled;
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+	{FID_SET_SPITFP_BAUDRATE,(message_handler_func_t)set_spitfp_baudrate},
+	{FID_GET_SPITFP_BAUDRATE,(message_handler_func_t)get_spitfp_baudrate},
+	COM_NO_MESSAGE, // FID 236 is reserved
+	{FID_GET_SPITFP_ERROR_COUNT, (message_handler_func_t)get_spitfp_error_count},
+#else
+	COM_NO_MESSAGE,
+	COM_NO_MESSAGE,
+	COM_NO_MESSAGE,
+	COM_NO_MESSAGE,
+#endif
 	{FID_ENABLE_STATUS_LED, (message_handler_func_t)enable_status_led},
 	{FID_DISABLE_STATUS_LED, (message_handler_func_t)disable_status_led},
 	{FID_IS_STATUS_LED_ENABLED, (message_handler_func_t)is_status_led_enabled},
@@ -97,6 +117,60 @@ void reset(const ComType com, const Reset *data) {
 
 	brick_reset();
 }
+
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+void set_spitfp_baudrate(const ComType com, const SetSPITFPBaudrate *data) {
+	uint8_t port = tolower((uint8_t)data->bricklet_port) - 'a';
+	if(port >= BRICKLET_NUM) {
+		com_return_error(data, sizeof(GetSPITFPErrorCountReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
+		logblete("Bricklet Port %d does not exist (set_spitfp_baudrate)\n\r", port);
+		return;
+	}
+
+	bricklet_spitfp_baudrate[port] = BETWEEN(400000, data->baudrate, 2000000);
+	com_return_setter(com, data);
+}
+
+void get_spitfp_baudrate(const ComType com, const GetSPITFPBaudrate *data) {
+	uint8_t port = tolower((uint8_t)data->bricklet_port) - 'a';
+	if(port >= BRICKLET_NUM) {
+		com_return_error(data, sizeof(GetSPITFPErrorCountReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
+		logblete("Bricklet Port %d does not exist (get_spitfp_baudrate)\n\r", port);
+		return;
+	}
+
+	GetSPITFPBaudrateReturn gsbr;
+
+	gsbr.header        = data->header;
+	gsbr.header.length = sizeof(GetSPITFPBaudrateReturn);
+	gsbr.baudrate      = bricklet_spitfp_baudrate[port];
+
+	send_blocking_with_timeout(&gsbr, sizeof(GetSPITFPBaudrateReturn), com);
+}
+
+void get_spitfp_error_count(const ComType com, const GetSPITFPErrorCount *data) {
+	uint8_t port = tolower((uint8_t)data->bricklet_port) - 'a';
+	if(port >= BRICKLET_NUM) {
+		com_return_error(data, sizeof(GetSPITFPErrorCountReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
+		logblete("Bricklet Port %d does not exist (get_spitfp_error_count)\n\r", port);
+		return;
+	}
+
+	GetSPITFPErrorCountReturn gsecr;
+
+	gsecr.header                       = data->header;
+	gsecr.header.length                = sizeof(GetSPITFPErrorCountReturn);
+	gsecr.error_count_ack_checksum     = CO_MCU_DATA(port)->error_count.error_count_ack_checksum;
+	gsecr.error_count_message_checksum = CO_MCU_DATA(port)->error_count.error_count_message_checksum;
+	gsecr.error_count_frame            = CO_MCU_DATA(port)->error_count.error_count_frame;
+
+	// There is no overflow in SPITFP on master side possible
+	// We keep it to here to be able to use the same API between Co-MCU Bricklets and Bricks
+	gsecr.error_count_overflow         = 0;
+
+	send_blocking_with_timeout(&gsecr, sizeof(GetSPITFPErrorCountReturn), com);
+}
+#endif
 
 void enable_status_led(const ComType com, const EnableStatusLED *data) {
 	led_status_is_enabled = true;

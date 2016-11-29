@@ -36,6 +36,12 @@
 
 #define SIZE_OF_MESSAGE_HEADER 8
 
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+#define FID_SET_SPITFP_BAUDRATE 234
+#define FID_GET_SPITFP_BAUDRATE 235
+#define FID_GET_SPITFP_ERROR_COUNT 237
+#endif
+
 #define FID_ENABLE_STATUS_LED 238
 #define FID_DISABLE_STATUS_LED 239
 #define FID_IS_STATUS_LED_ENABLED 240
@@ -77,6 +83,37 @@ typedef struct {
 	uint8_t type;
 	message_handler_func_t reply_func;
 } ComMessage;
+
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+typedef struct {
+	MessageHeader header;
+	char bricklet_port;
+	uint32_t baudrate;
+} __attribute__((__packed__)) SetSPITFPBaudrate;
+
+typedef struct {
+	MessageHeader header;
+	char bricklet_port;
+} __attribute__((__packed__)) GetSPITFPBaudrate;
+
+typedef struct {
+	MessageHeader header;
+	uint32_t baudrate;
+} __attribute__((__packed__)) GetSPITFPBaudrateReturn;
+#endif
+
+typedef struct {
+	MessageHeader header;
+	char bricklet_port;
+} __attribute__((__packed__)) GetSPITFPErrorCount;
+
+typedef struct {
+	MessageHeader header;
+	uint32_t error_count_ack_checksum;
+	uint32_t error_count_message_checksum;
+	uint32_t error_count_frame;
+	uint32_t error_count_overflow;
+} __attribute__((__packed__)) GetSPITFPErrorCountReturn;
 
 typedef struct {
 	MessageHeader header;
@@ -182,6 +219,12 @@ const ComMessage* get_com_from_header(const MessageHeader *header);
 uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
+
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+void set_spitfp_baudrate(const ComType com, const SetSPITFPBaudrate *data);
+void get_spitfp_baudrate(const ComType com, const GetSPITFPBaudrate *data);
+void get_spitfp_error_count(const ComType com, const GetSPITFPErrorCount *data);
+#endif
 
 void enable_status_led(const ComType com, const EnableStatusLED *data);
 void disable_status_led(const ComType com, const DisableStatusLED *data);

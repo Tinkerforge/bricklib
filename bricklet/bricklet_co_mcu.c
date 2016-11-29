@@ -31,44 +31,28 @@
 
 #include <string.h>
 
-#define BUFFER_SIZE_SEND 80
-#define BUFFER_SIZE_RECV 154
+uint32_t bricklet_spitfp_baudrate[BRICKLET_NUM] = {
+	#if BRICKLET_NUM > 0
+		CO_MCU_DEFAULT_BAUDRATE,
+	#endif
+	#if BRICKLET_NUM > 1
+		CO_MCU_DEFAULT_BAUDRATE,
+	#endif
+	#if BRICKLET_NUM > 2
+		CO_MCU_DEFAULT_BAUDRATE,
+	#endif
+	#if BRICKLET_NUM > 3
+		CO_MCU_DEFAULT_BAUDRATE
+	#endif
+};
+
 #define BUFFER_SEND_ACK_TIMEOUT 20 // in ms
 #define MAX_TRIES_IF_NOT_CONNECTED 100
 
 #define PROTOCOL_OVERHEAD 3 // 3 byte overhead for Brick <-> Bricklet protocol
 #define MIN_TFP_MESSAGE_LENGTH (8 + PROTOCOL_OVERHEAD)
 #define MAX_TFP_MESSAGE_LENGTH (80 + PROTOCOL_OVERHEAD)
-#define BAUDRATE 400000
-#define SLEEP_HALF_BIT_NS (((1000*1000*1000/2)/BAUDRATE) - 200) // We subtract 200ns for setting of pins etc
-
-typedef enum {
-	STATE_START,
-	STATE_ACK_SEQUENCE_NUMBER,
-	STATE_ACK_CHECKSUM,
-	STATE_MESSAGE_SEQUENCE_NUMBER,
-	STATE_MESSAGE_DATA,
-	STATE_MESSAGE_CHECKSUM
-} CoMCURecvState;
-
-typedef union {
-	struct {
-		uint8_t got_message:1;
-		uint8_t tries:7;
-	} access;
-	uint8_t data;
-} CoMCURecvAvailability;
-
-typedef struct {
-	CoMCURecvAvailability availability;
-	uint8_t buffer_send_length;
-	int16_t buffer_send_ack_timeout;
-	Ringbuffer ringbuffer_recv;
-	uint8_t current_sequence_number;
-	uint8_t last_sequence_number_seen;
-	uint8_t buffer_send[BUFFER_SIZE_SEND];
-	uint8_t buffer_recv[BUFFER_SIZE_RECV];
-} CoMCUData;
+#define SLEEP_HALF_BIT_NS(i) (((1000*1000*1000/2)/bricklet_spitfp_baudrate[(i)]) - 200) // We subtract 200ns for setting of pins etc
 
 extern BrickletSettings bs[BRICKLET_NUM];
 extern uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4];
@@ -79,7 +63,6 @@ extern ComInfo com_info;
 #define SPI_MOSI(i) (bs[i].pin3_pwm)
 #define SPI_MISO(i) (bs[i].pin4_io)
 
-#define CO_MCU_DATA(i) ((CoMCUData*)(bc[i]))
 
 void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 	logd("Initialize CO MCU Bricklet %c\n\r", 'a' + bricklet_num);
@@ -101,13 +84,17 @@ void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 	SPI_MISO(bricklet_num).attribute = PIO_PULLDOWN;
 	PIO_Configure(&SPI_MISO(bricklet_num), 1);
 
-	memset(CO_MCU_DATA(bricklet_num)->buffer_send, 0, BUFFER_SIZE_SEND);
-	memset(CO_MCU_DATA(bricklet_num)->buffer_recv, 0, BUFFER_SIZE_RECV);
+	memset(CO_MCU_DATA(bricklet_num)->buffer_send, 0, CO_MCU_BUFFER_SIZE_SEND);
+	memset(CO_MCU_DATA(bricklet_num)->buffer_recv, 0, CO_MCU_BUFFER_SIZE_RECV);
 	CO_MCU_DATA(bricklet_num)->availability.access.got_message = false;
 	CO_MCU_DATA(bricklet_num)->availability.access.tries = 0;
-	CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout = 50; // Wait for 50ms with first send
-	CO_MCU_DATA(bricklet_num)->current_sequence_number = 1;
+	CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout   = 50; // Wait for 50ms with first send
+	CO_MCU_DATA(bricklet_num)->current_sequence_number   = 1;
 	CO_MCU_DATA(bricklet_num)->last_sequence_number_seen = 0;
+
+	CO_MCU_DATA(bricklet_num)->error_count.error_count_ack_checksum     = 0;
+	CO_MCU_DATA(bricklet_num)->error_count.error_count_message_checksum = 0;
+	CO_MCU_DATA(bricklet_num)->error_count.error_count_frame            = 0;
 
 	// Send initial enumerate. This will send back the initial enumeration callback
 	// of type added. We also use this to set the UID for the first time.
@@ -124,7 +111,7 @@ void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 	memcpy(CO_MCU_DATA(bricklet_num)->buffer_send, &co_mcu_enumerate, sizeof(CoMCUEnumerate));
 	CO_MCU_DATA(bricklet_num)->buffer_send_length = sizeof(CoMCUEnumerate);
 
-	ringbuffer_init(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, BUFFER_SIZE_RECV, CO_MCU_DATA(bricklet_num)->buffer_recv);
+	ringbuffer_init(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, CO_MCU_BUFFER_SIZE_RECV, CO_MCU_DATA(bricklet_num)->buffer_recv);
 }
 
 void bricklet_co_mcu_spibb_select(const uint8_t bricklet_num) {
@@ -142,6 +129,7 @@ uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, 
 	Pio *pin_clk = SPI_CLK(bricklet_num).pio;
 	Pio *pin_mosi = SPI_MOSI(bricklet_num).pio;
 	Pio *pin_miso = SPI_MISO(bricklet_num).pio;
+	const uint32_t sleep_half_bit_ns = SLEEP_HALF_BIT_NS(bricklet_num);
 
 	uint8_t recv = 0;
 
@@ -153,13 +141,13 @@ uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, 
 			pin_mosi->PIO_CODR = pin_mosi_mask;
 		}
 
-		SLEEP_NS(SLEEP_HALF_BIT_NS); // TODO: Use TimerCounter or similar for more accurate sleep here?
+		SLEEP_NS(sleep_half_bit_ns); // TODO: Use TimerCounter or similar for more accurate sleep here?
 		if(pin_miso->PIO_PDSR & pin_miso_mask) {
 			recv |= (1 << i);
 		}
 
 		pin_clk->PIO_SODR = pin_clk_mask;
-		SLEEP_NS(SLEEP_HALF_BIT_NS);
+		SLEEP_NS(sleep_half_bit_ns);
 	}
 
 	// We unroll the last element of the loop and remove
@@ -174,7 +162,7 @@ uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, 
 		pin_mosi->PIO_CODR = pin_mosi_mask;
 	}
 
-	SLEEP_NS(SLEEP_HALF_BIT_NS);
+	SLEEP_NS(sleep_half_bit_ns);
 	if(pin_miso->PIO_PDSR & pin_miso_mask) {
 		recv |= (1 << 0);
 	}
@@ -214,7 +202,7 @@ void bricklet_co_mcu_send_ack(const uint8_t bricklet_num, const uint8_t sequence
 void bricklet_co_mcu_new_message(void *data, const uint16_t length, const ComType com, const uint8_t bricklet_num) {
 	// We have to inject connected UID to Enumerate and Identity messages
 	uint8_t fid = ((MessageHeader*)data)->fid;
-	logd("co mcu message recv: %d\n\r", fid);
+//	logd("co mcu message recv: %d\n\r", fid);
 	switch(fid) {
 		// The relevant message content (uid and position) of Enumerate Callback
 		// and GetIdentitiy is the same, so we can handle it in one case.
@@ -257,6 +245,9 @@ uint16_t bricklet_co_mcu_check_missing_length(const uint8_t bricklet_num) {
 		}
 
 		// TODO: Sanity check length here already?
+		//       If we ignore it here, the data will be thrown away in state machine
+		//       if we handle it here, we don't know when the next packet begins and
+		//       there will be a error in the state machine anyway....
 		return rb->buffer[rb->start] - ringbuffer_get_used(rb);
 	}
 
@@ -278,7 +269,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 	// so the state always starts as "STATE_START".
 	CoMCURecvState state = STATE_START;
 	for(uint16_t i = start; i < start+used; i++) {
-		const uint16_t index = i % BUFFER_SIZE_RECV;
+		const uint16_t index = i % CO_MCU_BUFFER_SIZE_RECV;
 		const uint8_t data = CO_MCU_DATA(bricklet_num)->buffer_recv[index];
 		num_to_remove_from_ringbuffer++;
 
@@ -298,6 +289,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 				} else {
 					// If the length is not PROTOCOL_OVERHEAD or within [MIN_TFP_MESSAGE_LENGTH, MAX_TFP_MESSAGE_LENGTH]
 					// or 0, something has gone wrong!
+					CO_MCU_DATA(bricklet_num)->error_count.error_count_frame++;
 					bricklet_co_mcu_handle_error(bricklet_num);
 					logw("Error in STATE_START\n\r");
 					return;
@@ -328,6 +320,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 				num_to_remove_from_ringbuffer = 0;
 
 				if(checksum != data) {
+					CO_MCU_DATA(bricklet_num)->error_count.error_count_ack_checksum++;
 					bricklet_co_mcu_handle_error(bricklet_num);
 					logw("Error in STATE_ACK_CHECKSUM\n\r");
 					return;
@@ -369,6 +362,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 				num_to_remove_from_ringbuffer = 0;
 
 				if(checksum != data) {
+					CO_MCU_DATA(bricklet_num)->error_count.error_count_message_checksum++;
 					bricklet_co_mcu_handle_error(bricklet_num);
 					logw("Error in STATE_MESSAGE_CHECKSUM (chk, rcv): %x != %x\n\r", checksum, data);
 					return;
@@ -466,7 +460,7 @@ void bricklet_co_mcu_poll(const uint8_t bricklet_num) {
 }
 
 void bricklet_co_mcu_send(const uint8_t bricklet_num, uint8_t *data, const uint8_t length) {
-	if(length == 0 || length > BUFFER_SIZE_SEND) {
+	if(length == 0 || length > CO_MCU_BUFFER_SIZE_SEND) {
 		// In this case something went wrong
 		return;
 	}

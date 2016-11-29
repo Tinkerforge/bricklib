@@ -23,6 +23,48 @@
 #define BRICKLET_CO_MCU_H
 
 #include <stdint.h>
+#include "bricklib/utility/ringbuffer.h"
+
+#define CO_MCU_BUFFER_SIZE_SEND 80
+#define CO_MCU_BUFFER_SIZE_RECV 142
+#define CO_MCU_DEFAULT_BAUDRATE 1400000
+
+typedef enum {
+	STATE_START,
+	STATE_ACK_SEQUENCE_NUMBER,
+	STATE_ACK_CHECKSUM,
+	STATE_MESSAGE_SEQUENCE_NUMBER,
+	STATE_MESSAGE_DATA,
+	STATE_MESSAGE_CHECKSUM
+} CoMCURecvState;
+
+typedef union {
+	struct {
+		uint8_t got_message:1;
+		uint8_t tries:7;
+	} access;
+	uint8_t data;
+} CoMCURecvAvailability;
+
+typedef struct {
+	uint32_t error_count_ack_checksum;
+	uint32_t error_count_message_checksum;
+	uint32_t error_count_frame;
+} CoMCUSPITFPErrorCount;
+
+typedef struct {
+	CoMCUSPITFPErrorCount error_count;
+	CoMCURecvAvailability availability;
+	uint8_t buffer_send_length;
+	int16_t buffer_send_ack_timeout;
+	uint8_t current_sequence_number;
+	uint8_t last_sequence_number_seen;
+	uint8_t buffer_send[CO_MCU_BUFFER_SIZE_SEND];
+	uint8_t buffer_recv[CO_MCU_BUFFER_SIZE_RECV];
+	Ringbuffer ringbuffer_recv;
+} CoMCUData;
+
+#define CO_MCU_DATA(i) ((CoMCUData*)(bc[i]))
 
 void bricklet_co_mcu_poll(const uint8_t bricklet_num);
 void bricklet_co_mcu_send(const uint8_t bricklet_num, uint8_t *data, const uint8_t length);
