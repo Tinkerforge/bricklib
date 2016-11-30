@@ -401,6 +401,12 @@ uint8_t bricklet_co_mcu_get_sequence_byte(const uint8_t bricklet_num, const bool
 }
 
 void bricklet_co_mcu_poll(const uint8_t bricklet_num) {
+	if(com_info.current == COM_NONE) {
+		// Never communicate with the Bricklet if we don't know were to send
+		// the data!
+		return;
+	}
+
 	uint8_t checksum = 0;
 	if(CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout > 0) {
 		CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout--;
