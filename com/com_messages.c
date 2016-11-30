@@ -325,6 +325,10 @@ void make_bricklet_enumerate(EnumerateCallback *ec, const uint8_t bricklet) {
 	ec->version_hw[1] = bs[bricklet].hardware_version[1];
 	ec->version_hw[2] = bs[bricklet].hardware_version[2];
 	ec->device_identifier = bs[bricklet].device_identifier;
+	if(bricklet_attached[bricklet] == BRICKLET_INIT_CO_MCU) {
+		// A co mcu Bricklet does the initial enumeration itself
+		ec->device_identifier = 0;
+	}
 }
 
 void enumerate(const ComType com, const Enumerate *data) {
