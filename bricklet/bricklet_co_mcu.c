@@ -393,7 +393,7 @@ uint8_t bricklet_co_mcu_get_sequence_byte(const uint8_t bricklet_num, const bool
 	if(increase) {
 		CO_MCU_DATA(bricklet_num)->current_sequence_number++;
 		if(CO_MCU_DATA(bricklet_num)->current_sequence_number > 0xF) {
-			CO_MCU_DATA(bricklet_num)->current_sequence_number = 1;
+			CO_MCU_DATA(bricklet_num)->current_sequence_number = 2;
 		}
 	}
 
