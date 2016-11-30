@@ -141,6 +141,7 @@ void com_message_loop(void *parameters) {
 
 		led_rxtx++;
 		mlp->return_func(data, header->length);
+		taskYIELD();
 	}
 }
 
