@@ -364,6 +364,9 @@ void spi_stack_master_irq(void) {
 				// Insert stack position (in case of Enumerate or GetIdentity).
 				// The SPI Slave can not know its position in the stack.
 				spi_stack_master_insert_position(spi_stack_buffer_recv, stack_address_current);
+
+				// Handle routing for Co MCU Bricklets
+				spi_stack_master_update_routing_table(spi_stack_buffer_recv, stack_address_current);
 			}
 		}
 
@@ -377,6 +380,20 @@ void spi_stack_master_irq(void) {
 		}
 
 		transceive_state = TRANSCEIVE_STATE_MESSAGE_EMPTY;
+	}
+}
+
+void spi_stack_master_update_routing_table(void* data, const uint8_t position) {
+	if(spi_stack_buffer_size_recv > sizeof(MessageHeader)) {
+		EnumerateCallback *enum_cb =  (EnumerateCallback*)data;
+		if(enum_cb->header.fid == FID_ENUMERATE_CALLBACK) {
+			RouteTo route_to = routing_route_to(enum_cb->header.uid);
+			if(route_to.to == 0 && route_to.option == 0) {
+				route_to.to = ROUTING_STACK;
+				route_to.option = position;
+				routing_add_route(enum_cb->header.uid, route_to);
+			}
+		}
 	}
 }
 
