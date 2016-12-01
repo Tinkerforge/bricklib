@@ -68,6 +68,13 @@ void com_make_default_header(void *message,
                              const uint32_t uid,
                              const uint8_t length,
                              const uint8_t fid);
+void send_blocking_options(const void *data,
+                           const uint16_t length,
+                           const ComType com,
+                           uint32_t *options);
+void send_blocking(const void *data,
+                   const uint16_t length,
+                   const ComType com);
 uint16_t send_blocking_with_timeout(const void *data,
                                     const uint16_t length,
                                     const ComType com);

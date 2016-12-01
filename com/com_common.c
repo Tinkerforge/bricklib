@@ -53,6 +53,26 @@ extern const BrickletAddress baddr[];
 extern BrickletSettings bs[];
 extern uint8_t bricklet_attached[];
 
+void send_blocking_options(const void *data,
+                           const uint16_t length,
+                           const ComType com,
+                           uint32_t *options) {
+	uint16_t bytes_send = 0;
+
+	while(length - bytes_send != 0) {
+		bytes_send += SEND(data + bytes_send, length - bytes_send, com, options);
+		taskYIELD();
+	}
+
+	led_rxtx++;
+}
+
+void send_blocking(const void *data,
+                   const uint16_t length,
+                   const ComType com) {
+	return send_blocking_options(data, length, com, NULL);
+}
+
 uint16_t send_blocking_with_timeout_options(const void *data,
                                             const uint16_t length,
                                             const ComType com,

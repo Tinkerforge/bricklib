@@ -26,7 +26,7 @@
 #include "bricklib/utility/ringbuffer.h"
 
 #define CO_MCU_BUFFER_SIZE_SEND 80
-#define CO_MCU_BUFFER_SIZE_RECV 142
+#define CO_MCU_BUFFER_SIZE_RECV 140
 #define CO_MCU_DEFAULT_BAUDRATE 1400000
 
 typedef enum {
@@ -59,6 +59,7 @@ typedef struct {
 	int16_t buffer_send_ack_timeout;
 	uint8_t current_sequence_number;
 	uint8_t last_sequence_number_seen;
+	bool first_enumerate_send;
 	uint8_t buffer_send[CO_MCU_BUFFER_SIZE_SEND];
 	uint8_t buffer_recv[CO_MCU_BUFFER_SIZE_RECV];
 	Ringbuffer ringbuffer_recv;

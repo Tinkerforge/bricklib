@@ -91,6 +91,7 @@ void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 	CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout   = 50; // Wait for 50ms with first send
 	CO_MCU_DATA(bricklet_num)->current_sequence_number   = 1;
 	CO_MCU_DATA(bricklet_num)->last_sequence_number_seen = 0;
+	CO_MCU_DATA(bricklet_num)->first_enumerate_send      = false;
 
 	CO_MCU_DATA(bricklet_num)->error_count.error_count_ack_checksum     = 0;
 	CO_MCU_DATA(bricklet_num)->error_count.error_count_message_checksum = 0;
@@ -225,7 +226,15 @@ void bricklet_co_mcu_new_message(void *data, const uint16_t length, const ComTyp
 	CO_MCU_DATA(bricklet_num)->availability.access.got_message = true;
 
 	// Send message via current com protocol.
-	send_blocking_with_timeout(data, length, com);
+	if(CO_MCU_DATA(bricklet_num)->first_enumerate_send) {
+		send_blocking_with_timeout(data, length, com);
+	} else {
+		// We make sure that the very first enumerate is definitely send.
+		// With this we can make sure that the Master of a stack can
+		// always creates a proper routing table
+		send_blocking(data, length, com);
+		CO_MCU_DATA(bricklet_num)->first_enumerate_send = true;
+	}
 }
 
 void bricklet_co_mcu_handle_error(const uint8_t bricklet_num) {
