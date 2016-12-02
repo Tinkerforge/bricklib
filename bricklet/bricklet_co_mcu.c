@@ -482,7 +482,7 @@ void bricklet_co_mcu_send(const uint8_t bricklet_num, uint8_t *data, const uint8
 	}
 
 	uint32_t start_time = system_timer_get_ms();
-	while(system_timer_is_time_elapsed_ms(start_time, SEND_BLOCKING_TIMEOUT_SPI_STACK)) {
+	while(!system_timer_is_time_elapsed_ms(start_time, SEND_BLOCKING_TIMEOUT_SPI_STACK)) {
 		if(CO_MCU_DATA(bricklet_num)->buffer_send_length == 0) {
 			memcpy(CO_MCU_DATA(bricklet_num)->buffer_send, data, length);
 			CO_MCU_DATA(bricklet_num)->buffer_send_length = length;
