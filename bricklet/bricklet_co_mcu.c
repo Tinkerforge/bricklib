@@ -25,6 +25,7 @@
 #include "bricklib/utility/init.h"
 #include "bricklib/utility/ringbuffer.h"
 #include "bricklib/utility/pearson_hash.h"
+#include "bricklib/utility/system_timer.h"
 
 #include "bricklet_config.h"
 #include "config.h"
@@ -480,8 +481,8 @@ void bricklet_co_mcu_send(const uint8_t bricklet_num, uint8_t *data, const uint8
 		return;
 	}
 
-	uint32_t trials = SEND_BLOCKING_TRIALS_SPI_STACK;
-	while(trials > 0) {
+	uint32_t start_time = system_timer_get_ms();
+	while(system_timer_is_time_elapsed_ms(start_time, SEND_BLOCKING_TIMEOUT_SPI_STACK)) {
 		if(CO_MCU_DATA(bricklet_num)->buffer_send_length == 0) {
 			memcpy(CO_MCU_DATA(bricklet_num)->buffer_send, data, length);
 			CO_MCU_DATA(bricklet_num)->buffer_send_length = length;
@@ -490,7 +491,6 @@ void bricklet_co_mcu_send(const uint8_t bricklet_num, uint8_t *data, const uint8
 			break;
 		}
 		taskYIELD();
-		trials--;
 	}
 
 }

@@ -38,6 +38,7 @@
 #include "bricklib/drivers/wdt/wdt.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/utility/led.h"
+#include "bricklib/utility/system_timer.h"
 
 #ifdef BRICK_CAN_BE_MASTER
 #ifndef BRICK_EXCLUDE_BRICKD
@@ -46,7 +47,7 @@
 #endif
 
 extern uint32_t led_rxtx;
-extern uint32_t com_blocking_trials[];
+extern uint32_t com_blocking_timeout[];
 
 extern ComInfo com_info;
 extern const BrickletAddress baddr[];
@@ -78,12 +79,14 @@ uint16_t send_blocking_with_timeout_options(const void *data,
                                             const ComType com,
                                             uint32_t *options) {
 	uint16_t bytes_send = 0;
-	uint32_t trials = com_blocking_trials[com];
+	uint32_t time_start = system_timer_get_ms();
 
-	while(length - bytes_send != 0 && trials--) {
+	led_toggle(LED_EXT_BLUE_0);
+	while(length - bytes_send != 0 && !system_timer_is_time_elapsed_ms(time_start, com_blocking_timeout[com])) {
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com, options);
 		taskYIELD();
 	}
+	led_toggle(LED_EXT_BLUE_0);
 
 	led_rxtx++;
 	return bytes_send;
