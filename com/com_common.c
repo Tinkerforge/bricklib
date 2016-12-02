@@ -81,12 +81,10 @@ uint16_t send_blocking_with_timeout_options(const void *data,
 	uint16_t bytes_send = 0;
 	uint32_t time_start = system_timer_get_ms();
 
-	led_toggle(LED_EXT_BLUE_0);
 	while(length - bytes_send != 0 && !system_timer_is_time_elapsed_ms(time_start, com_blocking_timeout[com])) {
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com, options);
 		taskYIELD();
 	}
-	led_toggle(LED_EXT_BLUE_0);
 
 	led_rxtx++;
 	return bytes_send;
