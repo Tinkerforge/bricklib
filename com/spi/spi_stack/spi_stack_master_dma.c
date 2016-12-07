@@ -63,7 +63,6 @@ extern ComInfo com_info;
 
 extern uint32_t led_rxtx;
 
-uint8_t spi_stack_master_master_seq_last_acked[SPI_ADDRESS_MAX] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 uint8_t spi_stack_master_master_seq[SPI_ADDRESS_MAX] = {1, 1, 1, 1, 1, 1, 1, 1};
 uint8_t spi_stack_master_slave_seq[SPI_ADDRESS_MAX] = {0};
 
@@ -371,18 +370,18 @@ void spi_stack_master_irq(void) {
 			}
 		}
 
+		const uint8_t last_master_seq_seen_by_slave = spi_stack_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_MASTER_MASK;
 		uint8_t seq_inc = spi_stack_master_master_seq[stack_address_current-1] & SPI_STACK_INFO_SEQUENCE_MASTER_MASK;
 		spi_stack_increase_master_seq(&seq_inc);
 
 		// If the slave received our last message or we didn't send anything anyway, we can increase sequence number.
-		// We do not increase the sequence number if the last ack we saw is the had the same sequence number as
+		// We do not increase the sequence number if the last ack we saw had the same sequence number as
 		// the one we would get after increasing. Otherwise we may get a false positive ACK.
-		if((((spi_stack_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_MASTER_MASK) != spi_stack_master_master_seq[stack_address_current-1]) &&
-		   ((spi_stack_buffer_size_send > 0) || seq_inc == spi_stack_master_master_seq_last_acked[stack_address_current-1]))) {
+		if(((last_master_seq_seen_by_slave != spi_stack_master_master_seq[stack_address_current-1]) &&
+		   ((spi_stack_buffer_size_send > 0) || (seq_inc == last_master_seq_seen_by_slave)))) {
 			transceive_state = TRANSCEIVE_STATE_MESSAGE_READY;
 			return;
 		} else {
-			spi_stack_master_master_seq_last_acked[stack_address_current-1] = spi_stack_buffer_recv[SPI_STACK_INFO(length)] & SPI_STACK_INFO_SEQUENCE_MASTER_MASK;
 			spi_stack_increase_master_seq(&spi_stack_master_master_seq[stack_address_current-1]);
 			spi_stack_buffer_size_send = 0;
 		}
