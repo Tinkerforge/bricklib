@@ -271,23 +271,25 @@ void com_adc_calibrate(const ComType com, const ADCCalibrate *data) {
 }
 
 void stack_enumerate(const ComType com, const StackEnumerate *data) {
-	StackEnumerateReturn ser = MESSAGE_EMPTY_INITIALIZER;
-	ser.header               = data->header;
-	ser.header.length        = sizeof(StackEnumerateReturn);
-	ser.uids[0]              = com_info.uid;
+	if(com != COM_WIFI2) {
+		StackEnumerateReturn ser = MESSAGE_EMPTY_INITIALIZER;
+		ser.header               = data->header;
+		ser.header.length        = sizeof(StackEnumerateReturn);
+		ser.uids[0]              = com_info.uid;
 
-	uint8_t i = 1;
-	for(uint8_t j = 0; j < BRICKLET_NUM; j++) {
-		if(bs[j].uid != 0) {
-			ser.uids[i]      = bs[j].uid;
-			i++;
+		uint8_t i = 1;
+		for(uint8_t j = 0; j < BRICKLET_NUM; j++) {
+			if(bs[j].uid != 0) {
+				ser.uids[i]      = bs[j].uid;
+				i++;
+			}
 		}
+
+		com_info.current = com;
+
+		send_blocking_with_timeout(&ser, sizeof(StackEnumerateReturn), com);
+		logd("Stack Enumerate: %lu %lu %lu %lu %lu\n\r", ser.uids[0], ser.uids[1], ser.uids[2], ser.uids[3], ser.uids[4]);
 	}
-
-	com_info.current = com;
-
-	send_blocking_with_timeout(&ser, sizeof(StackEnumerateReturn), com);
-	logd("Stack Enumerate: %lu %lu %lu %lu %lu\n\r", ser.uids[0], ser.uids[1], ser.uids[2], ser.uids[3], ser.uids[4]);
 
 	while(!brick_init_enumeration(com));
 }
