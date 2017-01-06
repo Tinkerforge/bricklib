@@ -99,12 +99,14 @@ const ComMessage* get_com_from_header(const MessageHeader *header) {
 	uint8_t fid = 0;
 	if(header->fid < COM_GENERAL_FID_MAX) {
 		fid = header->fid;
+		if(fid > COM_MESSAGE_USER_LAST_FID) {
+			return NULL;
+		}
 	} else {
 		fid = COM_MESSAGES_NUM - 1 - 255 + header->fid;
-	}
-
-	if(fid > COM_MESSAGES_NUM) {
-		return NULL;
+		if(fid > COM_MESSAGES_NUM) {
+			return NULL;
+		}
 	}
 
 	return &com_messages[fid];
