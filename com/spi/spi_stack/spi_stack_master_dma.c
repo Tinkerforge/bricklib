@@ -191,6 +191,7 @@ void spi_stack_master_disable_dma(void) {
 }
 
 void spi_stack_master_make_empty_send_packet(void) {
+	memset(spi_stack_buffer_send, 0, SPI_STACK_MAX_MESSAGE_LENGTH);
 	spi_stack_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 	spi_stack_buffer_send[SPI_STACK_LENGTH] = SPI_STACK_EMPTY_MESSAGE_LENGTH;
 	spi_stack_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_master_master_seq[stack_address_current-1] | spi_stack_master_slave_seq[stack_address_current-1];
@@ -247,6 +248,8 @@ SPIStackMasterTransceiveInfo spi_stack_master_start_transceive(const uint8_t *da
 		if(slave_status[stack_address-1] == SLAVE_STATUS_AVAILABLE) {
 			// The send buffer is empty, there is something to send
 			// and the slave is ready to receive data, that means we can copy the data!
+
+			memset(spi_stack_buffer_send, 0, SPI_STACK_MAX_MESSAGE_LENGTH);
 
 			spi_stack_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 			spi_stack_buffer_send[SPI_STACK_LENGTH] = length + SPI_STACK_EMPTY_MESSAGE_LENGTH;

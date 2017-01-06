@@ -171,6 +171,7 @@ void spi_stack_slave_handle_irq_send(void) {
 		// If we have something to send we will immediately give it to the DMA
 		const uint8_t length = spi_stack_buffer_size_send + SPI_STACK_EMPTY_MESSAGE_LENGTH;
 
+		memset(spi_dma_buffer_send, 0, SPI_STACK_MAX_MESSAGE_LENGTH);
 		// Set preamble, length and data
 		spi_dma_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 		spi_dma_buffer_send[SPI_STACK_LENGTH] = length;
@@ -216,6 +217,7 @@ void spi_stack_slave_handle_irq_send(void) {
 
 	// Otherwise the send buffer is empty.
 	// In this case we have to send an empty message
+	memset(spi_dma_buffer_send, 0, SPI_STACK_MAX_MESSAGE_LENGTH);
 	spi_dma_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 	spi_dma_buffer_send[SPI_STACK_LENGTH] = SPI_STACK_EMPTY_MESSAGE_LENGTH;
 	spi_dma_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_slave_slave_seq | spi_stack_slave_master_seq;
@@ -296,6 +298,7 @@ void spi_stack_slave_init(void) {
 
     spi_stack_slave_reset_recv_dma_buffer();
 
+	memset(spi_dma_buffer_send, 0, SPI_STACK_MAX_MESSAGE_LENGTH);
 	spi_dma_buffer_send[SPI_STACK_PREAMBLE] = SPI_STACK_PREAMBLE_VALUE;
 	spi_dma_buffer_send[SPI_STACK_LENGTH] = SPI_STACK_EMPTY_MESSAGE_LENGTH;
 	spi_dma_buffer_send[SPI_STACK_INFO(SPI_STACK_EMPTY_MESSAGE_LENGTH)] = spi_stack_slave_slave_seq | spi_stack_slave_master_seq;
@@ -328,6 +331,7 @@ uint16_t spi_stack_slave_send(const void *data, const uint16_t length, uint32_t 
 
 	uint16_t send_length = MIN(length, SPI_STACK_BUFFER_SIZE);
 
+	memset(spi_stack_buffer_send, 0, SPI_STACK_MAX_MESSAGE_LENGTH);
 	memcpy(spi_stack_buffer_send, data, send_length);
 	spi_stack_buffer_size_send = send_length;
 
