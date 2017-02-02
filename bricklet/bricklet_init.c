@@ -202,29 +202,6 @@ void bricklet_deselect(const uint8_t bricklet) {
 	}
 }
 
-void bricklet_write_asc_to_flash(const uint8_t bricklet) {
-	// Disable all irqs before plugin is written to flash.
-	// While writing to flash there can't be any other access to the flash
-	// (e.g. via interrupts).
-	DISABLE_RESET_BUTTON();
-	__disable_irq();
-
-	// Write api address to flash
-	int adr = (int)&ba;
-	FLASHD_Write(baddr[bricklet].api, &adr, sizeof(int*));
-
-	// Write settings address to flash
-	adr = (int)&bs[bricklet];
-	FLASHD_Write(baddr[bricklet].settings, &adr, sizeof(int*));
-
-	// Write context address to flash
-	adr = (int)&bc[bricklet];
-	FLASHD_Write(baddr[bricklet].context, &adr, sizeof(int*));
-
-	__enable_irq();
-    ENABLE_RESET_BUTTON();
-}
-
 void bricklet_write_plugin_to_flash(const char *plugin,
 	                                const uint8_t position,
 	                                const uint8_t bricklet,
@@ -248,16 +225,45 @@ uint8_t bricklet_init_plugin(const uint8_t bricklet) {
 	bricklet_select(bricklet);
 
 	char plugin[PLUGIN_CHUNK_SIZE_STARTUP];
+	const uint16_t last = BRICKLET_PLUGIN_MAX_SIZE/PLUGIN_CHUNK_SIZE_STARTUP - 1;
 
-	const uint16_t end = BRICKLET_PLUGIN_MAX_SIZE/PLUGIN_CHUNK_SIZE_STARTUP;
-
-	for(uint16_t position = 0; position < end; position++) {
+	for(uint16_t position = 0; position < last; position++) {
 		i2c_eeprom_master_read_plugin(TWI_BRICKLET, plugin, position, PLUGIN_CHUNK_SIZE_STARTUP);
 		bricklet_write_plugin_to_flash(plugin, position, bricklet, PLUGIN_CHUNK_SIZE_STARTUP);
 	}
 
+	// Patch API, settings and context addresses into last page, because
+	// on SAM4 we do a global erase before writing and can then only write
+	// a page correctly once
+	i2c_eeprom_master_read_plugin(TWI_BRICKLET, plugin, last, PLUGIN_CHUNK_SIZE_STARTUP);
+
+	// Write context address
+	uint32_t adr = (uint32_t)&bc[bricklet];
+
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP - 12] = (adr >>  0) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP - 11] = (adr >>  8) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP - 10] = (adr >> 16) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  9] = (adr >> 24) & 0xFF;
+
+	// Write settings address
+	adr = (uint32_t)&bs[bricklet];
+
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  8] = (adr >>  0) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  7] = (adr >>  8) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  6] = (adr >> 16) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  5] = (adr >> 24) & 0xFF;
+
+	// Write API address
+	adr = (uint32_t)&ba;
+
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  4] = (adr >>  0) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  3] = (adr >>  8) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  2] = (adr >> 16) & 0xFF;
+	plugin[PLUGIN_CHUNK_SIZE_STARTUP -  1] = (adr >> 24) & 0xFF;
+
+	bricklet_write_plugin_to_flash(plugin, last, bricklet, PLUGIN_CHUNK_SIZE_STARTUP);
+
 	bricklet_deselect(bricklet);
-	bricklet_write_asc_to_flash(bricklet);
 
     memset(bc[bricklet], 0, BRICKLET_CONTEXT_MAX_SIZE);
 
@@ -371,6 +377,7 @@ void bricklet_init(void) {
 		bricklet_attached[i] = BRICKLET_INIT_NO_BRICKLET;
 	}
 
+	// Only change wait states on SAM4, because this makes a SAM3 hang for unknown reasons
 	if(!IS_SAM3()) {
 		EFC_SetWaitState(EFC, 6);
 	}

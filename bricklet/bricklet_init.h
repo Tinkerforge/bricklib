@@ -31,7 +31,6 @@
 #define BRICKLET_INIT_PROTOCOL_VERSION_2 2
 #define BRICKLET_INIT_CO_MCU             3
 
-void bricklet_write_asc_to_flash(const uint8_t bricklet);
 void bricklet_write_plugin_to_flash(const char *plugin,
                                     const uint8_t position,
                                     const uint8_t bricklet,
