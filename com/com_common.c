@@ -81,7 +81,11 @@ uint16_t send_blocking_with_timeout_options(const void *data,
 	uint16_t bytes_send = 0;
 	uint32_t time_start = system_timer_get_ms();
 
-	while(length - bytes_send != 0 && !system_timer_is_time_elapsed_ms(time_start, com_blocking_timeout[com])) {
+	while(length - bytes_send != 0) {
+		if(system_timer_is_time_elapsed_ms(time_start, com_blocking_timeout[com])) {
+			com_timeout_count[com]++;
+			break;
+		}
 		bytes_send += SEND(data + bytes_send, length - bytes_send, com, options);
 		taskYIELD();
 	}

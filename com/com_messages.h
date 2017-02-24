@@ -36,6 +36,8 @@
 
 #define SIZE_OF_MESSAGE_HEADER 8
 
+#define FID_GET_SEND_TIMEOUT_COUNT 233
+
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 #define FID_SET_SPITFP_BAUDRATE 234
 #define FID_GET_SPITFP_BAUDRATE 235
@@ -83,6 +85,16 @@ typedef struct {
 	uint8_t type;
 	message_handler_func_t reply_func;
 } ComMessage;
+
+typedef struct {
+	MessageHeader header;
+	uint8_t communication_method;
+} __attribute__((__packed__)) GetSendTimeoutCount;
+
+typedef struct {
+	MessageHeader header;
+	uint32_t timeout_count;
+} __attribute__((__packed__)) GetSendTimeoutCountReturn;
 
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 typedef struct {
@@ -219,6 +231,9 @@ const ComMessage* get_com_from_header(const MessageHeader *header);
 uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
+
+
+void get_send_timeout_count(const ComType com, const GetSendTimeoutCount *data);
 
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 void set_spitfp_baudrate(const ComType com, const SetSPITFPBaudrate *data);

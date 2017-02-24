@@ -30,6 +30,7 @@
 #include "bricklib/logging/logging.h"
 #include "bricklib/drivers/pio/pio.h"
 #include "bricklib/drivers/adc/adc.h"
+#include "bricklib/com/com.h"
 
 #include "bricklib/bricklet/bricklet_communication.h"
 #include "bricklib/bricklet/bricklet_config.h"
@@ -67,6 +68,7 @@ extern bool led_status_is_enabled;
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
+	{FID_GET_SEND_TIMEOUT_COUNT, (message_handler_func_t)get_send_timeout_count},
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 	{FID_SET_SPITFP_BAUDRATE,(message_handler_func_t)set_spitfp_baudrate},
 	{FID_GET_SPITFP_BAUDRATE,(message_handler_func_t)get_spitfp_baudrate},
@@ -118,6 +120,26 @@ void reset(const ComType com, const Reset *data) {
 	// TODO: Protocol V2.0 -> wait until msg is send?
 
 	brick_reset();
+}
+
+void get_send_timeout_count(const ComType com, const GetSendTimeoutCount *data) {
+#ifdef BRICK_CAN_BE_MASTER
+	if(data->communication_method > COM_WIFI2) {
+#else
+	if(data->communication_method > COM_SPI_STACK) {
+#endif
+		com_return_error(data, sizeof(GetSendTimeoutCountReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
+		logblete("Communication Method %d does not exist (get_send_timeout_count)\n\r", port);
+		return;
+	}
+
+	GetSendTimeoutCountReturn gtcr;
+
+	gtcr.header        = data->header;
+	gtcr.header.length = sizeof(GetSendTimeoutCountReturn);
+	gtcr.timeout_count = com_timeout_count[data->communication_method];
+
+	send_blocking_with_timeout(&gtcr, sizeof(GetSendTimeoutCountReturn), com);
 }
 
 #ifdef BRICK_HAS_CO_MCU_SUPPORT

@@ -62,3 +62,5 @@ uint32_t com_blocking_timeout[] = {
 	SEND_BLOCKING_TIMEOUT_ETHERNET,
 	SEND_BLOCKING_TIMEOUT_WIFI2
 };
+
+uint32_t com_timeout_count[8] = {0, 0, 0, 0, 0, 0, 0, 0};

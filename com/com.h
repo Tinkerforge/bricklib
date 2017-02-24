@@ -85,5 +85,6 @@ struct Com {
 };
 
 extern Com com_list[];
+extern uint32_t com_timeout_count[];
 
 #endif
