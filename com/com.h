@@ -61,7 +61,7 @@ typedef struct {
 #define SEND_BLOCKING_TIMEOUT_ETHERNET   SEND_BLOCKING_TIMEOUT
 #define SEND_BLOCKING_TIMEOUT_WIFI2      SEND_BLOCKING_TIMEOUT
 
-// Not beeing able to send over chibi is expected (communication partner out
+// Not being able to send over chibi is expected (communication partner out
 // of range). Thus we don't want to wait too long.
 #define SEND_BLOCKING_TIMEOUT_CHIBI      10
 
