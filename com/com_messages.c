@@ -129,7 +129,7 @@ void get_send_timeout_count(const ComType com, const GetSendTimeoutCount *data) 
 	if(data->communication_method > COM_SPI_STACK) {
 #endif
 		com_return_error(data, sizeof(GetSendTimeoutCountReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
-		logblete("Communication Method %d does not exist (get_send_timeout_count)\n\r", port);
+		logblete("Communication Method %d does not exist (get_send_timeout_count)\n\r", data->communication_method);
 		return;
 	}
 
