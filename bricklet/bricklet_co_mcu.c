@@ -89,8 +89,8 @@ void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 	memset(CO_MCU_DATA(bricklet_num)->buffer_recv, 0, CO_MCU_BUFFER_SIZE_RECV);
 	CO_MCU_DATA(bricklet_num)->availability.access.got_message = false;
 	CO_MCU_DATA(bricklet_num)->availability.access.tries = 0;
-	CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout   = 50; // Wait for 50ms with first send
-	CO_MCU_DATA(bricklet_num)->current_sequence_number   = 1;
+	CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout   = -1; // Try first send immediately
+	CO_MCU_DATA(bricklet_num)->current_sequence_number   = 0; // Initialize sequence number as 0, so the first one will be written as 1.
 	CO_MCU_DATA(bricklet_num)->last_sequence_number_seen = 0;
 	CO_MCU_DATA(bricklet_num)->first_enumerate_send      = false;
 
