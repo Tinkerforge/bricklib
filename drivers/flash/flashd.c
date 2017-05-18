@@ -266,7 +266,8 @@ extern uint32_t FLASHD_Write( uint32_t dwAddress, const void *pvBuffer, uint32_t
 
        	// On SAM3 we do erase and write page here.
        	// On SAM4 we can't use EWP, we erased pages before, we only use WP here.
-       	if(IS_SAM3()) {
+        // First 2*8kb on SAM4 can use EWP.
+       	if(IS_SAM3() || (page < 32)) {
        		dwError = EFC_PerformCommand(pEfc, EFC_FCMD_EWP, page, _dwUseIAP);
        	} else {
        		dwError = EFC_PerformCommand(pEfc, EFC_FCMD_WP, page, _dwUseIAP);
