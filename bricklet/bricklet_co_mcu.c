@@ -47,6 +47,8 @@ uint32_t bricklet_spitfp_baudrate[BRICKLET_NUM] = {
 	#endif
 };
 
+#define BRICKLET_LED_STRIP_DEVICE_IDENTIFIER 231
+
 #define BUFFER_SEND_ACK_TIMEOUT 20 // in ms
 #define MAX_TRIES_IF_NOT_CONNECTED 100
 
@@ -58,6 +60,8 @@ uint32_t bricklet_spitfp_baudrate[BRICKLET_NUM] = {
 extern BrickletSettings bs[BRICKLET_NUM];
 extern uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4];
 extern ComInfo com_info;
+extern uint8_t bricklet_attached[BRICKLET_NUM];
+extern const BrickletAddress baddr[BRICKLET_NUM];
 
 #define SPI_SS(i)   (bs[i].pin1_ad)
 #define SPI_CLK(i)  (bs[i].pin2_da)
@@ -410,6 +414,39 @@ uint8_t bricklet_co_mcu_get_sequence_byte(const uint8_t bricklet_num, const bool
 	return CO_MCU_DATA(bricklet_num)->current_sequence_number | (CO_MCU_DATA(bricklet_num)->last_sequence_number_seen << 4);
 }
 
+bool bricklet_co_mcu_check_led_strip(const uint8_t bricklet_num) {
+	if(false ||
+#if BRICKLET_NUM > 0
+	   (bs[0].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER) ||
+#endif
+#if BRICKLET_NUM > 1
+	   (bs[1].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER) ||
+#endif
+#if BRICKLET_NUM > 2
+	   (bs[2].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER) ||
+#endif
+#if BRICKLET_NUM > 3
+	   (bs[3].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER)
+#endif
+	   ) {
+
+		// If there is an LED Strip Bricklet we do not poll
+		// this port anymore for a co mcu Bricklet and we reinitialize
+		// the LED Strip Bricklet
+		bricklet_attached[bricklet_num] = BRICKLET_INIT_NO_BRICKLET;
+		bs[bricklet_num].device_identifier = 0;
+
+		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
+			if(bs[i].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER) {
+				baddr[i].entry(BRICKLET_TYPE_CONSTRUCTOR, 0, NULL);
+			}
+		}
+		return true;
+	}
+
+	return false;
+}
+
 void bricklet_co_mcu_poll(const uint8_t bricklet_num) {
 	if(com_info.current == COM_NONE) {
 		// Never communicate with the Bricklet if we don't know were to send
@@ -426,6 +463,14 @@ void bricklet_co_mcu_poll(const uint8_t bricklet_num) {
 				// If we have never seen a message and tried to send a message for
 				// more then MAX_TRIES_IF_NOT_CONNCETED times, we assume that there is no
 				// Bricklet connected and remove the message
+
+				// HACK for LED Strip Bricklet: If we reached the first timeout and there is a
+				//                              LED Strip Bricklet present, we return here and
+				//                              don't check again. In this case the BC RAM can
+				//                              then be used by the LED Strip Bricklet.
+				if(bricklet_co_mcu_check_led_strip(bricklet_num)) {
+					return;
+				}
 
 				// For all following tries we only try once (until we really get an answer)
 				CO_MCU_DATA(bricklet_num)->availability.access.tries = MAX_TRIES_IF_NOT_CONNECTED - 1;

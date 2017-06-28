@@ -298,7 +298,7 @@ void bricklet_try_connection(const uint8_t bricklet) {
 		bricklet_co_mcu_init(bricklet);
 		bricklet_attached[bricklet] = BRICKLET_INIT_CO_MCU;
 		bs[bricklet].uid = 0;
-		bs[bricklet].device_identifier = 0;
+		bs[bricklet].device_identifier = 0xFFFF; // Set unused device identifier that is not equal to 0 for CO MCU Bricklet
 #endif
 		return;
 	}
