@@ -415,18 +415,18 @@ uint8_t bricklet_co_mcu_get_sequence_byte(const uint8_t bricklet_num, const bool
 }
 
 bool bricklet_co_mcu_check_led_strip(const uint8_t bricklet_num) {
-	if(false ||
+	if(false
 #if BRICKLET_NUM > 0
-	   (bs[0].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER) ||
+	   || (bs[0].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER)
 #endif
 #if BRICKLET_NUM > 1
-	   (bs[1].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER) ||
+	   || (bs[1].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER)
 #endif
 #if BRICKLET_NUM > 2
-	   (bs[2].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER) ||
+	   || (bs[2].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER)
 #endif
 #if BRICKLET_NUM > 3
-	   (bs[3].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER)
+	   || (bs[3].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER)
 #endif
 	   ) {
 
