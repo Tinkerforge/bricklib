@@ -487,8 +487,6 @@ void bricklet_co_mcu_update_speed(void) {
 		} else {
 			bricklet_spitfp_baudrate_current = CO_MCU_MAXIMUM_BAUDRATE;
 		}
-
-		printf("%d -> %d\n\r", counter, bricklet_spitfp_baudrate_current);
 	}
 }
 
