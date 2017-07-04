@@ -36,6 +36,11 @@
 
 #define SIZE_OF_MESSAGE_HEADER 8
 
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+#define FID_SET_SPITFP_BAUDRATE_CONFIG 231
+#define FID_GET_SPITFP_BAUDRATE_CONFIG 232
+#endif
+
 #define FID_GET_SEND_TIMEOUT_COUNT 233
 
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
@@ -85,6 +90,24 @@ typedef struct {
 	uint8_t type;
 	message_handler_func_t reply_func;
 } ComMessage;
+
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+typedef struct {
+	MessageHeader header;
+	bool enable_dynamic_baudrate;
+	uint32_t minimum_dynamic_baudrate;
+} __attribute__((__packed__)) SetSPITFPBaudrateConfig;
+
+typedef struct {
+	MessageHeader header;
+} __attribute__((__packed__)) GetSPITFPBaudrateConfig;
+
+typedef struct {
+	MessageHeader header;
+	bool enable_dynamic_baudrate;
+	uint32_t minimum_dynamic_baudrate;
+} __attribute__((__packed__)) GetSPITFPBaudrateConfigReturn;
+#endif
 
 typedef struct {
 	MessageHeader header;
@@ -232,6 +255,11 @@ uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
 
+
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+void set_spitfp_baudrate_config(const ComType com, const SetSPITFPBaudrateConfig *data);
+void get_spitfp_baudrate_config(const ComType com, const GetSPITFPBaudrateConfig *data);
+#endif
 
 void get_send_timeout_count(const ComType com, const GetSendTimeoutCount *data);
 

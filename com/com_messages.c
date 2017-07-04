@@ -44,6 +44,9 @@
 #include "bricklib/bricklet/bricklet_co_mcu.h"
 extern uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4];
 extern uint32_t bricklet_spitfp_baudrate[BRICKLET_NUM];
+extern uint32_t bricklet_spitfp_minimum_dynamic_baudrate;
+extern bool bricklet_spitfp_dynamic_baudrate_enabled;
+extern uint32_t bricklet_spitfp_baudrate_current;
 #endif
 
 #include "com_common.h"
@@ -68,6 +71,13 @@ extern bool led_status_is_enabled;
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+	{FID_SET_SPITFP_BAUDRATE_CONFIG,(message_handler_func_t)set_spitfp_baudrate_config},
+	{FID_GET_SPITFP_BAUDRATE_CONFIG,(message_handler_func_t)get_spitfp_baudrate_config},
+#else
+	COM_NO_MESSAGE,
+	COM_NO_MESSAGE,
+#endif
 	{FID_GET_SEND_TIMEOUT_COUNT, (message_handler_func_t)get_send_timeout_count},
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 	{FID_SET_SPITFP_BAUDRATE,(message_handler_func_t)set_spitfp_baudrate},
@@ -122,6 +132,35 @@ void reset(const ComType com, const Reset *data) {
 	brick_reset();
 }
 
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
+void set_spitfp_baudrate_config(const ComType com, const SetSPITFPBaudrateConfig *data) {
+	bricklet_spitfp_minimum_dynamic_baudrate = BETWEEN(CO_MCU_MINIMUM_BAUDRATE, data->minimum_dynamic_baudrate, CO_MCU_MAXIMUM_BAUDRATE);
+	bricklet_spitfp_dynamic_baudrate_enabled = data->enable_dynamic_baudrate;
+
+	// If we enable the dynamic baudrate, we start the dynamic approach with the default baudrate
+	if(bricklet_spitfp_dynamic_baudrate_enabled) {
+		bricklet_spitfp_baudrate_current = CO_MCU_DEFAULT_BAUDRATE;
+	}
+
+	com_return_setter(com, data);
+
+	logbletd("set_spitfp_baudrate_config: %lu %d\n\r", bricklet_spitfp_minimum_dynamic_baudrate, bricklet_spitfp_dynamic_baudrate_enabled);
+}
+
+void get_spitfp_baudrate_config(const ComType com, const GetSPITFPBaudrateConfig *data) {
+	GetSPITFPBaudrateConfigReturn gsbcr;
+
+	gsbcr.header                   = data->header;
+	gsbcr.header.length            = sizeof(GetSPITFPBaudrateConfigReturn);
+	gsbcr.minimum_dynamic_baudrate = bricklet_spitfp_minimum_dynamic_baudrate;
+	gsbcr.enable_dynamic_baudrate  = bricklet_spitfp_dynamic_baudrate_enabled;
+
+	send_blocking_with_timeout(&gsbcr, sizeof(GetSPITFPBaudrateConfigReturn), com);
+
+	logbletd("get_spitfp_baudrate_config: %lu %d\n\r", bricklet_spitfp_minimum_dynamic_baudrate, bricklet_spitfp_dynamic_baudrate_enabled);
+}
+#endif
+
 void get_send_timeout_count(const ComType com, const GetSendTimeoutCount *data) {
 #ifdef BRICK_CAN_BE_MASTER
 	if(data->communication_method > COM_WIFI2) {
@@ -151,7 +190,7 @@ void set_spitfp_baudrate(const ComType com, const SetSPITFPBaudrate *data) {
 		return;
 	}
 
-	bricklet_spitfp_baudrate[port] = BETWEEN(400000, data->baudrate, 2000000);
+	bricklet_spitfp_baudrate[port] = BETWEEN(CO_MCU_MINIMUM_BAUDRATE, data->baudrate, CO_MCU_MAXIMUM_BAUDRATE);
 	com_return_setter(com, data);
 }
 
