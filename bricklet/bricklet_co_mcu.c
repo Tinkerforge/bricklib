@@ -47,6 +47,10 @@ uint32_t bricklet_spitfp_baudrate[BRICKLET_NUM] = {
 	#endif
 };
 
+uint32_t bricklet_spitfp_baudrate_current = CO_MCU_DEFAULT_BAUDRATE;
+uint32_t bricklet_spitfp_minimum_dynamic_baudrate = CO_MCU_MINIMUM_BAUDRATE;
+bool bricklet_spitfp_dynamic_baudrate_enabled = true;
+
 #define BRICKLET_LED_STRIP_DEVICE_IDENTIFIER 231
 
 #define BUFFER_SEND_ACK_TIMEOUT 20 // in ms
@@ -55,7 +59,7 @@ uint32_t bricklet_spitfp_baudrate[BRICKLET_NUM] = {
 #define PROTOCOL_OVERHEAD 3 // 3 byte overhead for Brick <-> Bricklet protocol
 #define MIN_TFP_MESSAGE_LENGTH (8 + PROTOCOL_OVERHEAD)
 #define MAX_TFP_MESSAGE_LENGTH (80 + PROTOCOL_OVERHEAD)
-#define SLEEP_HALF_BIT_NS(i) (((1000*1000*1000/2)/bricklet_spitfp_baudrate[(i)]) - 200) // We subtract 200ns for setting of pins etc
+#define SLEEP_HALF_BIT_NS(baudrate) ((1000*1000*1000/2)/(baudrate) - 200) // We subtract 200ns for setting of pins etc
 
 extern BrickletSettings bs[BRICKLET_NUM];
 extern uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4];
@@ -68,6 +72,8 @@ extern const BrickletAddress baddr[BRICKLET_NUM];
 #define SPI_MOSI(i) (bs[i].pin3_pwm)
 #define SPI_MISO(i) (bs[i].pin4_io)
 
+static uint32_t bricklet_comcu_data_last_time = 0;
+static uint32_t bricklet_comcu_data_counter   = 0;
 
 void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 	logd("Initialize CO MCU Bricklet %c\n\r", 'a' + bricklet_num);
@@ -118,6 +124,9 @@ void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 	CO_MCU_DATA(bricklet_num)->buffer_send_length = sizeof(CoMCUEnumerate);
 
 	ringbuffer_init(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, CO_MCU_BUFFER_SIZE_RECV, CO_MCU_DATA(bricklet_num)->buffer_recv);
+
+	bricklet_comcu_data_last_time = system_timer_get_ms();
+	bricklet_comcu_data_counter   = 0;
 }
 
 void bricklet_co_mcu_spibb_select(const uint8_t bricklet_num) {
@@ -128,31 +137,34 @@ void bricklet_co_mcu_spibb_deselect(const uint8_t bricklet_num) {
 	SPI_SS(bricklet_num).pio->PIO_SODR = SPI_SS(bricklet_num).mask;
 }
 
-uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, const uint8_t value) {
+uint8_t  bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, const uint8_t value) {
 	const uint32_t pin_clk_mask = SPI_CLK(bricklet_num).mask;
 	const uint32_t pin_mosi_mask = SPI_MOSI(bricklet_num).mask;
 	const uint32_t pin_miso_mask = SPI_MISO(bricklet_num).mask;
 	Pio *pin_clk = SPI_CLK(bricklet_num).pio;
 	Pio *pin_mosi = SPI_MOSI(bricklet_num).pio;
 	Pio *pin_miso = SPI_MISO(bricklet_num).pio;
-	const uint32_t sleep_half_bit_ns = SLEEP_HALF_BIT_NS(bricklet_num);
+
+	const uint32_t baudrate = MIN(bricklet_spitfp_baudrate[bricklet_num], bricklet_spitfp_baudrate_current);
+	const uint32_t sleep_half_bit_ns = SLEEP_HALF_BIT_NS(baudrate);
 
 	uint8_t recv = 0;
 
 	for(int8_t i = 7; i >= 1; i--) { // Go through all but the last bit
-		pin_clk->PIO_CODR = pin_clk_mask;
 		if((value >> i) & 1) {
+			pin_clk->PIO_CODR = pin_clk_mask;
 			pin_mosi->PIO_SODR = pin_mosi_mask;
 		} else {
+			pin_clk->PIO_CODR = pin_clk_mask;
 			pin_mosi->PIO_CODR = pin_mosi_mask;
 		}
 
-		SLEEP_NS(sleep_half_bit_ns); // TODO: Use TimerCounter or similar for more accurate sleep here?
+		SLEEP_NS(sleep_half_bit_ns);
+		pin_clk->PIO_SODR = pin_clk_mask;
 		if(pin_miso->PIO_PDSR & pin_miso_mask) {
 			recv |= (1 << i);
 		}
 
-		pin_clk->PIO_SODR = pin_clk_mask;
 		SLEEP_NS(sleep_half_bit_ns);
 	}
 
@@ -160,26 +172,27 @@ uint8_t bricklet_co_mcu_entry_spibb_transceive_byte(const uint8_t bricklet_num, 
 	// the last sleep. The code that runs between each byte
 	// takes enough time for a half bit if communication
 	// if speed is >= 400khz
-
-	pin_clk->PIO_CODR = pin_clk_mask;
 	if((value >> 0) & 1) {
+		pin_clk->PIO_CODR = pin_clk_mask;
 		pin_mosi->PIO_SODR = pin_mosi_mask;
 	} else {
+		pin_clk->PIO_CODR = pin_clk_mask;
 		pin_mosi->PIO_CODR = pin_mosi_mask;
 	}
 
 	SLEEP_NS(sleep_half_bit_ns);
+	pin_clk->PIO_SODR = pin_clk_mask;
 	if(pin_miso->PIO_PDSR & pin_miso_mask) {
 		recv |= (1 << 0);
 	}
 
-	pin_clk->PIO_SODR = pin_clk_mask;
-
 	return recv;
 }
 
+
 uint8_t bricklet_co_mcu_transceive(const uint8_t bricklet_num, const uint8_t data) {
 	const uint8_t value = bricklet_co_mcu_entry_spibb_transceive_byte(bricklet_num, data);
+	bricklet_comcu_data_counter++;
 
 	if(!ringbuffer_add(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, value)) {
 		logw("Could not add to ringbuffer\n\r");
@@ -447,6 +460,38 @@ bool bricklet_co_mcu_check_led_strip(const uint8_t bricklet_num) {
 	return false;
 }
 
+void bricklet_co_mcu_update_speed(void) {
+	if(system_timer_is_time_elapsed_ms(bricklet_comcu_data_last_time, 100)) {
+		bricklet_comcu_data_last_time = system_timer_get_ms();
+		const uint32_t counter = bricklet_comcu_data_counter;
+		bricklet_comcu_data_counter = 0;
+
+		if(bricklet_spitfp_dynamic_baudrate_enabled) {
+
+			uint32_t new_baudrate = 0;
+
+			if(counter <= 800) {
+				new_baudrate = bricklet_spitfp_minimum_dynamic_baudrate;
+			} else if(counter >= 2000) {
+				new_baudrate = CO_MCU_MAXIMUM_BAUDRATE;
+			} else {
+				new_baudrate = SCALE(counter, 800, 2000, bricklet_spitfp_minimum_dynamic_baudrate, CO_MCU_MAXIMUM_BAUDRATE);
+			}
+
+			if(new_baudrate >= bricklet_spitfp_baudrate_current) {
+				bricklet_spitfp_baudrate_current = new_baudrate;
+			} else {
+				bricklet_spitfp_baudrate_current -= 10000;
+				bricklet_spitfp_baudrate_current = MAX(bricklet_spitfp_baudrate_current, new_baudrate);
+			}
+		} else {
+			bricklet_spitfp_baudrate_current = CO_MCU_MAXIMUM_BAUDRATE;
+		}
+
+		printf("%d -> %d\n\r", counter, bricklet_spitfp_baudrate_current);
+	}
+}
+
 void bricklet_co_mcu_poll(const uint8_t bricklet_num) {
 	if(com_info.current == COM_NONE) {
 		// Never communicate with the Bricklet if we don't know were to send
@@ -480,6 +525,7 @@ void bricklet_co_mcu_poll(const uint8_t bricklet_num) {
 		}
 	}
 
+	bricklet_co_mcu_update_speed();
 	bricklet_co_mcu_spibb_select(bricklet_num);
 
 	if((CO_MCU_DATA(bricklet_num)->buffer_send_length > 0) && (CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout <= 0)) {
@@ -537,5 +583,4 @@ void bricklet_co_mcu_send(const uint8_t bricklet_num, uint8_t *data, const uint8
 		}
 		taskYIELD();
 	}
-
 }
