@@ -33,7 +33,7 @@
 
 #include "config.h"
 
-#if LOGGING_LEVEL <= LOGGING_FATAL
+#ifdef LOGGING_SERIAL
 #include <stdint.h>
 
 extern void UART_Configure( uint32_t dwBaudrate, uint32_t dwMasterClock ) ;
