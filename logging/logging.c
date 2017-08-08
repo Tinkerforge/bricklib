@@ -98,17 +98,6 @@ void logging_lcd(const int type, const char *msg) {
 }
 #endif
 
-
-#ifdef LOGGING_LCD
-static const char * const log_type_to_string[LOG_NUM_TYPES] = {
-	"D: ",
-	"I: ",
-	"W: ",
-	"E: "
-};
-#endif
-
-
 void logging_serial(const char *msg, const uint8_t length) {
 	for(uint8_t i = 0; i < length; i++) {
 		UART_PutChar(msg[i]);
@@ -124,7 +113,6 @@ void logging_impl(const char *msg, const uint8_t length) {
 #ifdef LOGGING_SERIAL
 	logging_serial(msg, length);
 #endif
-
 }
 
 void logging_init(void) {
@@ -142,4 +130,3 @@ void logging_init(void) {
     PIO_Configure(console_pins, PIO_LISTSIZE(console_pins));
 #endif
 }
-
