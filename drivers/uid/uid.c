@@ -29,8 +29,12 @@
 const char BASE58_STR[] = \
 	"123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ";
 
-__attribute__ ((section (".ramfunc")))
+__attribute__ ((noinline)) __attribute__ ((section (".ramfunc")))
 uint32_t uid_get_uid32(void) {
+	// disable sequential-code-optimization, because the Atmel example code does
+	// it and reading the unique identifier might trigger a hardfault otherwise
+	EFC->EEFC_FMR |= (0x1u << 16);
+
     // Write "Start Read" unique identifier command (STUI)
 	EFC->EEFC_FCR = (0x5A << 24) | EFC_FCMD_STUI;
 	 // If STUI is performed, FRDY is cleared
@@ -45,6 +49,9 @@ uint32_t uid_get_uid32(void) {
     EFC->EEFC_FCR = (0x5A << 24) | EFC_FCMD_SPUI;
     // If SPUI is performed, FRDY is set
     while ((EFC->EEFC_FSR & EEFC_FSR_FRDY) != EEFC_FSR_FRDY);
+
+	// reenable sequential-code-optimization
+	EFC->EEFC_FMR &= ~(0x1u << 16);
 
     uint32_t uid = 0;
 
