@@ -1,3 +1,5 @@
+SET(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
 # the name of the target operating system
 SET(CMAKE_SYSTEM_NAME Generic)
 
