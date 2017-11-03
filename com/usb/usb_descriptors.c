@@ -138,12 +138,13 @@ static unsigned char serial_number_descriptor[SERIAL_NUMBER_LENGTH] = {
 };
 
 void set_serial_number_descriptor(char *sn, const uint8_t length) {
+	serial_number_descriptor[0] = USBStringDescriptor_LENGTH(length);
+
 	for(uint8_t i = 0; i < MIN(MAX_BASE58_STR_SIZE, length); i++) {
 		serial_number_descriptor[2+i*2] = sn[i];
 		serial_number_descriptor[2+i*2+1] = 0;
 	}
 }
-
 
 // List of all string descriptors used.
 static const unsigned char *string_descriptors[] = {

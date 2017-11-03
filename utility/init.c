@@ -20,6 +20,7 @@
  */
 
 #include "init.h"
+#include "string.h"
 
 #include "bricklib/drivers/pio/pio_it.h"
 #include "bricklib/drivers/wdt/wdt.h"
@@ -71,7 +72,7 @@ void brick_init(void) {
 	// Add 0 at end for printing
     char sn[MAX_BASE58_STR_SIZE] = {'\0'};
     uid_to_serial_number(com_info.uid, sn);
-    set_serial_number_descriptor(sn, MAX_BASE58_STR_SIZE);
+    set_serial_number_descriptor(sn, strlen(sn));
     logsi("Unique ID %s (%lu)\n\r\n\r", sn, com_info.uid);
 
     wdt_start();
