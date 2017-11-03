@@ -133,7 +133,8 @@ bool i2c_eeprom_master_write(Twi *twi,
     for(uint16_t i = 1; i < length; i++) {
     	timeout = 0;
     	// Wait until byte is sent, otherwise return false
-        while(!TWI_ByteSent(twi) && (++timeout < I2C_EEPROM_TIMEOUT));
+		while(!TWI_ByteSent(twi) && (++timeout < I2C_EEPROM_TIMEOUT)) {}
+
 		if(timeout == I2C_EEPROM_TIMEOUT) {
 			logieew("write timeout (nothing sent)\n\r");
 			mutex_give(mutex_twi_bricklet);
@@ -147,7 +148,8 @@ bool i2c_eeprom_master_write(Twi *twi,
 
     timeout = 0;
 	// Wait for transfer to be complete
-    while(!TWI_TransferComplete(twi) && (++timeout < I2C_EEPROM_TIMEOUT));
+	while(!TWI_TransferComplete(twi) && (++timeout < I2C_EEPROM_TIMEOUT)) {}
+
 	if (timeout == I2C_EEPROM_TIMEOUT) {
 		logieew("write timeout (transfer incomplete)\n\r");
 		mutex_give(mutex_twi_bricklet);
