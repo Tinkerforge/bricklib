@@ -556,12 +556,24 @@ void bricklet_co_mcu_send(const uint8_t bricklet_num, uint8_t *data, const uint8
 		return;
 	}
 
+	// CoMCU Bricklets need to ignore stack enumerate message
+	if(data[MESSAGE_HEADER_FID_POSITION] == FID_STACK_ENUMERATE) {
+		return;
+	}
+
 	uint32_t start_time = system_timer_get_ms();
 	while(!system_timer_is_time_elapsed_ms(start_time, SEND_BLOCKING_TIMEOUT_SPI_STACK)) {
 		if(CO_MCU_DATA(bricklet_num)->buffer_send_length == 0) {
 			memcpy(CO_MCU_DATA(bricklet_num)->buffer_send, data, length);
 			CO_MCU_DATA(bricklet_num)->buffer_send_length = length;
 			CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout = -1;
+
+
+			if(CO_MCU_DATA(bricklet_num)->buffer_send[MESSAGE_HEADER_FID_POSITION] == FID_CREATE_ENUMERATE_CONNECTED) {
+				CO_MCU_DATA(bricklet_num)->buffer_send[MESSAGE_HEADER_FID_POSITION] = FID_CO_MCU_ENUMERATE;
+				logd("New enumerate connected request (comcu): %d\n\r", bricklet_num);
+			}
+
 			bricklet_co_mcu_poll(bricklet_num);
 			break;
 		}
