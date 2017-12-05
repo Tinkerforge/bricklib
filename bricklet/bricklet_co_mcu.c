@@ -221,7 +221,6 @@ void bricklet_co_mcu_send_ack(const uint8_t bricklet_num, const uint8_t sequence
 void bricklet_co_mcu_new_message(void *data, const uint16_t length, const ComType com, const uint8_t bricklet_num) {
 	// We have to inject connected UID to Enumerate and Identity messages
 	uint8_t fid = ((MessageHeader*)data)->fid;
-//	logd("co mcu message recv: %d\n\r", fid);
 	switch(fid) {
 		// The relevant message content (uid and position) of Enumerate Callback
 		// and GetIdentitiy is the same, so we can handle it in one case.
