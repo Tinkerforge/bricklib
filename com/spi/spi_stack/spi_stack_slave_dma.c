@@ -21,17 +21,19 @@
 
 #include "spi_stack_slave_dma.h"
 
-#include "bricklib/drivers/pio/pio.h"
-#include "bricklib/drivers/pio/pio_it.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
+
+#include "bricklib/drivers/pio/pio.h"
+#include "bricklib/drivers/pio/pio_it.h"
 #include "bricklib/drivers/spi/spi.h"
 #include "bricklib/drivers/cmsis/core_cm3.h"
 #include "bricklib/free_rtos/include/FreeRTOS.h"
 #include "bricklib/free_rtos/include/task.h"
-#include <stdbool.h>
 
 #include "bricklib/utility/util_definitions.h"
+#include "bricklib/utility/system_timer.h"
 #include "bricklib/com/com_common.h"
 #include "bricklib/com/com_messages.h"
 
@@ -46,6 +48,7 @@ extern uint16_t spi_stack_buffer_size_send;
 extern uint16_t spi_stack_buffer_size_recv;
 
 extern uint32_t led_rxtx;
+extern uint32_t stack_enumerate_timer;
 
 static const Pin spi_slave_pins[] = {PINS_SPI, PIN_SPI_SELECT_SLAVE};
 
@@ -338,8 +341,21 @@ uint16_t spi_stack_slave_send(const void *data, const uint16_t length, uint32_t 
 	return send_length;
 }
 
+bool spi_stack_slave_add_enumerate_connected_request(void) {
+	__disable_irq();
+	com_make_default_header(spi_stack_buffer_recv, 0, sizeof(Enumerate), FID_CREATE_ENUMERATE_CONNECTED);
+	spi_stack_buffer_size_recv = sizeof(Enumerate);
+	__enable_irq();
+
+	return true;
+}
+
 uint16_t spi_stack_slave_recv(void *data, const uint16_t length, uint32_t *options) {
 	if(spi_stack_buffer_size_recv == 0) {
+		if((stack_enumerate_timer != 0) && (system_timer_is_time_elapsed_ms(stack_enumerate_timer, 1000))) {
+			stack_enumerate_timer = 0;
+			spi_stack_slave_add_enumerate_connected_request();
+		}
 		return 0;
 	}
 
