@@ -44,6 +44,7 @@ typedef struct {
 } MessageLoopParameter;
 
 #define MESSAGE_HEADER_LENGTH_POSITION 4
+#define MESSAGE_HEADER_FID_POSITION    5
 
 typedef struct {
 	uint32_t uid;
