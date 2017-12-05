@@ -108,7 +108,10 @@ void USBD_ResumeHandler(void)
         deviceState = previousDeviceState;
         if (deviceState >= USBD_STATE_DEFAULT) {
             /* Invoke the Resume callback */
-            USBDCallbacks_Resumed();
+        	// We don't call resumed here, since it is actually too early.
+        	// We only call the user resumed after USB is completely initialized.
+        	// Handled in USBD_HAL.c
+            //USBDCallbacks_Resumed();
         }
     }
 }
