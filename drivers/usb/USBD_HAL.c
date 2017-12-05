@@ -1135,6 +1135,7 @@ void USBD_IrqHandler(void)
     	if(configuration_seen_counter > 2) {
 			resume_seen = false;
 			usbd_hal_configuration_seen = false;
+			configuration_seen_counter = 0;
 			USBDCallbacks_Resumed();
     	}
     }
@@ -1180,6 +1181,7 @@ void USBD_IrqHandler(void)
         UDP->UDP_IDR = UDP_IDR_WAKEUP | UDP_IDR_RXRSM;
         /* Do resome operations */
         resume_seen = true;
+        configuration_seen_counter = 0;
         USBD_ResumeHandler();
     }
 
@@ -1188,6 +1190,7 @@ void USBD_IrqHandler(void)
     if (status == UDP_ISR_RXSUSP) {
     	resume_seen = false;
     	usbd_hal_configuration_seen = false;
+    	configuration_seen_counter = 0;
         TRACE_INFO_WP("Susp ");
         /* Enable wakeup */
         UDP->UDP_IER = UDP_IER_WAKEUP | UDP_IER_RXRSM;
