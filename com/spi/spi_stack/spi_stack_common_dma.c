@@ -49,6 +49,7 @@ uint16_t spi_stack_buffer_size_recv = 0;
 
 #ifdef BRICK_CAN_BE_MASTER
 extern uint8_t master_mode;
+extern ComInfo com_info;
 #endif
 
 void SPI_IrqHandler(void) {
@@ -103,7 +104,14 @@ uint16_t spi_stack_send(const void *data, const uint16_t length, uint32_t *optio
 uint16_t spi_stack_recv(void *data, const uint16_t length, uint32_t *options) {
 #ifdef BRICK_CAN_BE_MASTER
 	if(master_mode & MASTER_MODE_MASTER) {
-		return spi_stack_master_recv(data, length, options);
+		uint16_t ret = spi_stack_master_recv(data, length, options);
+
+		// Disallow stack enumerate answer message if it is not initial enumeration
+		if((((MessageHeader*)data)->fid == FID_STACK_ENUMERATE) && com_info.current != COM_NONE) {
+			return 0;
+		}
+
+		return ret;
 	} else if(master_mode & MASTER_MODE_SLAVE) {
 		return spi_stack_slave_recv(data, length, options);
 	} else {
