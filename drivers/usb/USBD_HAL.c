@@ -922,7 +922,6 @@ static inline uint8_t UDP_Write(uint8_t    bEndpoint,
 
     /* Check that the endpoint is in Idle state */
     if (pEndpoint->state != UDP_ENDPOINT_IDLE) {
-
         return USBD_STATUS_LOCKED;
     }
     TRACE_DEBUG_WP("Write%d(%d) ", bEndpoint, dLength);
@@ -1112,8 +1111,11 @@ void usb_set_read_endpoint_state_to_receiving(void) {
  * Manages device resume, suspend, end of bus reset.
  * Forwards endpoint events to the appropriate handler.
  */
+bool usbd_hal_configuration_seen = false;
 void USBD_IrqHandler(void)
 {
+	static bool resume_seen = false;
+	static uint8_t configuration_seen_counter = 0;
     uint32_t status;
     int32_t eptnum = 0;
 
@@ -1124,6 +1126,18 @@ void USBD_IrqHandler(void)
        Some interrupts may get masked depending on the device state */
     status = UDP->UDP_ISR;
     status &= UDP->UDP_IMR;
+
+    // Wait until the PC has issued a resume and set a configuration.
+    // After the configuration we wait for at least two more messages.
+    // Otherwise we sometimes send the initial enumeration too early.
+    if(resume_seen && usbd_hal_configuration_seen) {
+    	configuration_seen_counter++;
+    	if(configuration_seen_counter > 2) {
+			resume_seen = false;
+			usbd_hal_configuration_seen = false;
+			USBDCallbacks_Resumed();
+    	}
+    }
 
     if (USBD_GetState() < USBD_STATE_POWERED) {
 
@@ -1165,19 +1179,22 @@ void USBD_IrqHandler(void)
         UDP->UDP_ICR = UDP_ICR_WAKEUP | UDP_ICR_RXRSM | UDP_ICR_RXSUSP;
         UDP->UDP_IDR = UDP_IDR_WAKEUP | UDP_IDR_RXRSM;
         /* Do resome operations */
+        resume_seen = true;
         USBD_ResumeHandler();
     }
 
     /* Suspend
        This interrupt is always treated last (hence the '==') */
     if (status == UDP_ISR_RXSUSP) {
-
+    	resume_seen = false;
+    	usbd_hal_configuration_seen = false;
         TRACE_INFO_WP("Susp ");
         /* Enable wakeup */
         UDP->UDP_IER = UDP_IER_WAKEUP | UDP_IER_RXRSM;
         /* Acknowledge interrupt */
         UDP->UDP_ICR = UDP_ICR_RXSUSP;
         /* Do suspend operations */
+
         USBD_SuspendHandler();
     }
     /* End of bus reset */
