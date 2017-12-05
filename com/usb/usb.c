@@ -194,6 +194,22 @@ bool usb_is_connected(void) {
 #endif
 }
 
+bool usb_add_enumerate_connected_request(void) {
+	__disable_irq();
+	if(usb_recv_transferred != 0) {
+		__enable_irq();
+		return false;
+	}
+
+	com_make_default_header(usb_recv_buffer, 0, sizeof(Enumerate), FID_CREATE_ENUMERATE_CONNECTED);
+	usb_recv_transferred = sizeof(Enumerate);
+	__enable_irq();
+
+	usb_handle_send();
+
+	return true;
+}
+
 void usb_detect_configure(void) {
 #ifdef PIN_USB_DETECT
 	 PIO_Configure(&pin_usb_detect, 1);
