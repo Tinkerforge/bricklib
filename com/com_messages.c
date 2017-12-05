@@ -354,7 +354,10 @@ void stack_enumerate(const ComType com, const StackEnumerate *data) {
 		logd("Stack Enumerate: %lu %lu %lu %lu %lu\n\r", ser.uids[0], ser.uids[1], ser.uids[2], ser.uids[3], ser.uids[4]);
 	}
 
-	while(!brick_init_enumeration(com));
+	// Start stack enumerate timer. We will issue an enumeration if there is no
+	// enumeration request in the next 1000ms. This is for backwards compatibility to
+	// old Brick firmware versions.
+	stack_enumerate_timer = system_timer_get_ms();
 }
 
 
