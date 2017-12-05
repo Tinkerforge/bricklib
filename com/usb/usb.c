@@ -55,22 +55,21 @@
 #define USB_IN_FUNCTION 1
 #define USB_CALLBACK 2
 
-extern uint8_t reset_counter;
+extern const USBDDriverDescriptors driver_descriptors;
 extern ComInfo com_info;
 
-extern const USBDDriverDescriptors driver_descriptors;
 static USBDDriver usbd_driver;
-static uint32_t usb_send_transferred = 0;
+bool usb_first_connection = false;
+uint8_t usb_wakeup_counter = 0;
 uint32_t usb_recv_transferred = 0;
 
 bool usb_startup_connected = false;
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
 
-uint32_t usb_num_send_tries = NUM_SEND_TRIES;
-
 char usb_recv_buffer[DEFAULT_EP_SIZE];
 char usb_send_buffer[DEFAULT_EP_SIZE];
+uint16_t usb_send_buffer_length = 0;
 
 #ifdef PIN_USB_DETECT
 static Pin pin_usb_detect = PIN_USB_DETECT;
@@ -78,63 +77,82 @@ static Pin pin_usb_detect = PIN_USB_DETECT;
 
 uint32_t usb_sequence_number = 0;
 
+typedef enum {
+	USB_SEND_STATE_IDLE,
+	USB_SEND_STATE_WAIT_FOR_CALLBACK,
+} USBSendState;
+
+volatile USBSendState usb_send_state = USB_SEND_STATE_IDLE;
+
 void usb_send_callback(void *arg,
                        uint8_t status,
                        uint32_t transferred,
                        uint32_t remaining) {
 	static int32_t higher_priority_task_woken;
 
-	usb_send_transferred = transferred;
+	usb_send_state = USB_SEND_STATE_IDLE;
 
-	if((uint32_t)arg == usb_sequence_number) {
-		send_status |= USB_CALLBACK;
+	// If data was not transferred we go back to idle, but re-send the data
+	if(transferred != 0) {
+		usb_send_buffer_length = 0;
 	}
+
 	portEND_SWITCHING_ISR(higher_priority_task_woken);
 }
 
+bool is_endpoint_idle(const uint8_t ep);
+void usb_handle_send(void) {
+	if(usb_send_buffer_length == 0) {
+		return;
+	}
+
+	switch(usb_send_state) {
+		case USB_SEND_STATE_IDLE: {
+			usb_send_state = USB_SEND_STATE_WAIT_FOR_CALLBACK;
+			if(!(USBD_Write(IN_EP, usb_send_buffer, usb_send_buffer_length, usb_send_callback, (void*)usb_sequence_number) == USBD_STATUS_SUCCESS)) {
+				usb_send_state = USB_SEND_STATE_IDLE;
+			} else {
+
+			}
+
+			break;
+		}
+
+		case USB_SEND_STATE_WAIT_FOR_CALLBACK: {
+			// If we reach this state, we did a write and there was no callback within one ms.
+			// Normally this does not happen.
+			// We disable the irq and check if the endpoint is idling. If it is we have to assume
+			// that the message was lost and we have to send it again.
+			// This can for example happen if a PC goes into suspend during a usb write (before
+			// the message reached the PC).
+			__disable_irq();
+			if(usb_send_state == USB_SEND_STATE_WAIT_FOR_CALLBACK) { // Check again if we got the callback between the switch and the irq disable...
+				if(is_endpoint_idle(IN_EP)) {
+					USBD_Write(IN_EP, usb_send_buffer, usb_send_buffer_length, usb_send_callback, (void*)usb_sequence_number);
+				}
+			}
+			__enable_irq();
+
+			break;
+		}
+	}
+}
+
 inline uint16_t usb_send(const void *data, const uint16_t length, uint32_t *options) {
-	if((send_status & (USB_IN_FUNCTION))) {
+	if((usb_send_buffer_length != 0) || length > DEFAULT_EP_SIZE) {
 		return 0;
 	}
 
-	if(!(send_status & USB_CALLBACK)) {
-		send_status |= USB_IN_FUNCTION;
-		if(USBD_Write(IN_EP, data, length, usb_send_callback, (void*)usb_sequence_number) != USBD_STATUS_SUCCESS) {
-			send_status &= ~USB_IN_FUNCTION;
-			return 0;
-		}
-	} else {
-		return 0;
-	}
+	// Copy to send buffer and call usb_handle_send once.
+	// Normally the send will be handled in the first try and a callback
+	// will be issued after the send finished (and allow for a new send).
 
-	uint32_t num_tries = 0;
-	while(~send_status & USB_CALLBACK) {
-		taskYIELD();
-		num_tries++;
-		// USBD_Write does not always call callback when USBD_STATUS_SUCCESS
-		// Wait for NUM_SEND_TRIES
-		if(num_tries > usb_num_send_tries) {
-			usb_sequence_number++;
-			send_status = 0;
-
-			// We sometimes come to this state if the PC/laptop is on suspend to disk.
-			// In that case it seems that the USB is in LOCKED state forever.
-			// So we are cautionary and cancel all IO.
-
-			// TODO: Fixme: Seems to make problems on some Windows versions!
-			//USBD_HAL_CancelIo(0xFFFF);
-			return 0;
-		}
-	}
-
-	send_status = 0;
-
-	// We assume that the sending worked out OK if usb_send_transferred is
-	// not equal 0. This is necessary, since USBD_HAL sometimes returns
-	// UINT32_MAX for unknown reasons.
-	if(usb_send_transferred == 0) {
-		return 0;
-	}
+	// But in cases of usb errors or suspend/resume we may need to call the
+	// usb write function again. Because of this we have to copy the buffer first.
+	// Otherwise the data may be lost in case of an error.
+	memcpy(usb_send_buffer, data, length);
+	usb_send_buffer_length = length;
+	usb_handle_send();
 
 	return length;
 }

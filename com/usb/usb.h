@@ -54,6 +54,8 @@ void usb_configure_clock_48mhz(void);
 bool usb_is_connected(void);
 bool usb_init();
 void usb_message_loop(void *parameters);
+void usb_tick_task(const uint8_t tick_type);
+bool usb_add_enumerate_connected_request(void);
 
 void usb_message_loop_return(const char *data, const uint16_t length);
 
