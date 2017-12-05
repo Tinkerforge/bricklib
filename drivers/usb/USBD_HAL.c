@@ -303,6 +303,13 @@ typedef struct {
 /** Holds the internal state for each endpoint of the UDP. */
 static Endpoint endpoints[CHIP_USB_NUMENDPOINTS];
 
+// Add public is_endpoint_idle function, so we can find out if an endpoint is idle or not
+// before we call send.
+bool is_endpoint_idle(const uint8_t ep) {
+	Endpoint *pEndpoint = &(endpoints[ep]);
+	return pEndpoint->state == UDP_ENDPOINT_IDLE;
+}
+
 /*---------------------------------------------------------------------------
  *      Internal Functions
  *---------------------------------------------------------------------------*/
