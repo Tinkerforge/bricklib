@@ -27,6 +27,7 @@
 #include "bricklib/utility/init.h"
 #include "bricklib/utility/led.h"
 #include "bricklib/utility/util_definitions.h"
+#include "bricklib/utility/system_timer.h"
 #include "bricklib/logging/logging.h"
 #include "bricklib/drivers/pio/pio.h"
 #include "bricklib/drivers/adc/adc.h"
@@ -35,10 +36,6 @@
 #include "bricklib/bricklet/bricklet_communication.h"
 #include "bricklib/bricklet/bricklet_config.h"
 #include "bricklib/bricklet/bricklet_init.h"
-
-#ifdef BRICK_CAN_BE_MASTER
-#include "extensions/extension_init.h"
-#endif
 
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 #include "bricklib/bricklet/bricklet_co_mcu.h"
@@ -63,25 +60,34 @@ extern BrickletAddress baddr[];
 extern uint8_t brick_hardware_version[];
 extern uint8_t bricklet_attached[];
 extern bool led_status_is_enabled;
+extern uint8_t brick_init_bricklet_new_enumerate;
+
+#ifdef BRICK_CAN_BE_MASTER
+extern uint8_t rs485_first_message;
+extern uint8_t chibi_first_message;
+#endif
 
 #ifndef COM_MESSAGES_USER
 #define COM_MESSAGES_USER
 #endif
 
+uint32_t stack_enumerate_timer = 0;
+
 const ComMessage com_messages[] = {
 	COM_NO_MESSAGE,
 	COM_MESSAGES_USER
+	{FID_CREATE_ENUMERATE_CONNECTED, (message_handler_func_t)create_enumerate_connected},
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
-	{FID_SET_SPITFP_BAUDRATE_CONFIG,(message_handler_func_t)set_spitfp_baudrate_config},
-	{FID_GET_SPITFP_BAUDRATE_CONFIG,(message_handler_func_t)get_spitfp_baudrate_config},
+	{FID_SET_SPITFP_BAUDRATE_CONFIG, (message_handler_func_t)set_spitfp_baudrate_config},
+	{FID_GET_SPITFP_BAUDRATE_CONFIG, (message_handler_func_t)get_spitfp_baudrate_config},
 #else
 	COM_NO_MESSAGE,
 	COM_NO_MESSAGE,
 #endif
 	{FID_GET_SEND_TIMEOUT_COUNT, (message_handler_func_t)get_send_timeout_count},
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
-	{FID_SET_SPITFP_BAUDRATE,(message_handler_func_t)set_spitfp_baudrate},
-	{FID_GET_SPITFP_BAUDRATE,(message_handler_func_t)get_spitfp_baudrate},
+	{FID_SET_SPITFP_BAUDRATE, (message_handler_func_t)set_spitfp_baudrate},
+	{FID_GET_SPITFP_BAUDRATE, (message_handler_func_t)get_spitfp_baudrate},
 	COM_NO_MESSAGE, // FID 236 is reserved
 	{FID_GET_SPITFP_ERROR_COUNT, (message_handler_func_t)get_spitfp_error_count},
 #else
@@ -130,6 +136,53 @@ void reset(const ComType com, const Reset *data) {
 	// TODO: Protocol V2.0 -> wait until msg is send?
 
 	brick_reset();
+}
+
+void create_enumerate_connected(const ComType com, const CreateEnumerateConnected *data) {
+	EnumerateCallback ec = MESSAGE_EMPTY_INITIALIZER;
+	make_brick_enumerate(&ec);
+	ec.enumeration_type = ENUMERATE_TYPE_ADDED;
+
+	send_blocking_with_timeout(&ec, sizeof(EnumerateCallback), com);
+	logd("Returning initial Enumeration for Brick: %lu\n\r", ec.header.uid);
+
+#ifdef BRICK_CAN_BE_MASTER
+	// Mark RS485/Chibi message as send.
+	// This stops the rs485/chibi enumeration timer (we already enumerated).
+	if(com == COM_RS485) {
+		rs485_first_message = 2;
+	} else 	if(com == COM_CHIBI) {
+		chibi_first_message = 2;
+	}
+#endif
+
+	// Set stack enumerate timer back to 0, we already are enumerating here.
+	stack_enumerate_timer = 0;
+
+	com_info.current = com;
+
+	// Enumerate non-comcu bricklets asynchronously
+	brick_init_bricklet_new_enumerate = 0;
+#if BRICKLET_NUM > 0
+	if((bricklet_attached[0] != BRICKLET_INIT_CO_MCU)) {
+		brick_init_bricklet_new_enumerate |= 1 << 0;
+	}
+#endif
+#if BRICKLET_NUM > 1
+	if((bricklet_attached[1] != BRICKLET_INIT_CO_MCU)) {
+		brick_init_bricklet_new_enumerate |= 1 << 1;
+	}
+#endif
+#if BRICKLET_NUM > 2
+	if((bricklet_attached[2] != BRICKLET_INIT_CO_MCU)) {
+		brick_init_bricklet_new_enumerate |= 1 << 2;
+	}
+#endif
+#if BRICKLET_NUM > 3
+	if((bricklet_attached[3] != BRICKLET_INIT_CO_MCU)) {
+		brick_init_bricklet_new_enumerate |= 1 << 3;
+	}
+#endif
 }
 
 #ifdef BRICK_HAS_CO_MCU_SUPPORT

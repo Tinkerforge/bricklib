@@ -36,6 +36,8 @@
 
 #define SIZE_OF_MESSAGE_HEADER 8
 
+#define FID_CREATE_ENUMERATE_CONNECTED 230
+
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 #define FID_SET_SPITFP_BAUDRATE_CONFIG 231
 #define FID_GET_SPITFP_BAUDRATE_CONFIG 232
@@ -90,6 +92,10 @@ typedef struct {
 	uint8_t type;
 	message_handler_func_t reply_func;
 } ComMessage;
+
+typedef struct {
+	MessageHeader header;
+} __attribute__((packed)) CreateEnumerateConnected;
 
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 typedef struct {
@@ -255,6 +261,8 @@ uint16_t get_length_from_data(const char *data);
 uint8_t get_stack_id_from_data(const char *data);
 uint8_t get_type_from_data(const char *data);
 
+
+void create_enumerate_connected(const ComType com, const CreateEnumerateConnected *data);
 
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 void set_spitfp_baudrate_config(const ComType com, const SetSPITFPBaudrateConfig *data);
