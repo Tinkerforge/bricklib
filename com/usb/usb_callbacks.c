@@ -23,12 +23,20 @@
 
 #include "config.h"
 #include "bricklib/drivers/cmsis/core_cm3.h"
+#include "bricklib/drivers/usb/USBD.h"
 #include "bricklib/logging/logging.h"
 #include "bricklib/utility/init.h"
 
-bool usb_first_connection = true;
+#include <stdbool.h>
 
-uint8_t reset_counter = 0;
+extern bool usb_first_connection;
+extern uint8_t usb_wakeup_counter;
+extern bool usbd_hal_configuration_seen;
+
+void USBDDriverCallbacks_ConfigurationChanged(uint8_t cfgnum) {
+	logi("USBDDriverCallbacks_ConfigurationChanged: %d\n\r", cfgnum);
+	usbd_hal_configuration_seen = true;
+}
 
 // Invoked after the USB driver has been initialized.
 // Configures the UDP/UDPHS interrupt.
@@ -39,16 +47,19 @@ void USBDCallbacks_Initialized(void) {
 
 void USBDCallbacks_Resumed(void) {
 	logi("USBDCallbacks_Resumed\n\r");
-	if(!usb_first_connection) {
-		logi("Brick will reset in 255ms\n\r");
-		reset_counter = 1;
-	}
+
+	// Send initial enumeration again
+	usb_first_connection = true;
 }
 
 void USBDCallbacks_Suspended(void) {
-	logi("USBDCallbacks_Suspended\n\r");
-	if(!usb_first_connection) {
-		logi("Brick will reset in 255ms\n\r");
-		reset_counter = 1;
-	}
+	logi("USBDCallbacks_Suspended: %d\n\r", usb_first_connection);
+
+	// Start wakeup counter.
+	// It is possible that the Brick gets suspended because of an EMI event.
+	// In this case we don't actually want to go to sleep. So we start a
+	// wake-up sequence to show the PC that we are still alive.
+	// The wakeup will be triggered within 255ms. If the PC itself issues
+	// a resume within this time, the wakeup will be cancelled.
+	usb_wakeup_counter = 1;
 }
