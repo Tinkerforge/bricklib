@@ -108,20 +108,7 @@ void bricklet_co_mcu_init(const uint8_t bricklet_num) {
 	CO_MCU_DATA(bricklet_num)->error_count.error_count_message_checksum = 0;
 	CO_MCU_DATA(bricklet_num)->error_count.error_count_frame            = 0;
 
-	// Send initial enumerate. This will send back the initial enumeration callback
-	// of type added. We also use this to set the UID for the first time.
-	CoMCUEnumerate co_mcu_enumerate;
-	co_mcu_enumerate.header.uid              = 0;
-	co_mcu_enumerate.header.length           = sizeof(Enumerate);
-	co_mcu_enumerate.header.fid              = FID_CO_MCU_ENUMERATE;
-	co_mcu_enumerate.header.sequence_num     = 0; // Sequence number for callback is 0
-	co_mcu_enumerate.header.return_expected  = 0;
-	co_mcu_enumerate.header.authentication   = 0;
-	co_mcu_enumerate.header.other_options    = 0;
-	co_mcu_enumerate.header.error            = 0;
-	co_mcu_enumerate.header.future_use       = 0;
-	memcpy(CO_MCU_DATA(bricklet_num)->buffer_send, &co_mcu_enumerate, sizeof(CoMCUEnumerate));
-	CO_MCU_DATA(bricklet_num)->buffer_send_length = sizeof(CoMCUEnumerate);
+	CO_MCU_DATA(bricklet_num)->buffer_send_length = 0;
 
 	ringbuffer_init(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, CO_MCU_BUFFER_SIZE_RECV, CO_MCU_DATA(bricklet_num)->buffer_recv);
 
