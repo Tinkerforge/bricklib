@@ -185,32 +185,30 @@ void usb_detect_configure(void) {
 #endif
 }
 
-void usb_detect_task(const uint8_t tick_type) {
-	if(tick_type == TICK_TASK_TYPE_CALCULATION) {
-		// Reset through usb resume
-		if(reset_counter > 0) {
-			reset_counter++;
-			if(reset_counter == 255) {
-				brick_reset();
-			}
-		}
 
-// Disable USB hotplug completely for now, it seems that it can still
-// make problems under some circumstances (depending on ambient temperature).
-#if 0
-		if(master_get_hardware_version() > 20) {
-			// Reset through usb detect
-			if(usb_startup_connected ^ usb_is_connected()) {
-				usb_detect_task_counter++;
-				if(usb_detect_task_counter >= 250) {
-					logi("USB detect: %d\n\r", adc_channel_get_data(USB_VOLTAGE_CHANNEL));
-					brick_reset();
-				}
-			} else {
-				usb_detect_task_counter = 0;
+void usb_tick_task(const uint8_t tick_type) {
+	if(tick_type == TICK_TASK_TYPE_CALCULATION) {
+		if(usb_wakeup_counter > 0) {
+			usb_wakeup_counter++;
+			if(usb_wakeup_counter == 255) {
+				logi("USB Remote Wakeup\n\r");
+				USBD_RemoteWakeUp();
 			}
 		}
-#endif
+	} else if(tick_type == TICK_TASK_TYPE_MESSAGE) {
+		usb_handle_send();
+
+		// Periodically look if Bricklets need re-enumeration.
+		// We run this here, since the usb tick task runs on every brick.
+		brick_init_handle_bricklet_enumeration();
+
+		// Handle initial USB enumeration
+		if(usb_first_connection && !usbd_hal_is_disabled(IN_EP)) {
+			if(usb_add_enumerate_connected_request()) {
+				usb_first_connection = false;
+				com_info.current = COM_USB;
+			}
+		}
 	}
 }
 
