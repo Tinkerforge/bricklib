@@ -37,6 +37,6 @@ void brick_enable_brownout_detection(void);
 void brick_tick_task(void *parameters);
 void brick_init_start_tick_task(void);
 void brick_reset(void);
-bool brick_init_enumeration(const ComType com);
+void brick_init_handle_bricklet_enumeration(void);
 
 #endif

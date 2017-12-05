@@ -47,6 +47,9 @@ extern ComInfo com_info;
 static uint8_t type_calculation = TICK_TASK_TYPE_CALCULATION;
 static uint8_t type_message = TICK_TASK_TYPE_MESSAGE;
 
+uint8_t brick_init_bricklet_new_enumerate = 0;
+extern uint8_t bricklet_attached[];
+
 void brick_init(void) {
 	// Wait 5ms so everything can power up
 	SLEEP_MS(5);
@@ -164,28 +167,26 @@ void brick_init_start_tick_task(void) {
 				(xTaskHandle *)NULL);
 }
 
-bool brick_init_enumeration(const ComType com) {
-	EnumerateCallback ec = MESSAGE_EMPTY_INITIALIZER;
-	make_brick_enumerate(&ec);
-	ec.enumeration_type = ENUMERATE_TYPE_ADDED;
-
-	if(SEND(&ec, sizeof(EnumerateCallback), com, NULL) != 0) {
-		logd("Returning initial Enumeration for Brick: %lu\n\r", ec.header.uid);
-
+// This is called periodically to handle Bricklet enumeration asynchronously.
+void brick_init_handle_bricklet_enumeration(void) {
+	if((brick_init_bricklet_new_enumerate != 0) && (com_info.current != COM_NONE)) {
 		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-			EnumerateCallback ec = MESSAGE_EMPTY_INITIALIZER;
-			make_bricklet_enumerate(&ec, i);
-			if(ec.device_identifier != 0) {
-				logd("Returning initial Enumeration for Bricklet %c: %lu\n\r", 'a' + i, ec.header.uid);
-				ec.enumeration_type = ENUMERATE_TYPE_ADDED;
-				while(send_blocking_with_timeout(&ec, sizeof(EnumerateCallback), com) == 0);
+			if(bricklet_attached[i] != BRICKLET_INIT_CO_MCU) { // CoMCU Bricklets do handle their enumeration themself
+				if(brick_init_bricklet_new_enumerate & (1 << i)) {
+					EnumerateCallback ec = MESSAGE_EMPTY_INITIALIZER;
+					make_bricklet_enumerate(&ec, i);
+					if(ec.device_identifier != 0) {
+						ec.enumeration_type = ENUMERATE_TYPE_ADDED;
+
+						if(SEND(&ec, sizeof(EnumerateCallback), com_info.current, NULL) != 0) {
+							logd("Returning initial Enumeration for Bricklet %c: %lu (%d)\n\r", 'a' + i, ec.header.uid, system_timer_get_ms());
+							brick_init_bricklet_new_enumerate &= ~(1 << i);
+						}
+					}
+				}
 			}
 		}
-
-		return true;
 	}
-
-	return false;
 }
 
 void brick_tick_task(void *parameters) {
