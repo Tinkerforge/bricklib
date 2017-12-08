@@ -67,8 +67,8 @@ bool usb_startup_connected = false;
 static uint8_t receive_status = 0;
 static uint8_t send_status = 0;
 
-char usb_recv_buffer[DEFAULT_EP_SIZE];
-char usb_send_buffer[DEFAULT_EP_SIZE];
+char usb_recv_buffer[MAX_USB_MESSAGE_SIZE];
+char usb_send_buffer[MAX_USB_MESSAGE_SIZE];
 uint16_t usb_send_buffer_length = 0;
 
 #ifdef PIN_USB_DETECT
@@ -139,7 +139,7 @@ void usb_handle_send(void) {
 }
 
 inline uint16_t usb_send(const void *data, const uint16_t length, uint32_t *options) {
-	if((usb_send_buffer_length != 0) || length > DEFAULT_EP_SIZE) {
+	if((usb_send_buffer_length != 0) || length > MAX_USB_MESSAGE_SIZE) {
 		return 0;
 	}
 
