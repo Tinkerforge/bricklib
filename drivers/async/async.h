@@ -43,6 +43,8 @@
  *----------------------------------------------------------------------------*/
 /** Transfer is still pending.*/
 #define ASYNC_STATUS_PENDING        0xFF
+#define ASYNC_STATUS_DMA_PENDING    0xFE
+#define ASYNC_STATUS_DMA_DONE       0xFD
 
 /*----------------------------------------------------------------------------
  *        Type

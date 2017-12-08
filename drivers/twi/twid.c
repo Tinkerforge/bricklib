@@ -38,6 +38,11 @@
 #include "bricklib/drivers/twi/twi.h"
 
 #include "bricklib/utility/trace.h"
+#include "bricklib/utility/util_definitions.h"
+#include "bricklib/utility/system_timer.h"
+
+extern Twid twid;
+extern Twid twid1;
 
 /*----------------------------------------------------------------------------
  *        Definition
@@ -96,7 +101,7 @@ void TWID_Initialize(Twid *pTwid, Twi *pTwi)
  */
 void TWID_Handler( Twid *pTwid )
 {
-    uint8_t status;
+    uint32_t status = 0;
     AsyncTwi *pTransfer ;
     Twi *pTwi ;
 
@@ -110,8 +115,20 @@ void TWID_Handler( Twid *pTwid )
     /* Retrieve interrupt status */
     status = TWI_GetMaskedStatus(pTwi);
 
+    if(((status & TWI_SR_ENDRX) == TWI_SR_ENDRX)) {
+    	TWI_Stop(pTwi);
+    	pTwi->TWI_IDR = TWI_SR_ENDRX;
+    	pTransfer->status = ASYNC_STATUS_DMA_DONE;
+    	pTwid->pTransfer = NULL;
+    } else if(((status & TWI_SR_ENDTX) == TWI_SR_ENDTX)) {
+    	TWI_SendSTOPCondition(pTwi);
+    	pTwi->TWI_IDR = TWI_SR_ENDTX;
+    	pTransfer->status = ASYNC_STATUS_DMA_DONE;
+    	pTwid->pTransfer = NULL;
+    }
+
     /* Byte received */
-    if (TWI_STATUS_RXRDY(status)) {
+    else if (TWI_STATUS_RXRDY(status)) {
 
         pTransfer->pData[pTransfer->transferred] = TWI_ReadByte(pTwi);
         pTransfer->transferred++;
@@ -219,41 +236,78 @@ uint8_t TWID_Read(
     }
     /* Synchronous transfer*/
     else {
+    	// Set-up async struct for callback function
+    	Async async;
+    	async.status = ASYNC_STATUS_DMA_PENDING;
 
-        /* Start read*/
-        TWI_StartRead(pTwi, address, iaddress, isize);
+    	if(pTwi == TWI0) {
+    		twid.pTwi = pTwi;
+    		twid.pTransfer = &async;
+    	} else if(pTwi == TWI1){
+    		twid1.pTwi = pTwi;
+    		twid1.pTransfer = &async;
+    	} else {
+    		return 2;
+    	}
 
-        /* Read all bytes, setting STOP before the last byte*/
-        while (num > 0) {
+        // Set address and read size
+        pTwi->TWI_MMR = 0;
+        pTwi->TWI_MMR = (isize << 8) | TWI_MMR_MREAD | (address << 16);
 
-            /* Last byte ?*/
-            if (num == 1) {
+        pTwi->TWI_IADR = 0;
+        pTwi->TWI_IADR = iaddress;
 
-                TWI_Stop(pTwi);
-            }
+        if(num > 1) {
+			// Disable DMA and interrupt
+			pTwi->TWI_PTCR = (PERIPH_PTCR_RXTDIS | PERIPH_PTCR_TXTDIS);
+			pTwi->TWI_IDR = 0xFFFF;
 
-            /* Wait for byte then read and store it*/
-            timeout = 0;
-            while( !TWI_ByteReceived(pTwi) && (++timeout<TWITIMEOUTMAX) ) {
-                if(pTwi->TWI_SR & TWI_SR_NACK) {
-                    return 0;
-                }
-            }
-            if (timeout == TWITIMEOUTMAX) {
-                TRACE_ERROR("TWID Timeout BR\n\r");
-                *pData++ = 0;
-            } else {
-                *pData++ = TWI_ReadByte(pTwi);
-            }
-            num--;
+			// Set DMA pointer and count
+			pTwi->TWI_RPR = (uint32_t)pData;
+			pTwi->TWI_RCR = num-1;
+
+			// Enable interrupt and DMA
+			pTwi->TWI_IER = TWI_IER_ENDRX;
+			pTwi->TWI_PTCR = PERIPH_PTCR_RXTEN;
         }
 
-        /* Wait for transfer to be complete */
+        // Set start bit
+        pTwi->TWI_CR = TWI_CR_START;
+
+        // Wait for rx interrupt to trigger
+        if(num > 1) {
+			uint32_t start = system_timer_get_ms();
+			uint32_t wait_for_ms = MAX(10, num*40*2/1000);
+			while(async.status != ASYNC_STATUS_DMA_DONE) {
+				if(system_timer_is_time_elapsed_ms(start, wait_for_ms)) {
+					return 1;
+				}
+			}
+
+			pTwi->TWI_PTCR = PERIPH_PTCR_RXTDIS;
+        }
+
+        // Interrupt has occurred and stop bit has been set.
+        // Now we have to read the last byte the old way.
         timeout = 0;
-        while( !TWI_TransferComplete(pTwi) && (++timeout<TWITIMEOUTMAX) );
-        if (timeout == TWITIMEOUTMAX) {
-            TRACE_ERROR("TWID Timeout TC\n\r");
+        while( !TWI_ByteReceived(pTwi) && (++timeout<TWITIMEOUTMAX) ) {
+            if(pTwi->TWI_SR & TWI_SR_NACK) {
+                return 0;
+            }
         }
+
+        if (timeout == TWITIMEOUTMAX) {
+            TRACE_ERROR("TWID Timeout BR\n\r");
+            pData[num-1] = 0;
+        } else {
+            pData[num-1] = TWI_ReadByte(pTwi);
+        }
+
+		timeout = 0;
+		while( !TWI_TransferComplete(pTwi) && (++timeout<TWITIMEOUTMAX) );
+		if (timeout == TWITIMEOUTMAX) {
+			TRACE_ERROR("TWID Timeout TC\n\r");
+		}
     }
 
     pTwi->TWI_SR;
@@ -316,31 +370,55 @@ uint8_t TWID_Write(
     }
     /* Synchronous transfer*/
     else {
+    	// Set-up async struct for callback function
+    	Async async;
+    	async.status = ASYNC_STATUS_DMA_PENDING;
 
-        // Start write
-        TWI_StartWrite(pTwi, address, iaddress, isize, *pData++);
-        num--;
+    	if(pTwi == TWI0) {
+    		twid.pTwi = pTwi;
+    		twid.pTransfer = &async;
+    	} else if(pTwi == TWI1){
+    		twid1.pTwi = pTwi;
+    		twid1.pTransfer = &async;
+    	} else {
+    		return 2;
+    	}
 
-        /* Send all bytes */
-        while (num > 0) {
+        // Set address and read size
+        pTwi->TWI_MMR = 0;
+        pTwi->TWI_MMR = (isize << 8) | (address << 16);
 
-            /* Wait before sending the next byte */
-            timeout = 0;
-            while( !TWI_ByteSent(pTwi) && (++timeout<TWITIMEOUTMAX) );
-            if (timeout == TWITIMEOUTMAX) {
-                TRACE_ERROR("TWID Timeout BS\n\r");
-            }
+        pTwi->TWI_IADR = 0;
+        pTwi->TWI_IADR = iaddress;
 
-            TWI_WriteByte(pTwi, *pData++);
-            num--;
-        }
+		// Disable DMA and interrupt
+		pTwi->TWI_PTCR = (PERIPH_PTCR_RXTDIS | PERIPH_PTCR_TXTDIS);
+		pTwi->TWI_IDR = 0xFFFF;
 
-        /* Wait for actual end of transfer */
+		// Set DMA pointer and count
+		pTwi->TWI_TPR = (uint32_t)pData;
+		pTwi->TWI_TCR = num;
+
+		// Enable interrupt and DMA
+		pTwi->TWI_IER = TWI_IER_ENDTX;
+		pTwi->TWI_PTCR = PERIPH_PTCR_TXTEN;
+
+        // Set start bit
+        pTwi->TWI_CR = TWI_CR_START;
+
+        // Wait for tx interrupt to trigger
+		uint32_t start = system_timer_get_ms();
+		uint32_t wait_for_ms = MAX(10, num*40*2/1000);
+		while(async.status != ASYNC_STATUS_DMA_DONE) {
+			if(system_timer_is_time_elapsed_ms(start, wait_for_ms)) {
+				return 1;
+			}
+		}
+
+		pTwi->TWI_PTCR = PERIPH_PTCR_TXTDIS;
+
+        // Wait for the transfer to complete
         timeout = 0;
-
-        /* Send a STOP condition */
-        TWI_SendSTOPCondition(pTwi);
-
         while( !TWI_TransferComplete(pTwi) && (++timeout<TWITIMEOUTMAX) );
         if (timeout == TWITIMEOUTMAX) {
             TRACE_ERROR("TWID Timeout TC2\n\r");
