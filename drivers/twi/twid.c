@@ -236,20 +236,6 @@ uint8_t TWID_Read(
     }
     /* Synchronous transfer*/
     else {
-    	// Set-up async struct for callback function
-    	Async async;
-    	async.status = ASYNC_STATUS_DMA_PENDING;
-
-    	if(pTwi == TWI0) {
-    		twid0.pTwi = pTwi;
-    		twid0.pTransfer = &async;
-    	} else if(pTwi == TWI1){
-    		twid1.pTwi = pTwi;
-    		twid1.pTransfer = &async;
-    	} else {
-    		return 2;
-    	}
-
         // Set address and read size
         pTwi->TWI_MMR = 0;
         pTwi->TWI_MMR = (isize << 8) | TWI_MMR_MREAD | (address << 16);
@@ -258,6 +244,20 @@ uint8_t TWID_Read(
         pTwi->TWI_IADR = iaddress;
 
         if(num > 1) {
+			// Set-up async struct for callback function
+			Async async;
+			async.status = ASYNC_STATUS_DMA_PENDING;
+
+			if(pTwi == TWI0) {
+				twid0.pTwi = pTwi;
+				twid0.pTransfer = &async;
+			} else if(pTwi == TWI1){
+				twid1.pTwi = pTwi;
+				twid1.pTransfer = &async;
+			} else {
+				return 2;
+			}
+
 			// Disable DMA and interrupt
 			pTwi->TWI_PTCR = (PERIPH_PTCR_RXTDIS | PERIPH_PTCR_TXTDIS);
 			pTwi->TWI_IDR = 0xFFFF;
@@ -272,17 +272,8 @@ uint8_t TWID_Read(
 
 			// Set start bit
 			pTwi->TWI_CR = TWI_CR_START;
-        } else if(num == 1) {
-        	// Make sure that there can't be an interrupt between start and stop,
-        	// Otherwise we could possibly read too many bytes
-        	__disable_irq();
-			pTwi->TWI_CR = TWI_CR_START;
-        	pTwi->TWI_CR = TWI_CR_STOP;
-        	__enable_irq();
-        }
 
-        // Wait for rx interrupt to trigger
-        if(num > 1) {
+        	// Wait for rx interrupt to trigger
 			uint32_t start = system_timer_get_ms();
 			uint32_t wait_for_ms = MAX(10, num*40*2/1000);
 			while(async.status != ASYNC_STATUS_DMA_DONE) {
@@ -292,7 +283,15 @@ uint8_t TWID_Read(
 			}
 
 			pTwi->TWI_PTCR = PERIPH_PTCR_RXTDIS;
+        } else if(num == 1) {
+        	// Make sure that there can't be an interrupt between start and stop,
+        	// Otherwise we could possibly read too many bytes
+        	__disable_irq();
+			pTwi->TWI_CR = TWI_CR_START;
+        	pTwi->TWI_CR = TWI_CR_STOP;
+        	__enable_irq();
         }
+
 
         // Interrupt has occurred and stop bit has been set.
         // Now we have to read the last byte the old way.
