@@ -74,7 +74,20 @@ extern const BrickletAddress baddr[BRICKLET_NUM];
 
 #define BRICKLET_COMCU_RESET_WAIT 500 // ms
 
-static uint32_t bricklet_comcu_reset_wait_time[BRICKLET_NUM] = {0, 0, 0, 0};
+static uint32_t bricklet_comcu_reset_wait_time[BRICKLET_NUM] = {
+#if BRICKLET_NUM > 0
+	0,
+#endif
+#if BRICKLET_NUM > 1
+	0,
+#endif
+#if BRICKLET_NUM > 2
+	0,
+#endif
+#if BRICKLET_NUM > 3
+	0
+#endif
+};
 static uint32_t bricklet_comcu_data_last_time = 0;
 static uint32_t bricklet_comcu_data_counter   = 0;
 
