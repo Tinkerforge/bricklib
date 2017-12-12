@@ -72,6 +72,9 @@ extern const BrickletAddress baddr[BRICKLET_NUM];
 #define SPI_MOSI(i) (bs[i].pin3_pwm)
 #define SPI_MISO(i) (bs[i].pin4_io)
 
+#define BRICKLET_COMCU_RESET_WAIT 500 // ms
+
+static uint32_t bricklet_comcu_reset_wait_time[BRICKLET_NUM] = {0, 0, 0, 0};
 static uint32_t bricklet_comcu_data_last_time = 0;
 static uint32_t bricklet_comcu_data_counter   = 0;
 
@@ -267,6 +270,28 @@ uint16_t bricklet_co_mcu_check_missing_length(const uint8_t bricklet_num) {
 	return 0;
 }
 
+// This function is called after data was send successfully
+void bricklet_co_mcu_check_reset(const uint8_t bricklet_num) {
+	// Check if we actually send data
+	if(CO_MCU_DATA(bricklet_num)->buffer_send_length != 0) {
+		// and the request was a reset
+		if(CO_MCU_DATA(bricklet_num)->buffer_send[MESSAGE_HEADER_FID_POSITION] == FID_RESET) {
+			// Just to be sure we don't accidentially do this two times we overwrite the FID.
+			CO_MCU_DATA(bricklet_num)->buffer_send[MESSAGE_HEADER_FID_POSITION] = 0;
+
+			// Start reset wait timer.
+			// We don't want to speak to the Bricklet during the reset, since the
+			// XMC MCUs start in a bootloader-mode at the beginning and we may otherwise
+			// confuse the bootloader if we speak SPI with it (it expects UART).
+			bricklet_comcu_reset_wait_time[bricklet_num] = system_timer_get_ms();
+
+			// Set sequence number back to 0, since the slave will now start at 1 again.
+			// Otherwise we may accidentally be at 1 and throw the first message awai.
+			CO_MCU_DATA(bricklet_num)->last_sequence_number_seen = 0;
+		}
+	}
+}
+
 void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 	uint8_t message[MAX_TFP_MESSAGE_LENGTH];
 	uint16_t message_position = 0;
@@ -341,6 +366,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 
 				uint8_t last_sequence_number_seen_by_slave = (data_sequence_number & 0xF0) >> 4;
 				if(last_sequence_number_seen_by_slave == CO_MCU_DATA(bricklet_num)->current_sequence_number) {
+					bricklet_co_mcu_check_reset(bricklet_num);
 					CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout = -1;
 					CO_MCU_DATA(bricklet_num)->buffer_send_length = 0;
 				}
@@ -383,6 +409,7 @@ void bricklet_co_mcu_check_recv(const uint8_t bricklet_num) {
 
 				uint8_t last_sequence_number_seen_by_slave = (data_sequence_number & 0xF0) >> 4;
 				if(last_sequence_number_seen_by_slave == CO_MCU_DATA(bricklet_num)->current_sequence_number) {
+					bricklet_co_mcu_check_reset(bricklet_num);
 					CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout = -1;
 					CO_MCU_DATA(bricklet_num)->buffer_send_length = 0;
 				}
@@ -483,6 +510,14 @@ void bricklet_co_mcu_poll(const uint8_t bricklet_num) {
 		return;
 	}
 
+	if(bricklet_comcu_reset_wait_time[bricklet_num] != 0) {
+		if(system_timer_is_time_elapsed_ms(bricklet_comcu_reset_wait_time[bricklet_num], BRICKLET_COMCU_RESET_WAIT)) {
+			bricklet_comcu_reset_wait_time[bricklet_num] = 0;
+		} else {
+			return;
+		}
+	}
+
 	uint8_t checksum = 0;
 	if(CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout > 0) {
 		CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout--;
@@ -567,7 +602,6 @@ void bricklet_co_mcu_send(const uint8_t bricklet_num, uint8_t *data, const uint8
 			memcpy(CO_MCU_DATA(bricklet_num)->buffer_send, data, length);
 			CO_MCU_DATA(bricklet_num)->buffer_send_length = length;
 			CO_MCU_DATA(bricklet_num)->buffer_send_ack_timeout = -1;
-
 
 			if(CO_MCU_DATA(bricklet_num)->buffer_send[MESSAGE_HEADER_FID_POSITION] == FID_CREATE_ENUMERATE_CONNECTED) {
 				CO_MCU_DATA(bricklet_num)->buffer_send[MESSAGE_HEADER_FID_POSITION] = FID_CO_MCU_ENUMERATE;
