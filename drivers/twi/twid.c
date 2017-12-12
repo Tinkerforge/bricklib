@@ -41,7 +41,7 @@
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/utility/system_timer.h"
 
-extern Twid twid;
+extern Twid twid0;
 extern Twid twid1;
 
 /*----------------------------------------------------------------------------
@@ -241,8 +241,8 @@ uint8_t TWID_Read(
     	async.status = ASYNC_STATUS_DMA_PENDING;
 
     	if(pTwi == TWI0) {
-    		twid.pTwi = pTwi;
-    		twid.pTransfer = &async;
+    		twid0.pTwi = pTwi;
+    		twid0.pTransfer = &async;
     	} else if(pTwi == TWI1){
     		twid1.pTwi = pTwi;
     		twid1.pTransfer = &async;
@@ -273,6 +273,10 @@ uint8_t TWID_Read(
 
         // Set start bit
         pTwi->TWI_CR = TWI_CR_START;
+
+        if(num == 1) {
+        	TWI_Stop(pTwi);
+        }
 
         // Wait for rx interrupt to trigger
         if(num > 1) {
@@ -371,51 +375,59 @@ uint8_t TWID_Write(
     /* Synchronous transfer*/
     else {
     	// Set-up async struct for callback function
-    	Async async;
-    	async.status = ASYNC_STATUS_DMA_PENDING;
+    	if(num > 1) {
+			Async async;
+			async.status = ASYNC_STATUS_DMA_PENDING;
 
-    	if(pTwi == TWI0) {
-    		twid.pTwi = pTwi;
-    		twid.pTransfer = &async;
-    	} else if(pTwi == TWI1){
-    		twid1.pTwi = pTwi;
-    		twid1.pTransfer = &async;
-    	} else {
-    		return 2;
+			if(pTwi == TWI0) {
+				twid0.pTwi = pTwi;
+				twid0.pTransfer = &async;
+			} else if(pTwi == TWI1){
+				twid1.pTwi = pTwi;
+				twid1.pTransfer = &async;
+			} else {
+				return 2;
+			}
+
+			// Set address and read size
+			pTwi->TWI_MMR = 0;
+			pTwi->TWI_MMR = (isize << 8) | (address << 16);
+
+			pTwi->TWI_IADR = 0;
+			pTwi->TWI_IADR = iaddress;
+
+			// Disable DMA and interrupt
+			pTwi->TWI_PTCR = (PERIPH_PTCR_RXTDIS | PERIPH_PTCR_TXTDIS);
+			pTwi->TWI_IDR = 0xFFFF;
+
+			// Set DMA pointer and count
+			pTwi->TWI_TPR = (uint32_t)pData;
+			pTwi->TWI_TCR = num;
+
+			// Enable interrupt and DMA
+			pTwi->TWI_IER = TWI_IER_ENDTX;
+			pTwi->TWI_PTCR = PERIPH_PTCR_TXTEN;
+
+			// Set start bit
+			pTwi->TWI_CR = TWI_CR_START;
+
+			// Wait for tx interrupt to trigger
+			uint32_t start = system_timer_get_ms();
+			uint32_t wait_for_ms = MAX(10, num*40*2/1000);
+			while(async.status != ASYNC_STATUS_DMA_DONE) {
+				if(system_timer_is_time_elapsed_ms(start, wait_for_ms)) {
+					return 1;
+				}
+			}
+
+			pTwi->TWI_PTCR = PERIPH_PTCR_TXTDIS;
+    	} else if(num == 1) {
+            // Start write
+            TWI_StartWrite(pTwi, address, iaddress, isize, *pData++);
+            num--;
+            TWI_SendSTOPCondition(pTwi);
     	}
 
-        // Set address and read size
-        pTwi->TWI_MMR = 0;
-        pTwi->TWI_MMR = (isize << 8) | (address << 16);
-
-        pTwi->TWI_IADR = 0;
-        pTwi->TWI_IADR = iaddress;
-
-		// Disable DMA and interrupt
-		pTwi->TWI_PTCR = (PERIPH_PTCR_RXTDIS | PERIPH_PTCR_TXTDIS);
-		pTwi->TWI_IDR = 0xFFFF;
-
-		// Set DMA pointer and count
-		pTwi->TWI_TPR = (uint32_t)pData;
-		pTwi->TWI_TCR = num;
-
-		// Enable interrupt and DMA
-		pTwi->TWI_IER = TWI_IER_ENDTX;
-		pTwi->TWI_PTCR = PERIPH_PTCR_TXTEN;
-
-        // Set start bit
-        pTwi->TWI_CR = TWI_CR_START;
-
-        // Wait for tx interrupt to trigger
-		uint32_t start = system_timer_get_ms();
-		uint32_t wait_for_ms = MAX(10, num*40*2/1000);
-		while(async.status != ASYNC_STATUS_DMA_DONE) {
-			if(system_timer_is_time_elapsed_ms(start, wait_for_ms)) {
-				return 1;
-			}
-		}
-
-		pTwi->TWI_PTCR = PERIPH_PTCR_TXTDIS;
 
         // Wait for the transfer to complete
         timeout = 0;
