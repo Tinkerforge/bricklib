@@ -274,7 +274,7 @@ uint8_t TWID_Read(
 			pTwi->TWI_CR = TWI_CR_START;
         } else if(num == 1) {
         	// Make sure that there can't be an interrupt between start and stop,
-        	// Otherwise we could possibly read to many bytes
+        	// Otherwise we could possibly read too many bytes
         	__disable_irq();
 			pTwi->TWI_CR = TWI_CR_START;
         	pTwi->TWI_CR = TWI_CR_STOP;
@@ -426,7 +426,7 @@ uint8_t TWID_Write(
 			pTwi->TWI_PTCR = PERIPH_PTCR_TXTDIS;
     	} else if(num == 1) {
         	// Make sure that there can't be an interrupt between start and stop,
-        	// Otherwise we could possibly write to many bytes
+        	// Otherwise we could possibly write too many bytes
     		__disable_irq();
             TWI_StartWrite(pTwi, address, iaddress, isize, *pData++);
             TWI_SendSTOPCondition(pTwi);
