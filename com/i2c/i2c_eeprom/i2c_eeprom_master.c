@@ -41,10 +41,15 @@
 uint8_t bricklet_eeprom_address;
 
 extern Mutex mutex_twi_bricklet;
-extern Twid twid;
+Twid twid0 = {TWI0, NULL};
+Twid twid1 = {TWI1, NULL};
 
 void TWI0_IrqHandler(void) {
-    TWID_Handler(&twid);
+    TWID_Handler(&twid0);
+}
+
+void TWI1_IrqHandler(void) {
+    TWID_Handler(&twid1);
 }
 
 void i2c_eeprom_master_init(Twi *twi) {

@@ -60,7 +60,8 @@ extern ComInfo com_info;
 extern uint8_t bricklet_eeprom_address;
 extern Mutex mutex_twi_bricklet;
 
-Twid twid = {TWI_BRICKLET, NULL};
+extern Twid twid0;
+
 
 // Declare bricklet api (ba)
 const BrickletAPI ba = {
@@ -79,7 +80,7 @@ const BrickletAPI ba = {
 	adc_channel_get_data,
 	i2c_eeprom_master_read,
 	i2c_eeprom_master_write,
-	&twid,
+	&twid0,
 	&mutex_twi_bricklet,
 	&com_return_error,
 	&com_return_setter,
