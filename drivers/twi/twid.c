@@ -269,13 +269,16 @@ uint8_t TWID_Read(
 			// Enable interrupt and DMA
 			pTwi->TWI_IER = TWI_IER_ENDRX;
 			pTwi->TWI_PTCR = PERIPH_PTCR_RXTEN;
-        }
 
-        // Set start bit
-        pTwi->TWI_CR = TWI_CR_START;
-
-        if(num == 1) {
-        	TWI_Stop(pTwi);
+			// Set start bit
+			pTwi->TWI_CR = TWI_CR_START;
+        } else if(num == 1) {
+        	// Make sure that there can't be an interrupt between start and stop,
+        	// Otherwise we could possibly read to many bytes
+        	__disable_irq();
+			pTwi->TWI_CR = TWI_CR_START;
+        	pTwi->TWI_CR = TWI_CR_STOP;
+        	__enable_irq();
         }
 
         // Wait for rx interrupt to trigger
@@ -422,10 +425,12 @@ uint8_t TWID_Write(
 
 			pTwi->TWI_PTCR = PERIPH_PTCR_TXTDIS;
     	} else if(num == 1) {
-            // Start write
+        	// Make sure that there can't be an interrupt between start and stop,
+        	// Otherwise we could possibly write to many bytes
+    		__disable_irq();
             TWI_StartWrite(pTwi, address, iaddress, isize, *pData++);
-            num--;
             TWI_SendSTOPCondition(pTwi);
+            __enable_irq();
     	}
 
 
