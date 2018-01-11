@@ -69,7 +69,7 @@ static uint8_t send_status = 0;
 
 char usb_recv_buffer[MAX_USB_MESSAGE_SIZE];
 char usb_send_buffer[MAX_USB_MESSAGE_SIZE];
-uint16_t usb_send_buffer_length = 0;
+volatile uint16_t usb_send_buffer_length = 0;
 
 #ifdef PIN_USB_DETECT
 static Pin pin_usb_detect = PIN_USB_DETECT;
@@ -108,6 +108,11 @@ void usb_handle_send(void) {
 
 	switch(usb_send_state) {
 		case USB_SEND_STATE_IDLE: {
+			// It is possible that we got an interrupt between the if and the switch.
+			// If we did, the send buffer is now empty and we can return here.
+			if(usb_send_buffer_length == 0) {
+				return;
+			}
 			usb_send_state = USB_SEND_STATE_WAIT_FOR_CALLBACK;
 			if(!(USBD_Write(IN_EP, usb_send_buffer, usb_send_buffer_length, usb_send_callback, (void*)usb_sequence_number) == USBD_STATUS_SUCCESS)) {
 				usb_send_state = USB_SEND_STATE_IDLE;
