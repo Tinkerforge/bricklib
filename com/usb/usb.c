@@ -45,7 +45,9 @@
 #include "bricklib/logging/logging.h"
 #include "bricklib/com/spi/spi_stack/spi_stack_master.h"
 #include "bricklib/utility/led.h"
+#ifndef BRICK_HAS_NO_BRICKLETS
 #include "bricklib/bricklet/bricklet_config.h"
+#endif
 
 #include "usb_descriptors.h"
 #include "config.h"
@@ -239,7 +241,9 @@ void usb_tick_task(const uint8_t tick_type) {
 
 		// Periodically look if Bricklets need re-enumeration.
 		// We run this here, since the usb tick task runs on every brick.
+#ifndef BRICK_HAS_NO_BRICKLETS
 		brick_init_handle_bricklet_enumeration();
+#endif
 
 		// Handle initial USB enumeration
 		if(usb_first_connection && !usbd_hal_is_disabled(IN_EP)) {

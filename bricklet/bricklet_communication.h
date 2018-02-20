@@ -35,6 +35,15 @@
 #define FID_WRITE_BRICKLET_UID 248
 #define FID_READ_BRICKLET_UID 249
 
+#ifdef BRICK_HAS_NO_BRICKLETS
+#define COM_MESSAGES_BRICKLET \
+	{FID_WRITE_BRICKLET_NAME, (message_handler_func_t)NULL}, /* Not used anymore */ \
+	{FID_READ_BRICKLET_NAME, (message_handler_func_t)NULL}, /* Not used anymore */ \
+	{FID_WRITE_BRICKLET_PLUGIN, (message_handler_func_t)NULL}, \
+	{FID_READ_BRICKLET_PLUGIN, (message_handler_func_t)NULL}, \
+	{FID_WRITE_BRICKLET_UID, (message_handler_func_t)NULL}, \
+	{FID_READ_BRICKLET_UID, (message_handler_func_t)NULL},
+#else
 #define COM_MESSAGES_BRICKLET \
 	{FID_WRITE_BRICKLET_NAME, (message_handler_func_t)NULL}, /* Not used anymore */ \
 	{FID_READ_BRICKLET_NAME, (message_handler_func_t)NULL}, /* Not used anymore */ \
@@ -42,6 +51,7 @@
 	{FID_READ_BRICKLET_PLUGIN, (message_handler_func_t)read_bricklet_plugin}, \
 	{FID_WRITE_BRICKLET_UID, (message_handler_func_t)write_bricklet_uid}, \
 	{FID_READ_BRICKLET_UID, (message_handler_func_t)read_bricklet_uid},
+#endif
 
 typedef struct {
 	MessageHeader header;

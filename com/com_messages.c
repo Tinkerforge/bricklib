@@ -60,7 +60,9 @@ extern BrickletAddress baddr[];
 extern uint8_t brick_hardware_version[];
 extern uint8_t bricklet_attached[];
 extern bool led_status_is_enabled;
+#ifndef BRICK_HAS_NO_BRICKLETS
 extern uint8_t brick_init_bricklet_new_enumerate;
+#endif
 
 #ifdef BRICK_CAN_BE_MASTER
 extern uint8_t rs485_first_message;
@@ -162,8 +164,8 @@ void create_enumerate_connected(const ComType com, const CreateEnumerateConnecte
 	com_info.current = com;
 
 	// Enumerate non-comcu bricklets asynchronously
-	brick_init_bricklet_new_enumerate = 0;
 #if BRICKLET_NUM > 0
+	brick_init_bricklet_new_enumerate = 0;
 	if((bricklet_attached[0] != BRICKLET_INIT_CO_MCU)) {
 		brick_init_bricklet_new_enumerate |= 1 << 0;
 	}

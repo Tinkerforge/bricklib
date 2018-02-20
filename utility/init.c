@@ -30,7 +30,6 @@
 #include "bricklib/free_rtos/include/task.h"
 
 #include "bricklib/com/com_common.h"
-#include "bricklib/bricklet/bricklet_init.h"
 #include "bricklib/com/i2c/i2c_eeprom/i2c_eeprom_master.h"
 #include "bricklib/com/usb/usb.h"
 #include "bricklib/logging/logging.h"
@@ -38,7 +37,12 @@
 #include "bricklib/utility/mutex.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/logging/logging.h"
+
+#ifndef BRICK_HAS_NO_BRICKLETS
 #include "bricklib/bricklet/bricklet_init.h"
+extern uint8_t bricklet_attached[];
+uint8_t brick_init_bricklet_new_enumerate = 0;
+#endif
 
 #include "config.h"
 
@@ -47,8 +51,6 @@ extern ComInfo com_info;
 static uint8_t type_calculation = TICK_TASK_TYPE_CALCULATION;
 static uint8_t type_message = TICK_TASK_TYPE_MESSAGE;
 
-uint8_t brick_init_bricklet_new_enumerate = 0;
-extern uint8_t bricklet_attached[];
 
 void brick_init(void) {
 	// Wait 5ms so everything can power up
@@ -97,7 +99,10 @@ void brick_init(void) {
 	com_info.current = COM_NONE;
     PIO_InitializeInterrupts(15);
 
+#ifndef BRICK_HAS_NO_BRICKLETS
     bricklet_clear_eeproms();
+#endif
+
     i2c_eeprom_master_init(TWI_BRICKLET);
     logsi("I2C for Bricklets initialized\n\r");
 
@@ -110,7 +115,9 @@ void brick_init(void) {
 #endif
     logsi("A/D converter initialized\n\r");
 
+#ifndef BRICK_HAS_NO_BRICKLETS
 	bricklet_init();
+#endif
 }
 
 void SUPC_IrqHandler(void) {
@@ -167,6 +174,7 @@ void brick_init_start_tick_task(void) {
 				(xTaskHandle *)NULL);
 }
 
+#ifndef BRICK_HAS_NO_BRICKLETS
 // This is called periodically to handle Bricklet enumeration asynchronously.
 void brick_init_handle_bricklet_enumeration(void) {
 	if((brick_init_bricklet_new_enumerate != 0) && (com_info.current != COM_NONE)) {
@@ -188,6 +196,7 @@ void brick_init_handle_bricklet_enumeration(void) {
 		}
 	}
 }
+#endif
 
 void brick_tick_task(void *parameters) {
 	const uint8_t tick_type = *((uint8_t*)parameters);
@@ -196,7 +205,9 @@ void brick_tick_task(void *parameters) {
 		wdt_restart();
 		tick_task(tick_type);
 		taskYIELD();
+#ifndef BRICK_HAS_NO_BRICKLETS
 		bricklet_tick_task(tick_type);
+#endif
 		led_tick_task(tick_type);
 		usb_tick_task(tick_type);
 
