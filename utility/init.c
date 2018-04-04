@@ -62,7 +62,9 @@ void brick_init(void) {
 	logsi("Processor family %s\n\r", IS_SAM3() ? "SAM3S" : "SAM4S");
 
     led_init();
+#ifdef LED_STD_BLUE
 	led_on(LED_STD_BLUE);
+#endif
 #ifdef LED_STD_RED
 #if LOGGING_LEVEL == LOGGING_NONE
 	led_off(LED_STD_RED);
