@@ -37,6 +37,7 @@
 #include "bricklib/utility/mutex.h"
 #include "bricklib/utility/util_definitions.h"
 #include "bricklib/logging/logging.h"
+#include "bricklib/utility/system_timer.h"
 
 #ifndef BRICK_HAS_NO_BRICKLETS
 #include "bricklib/bricklet/bricklet_init.h"
@@ -123,7 +124,7 @@ void brick_init(void) {
 }
 
 void SUPC_IrqHandler(void) {
-    loge("SUPC: %x\n\r", SUPC->SUPC_SR);
+    loge("SUPC: %lu\n\r", SUPC->SUPC_SR);
     while(1);
 }
 
@@ -189,7 +190,7 @@ void brick_init_handle_bricklet_enumeration(void) {
 						ec.enumeration_type = ENUMERATE_TYPE_ADDED;
 
 						if(SEND(&ec, sizeof(EnumerateCallback), com_info.current, NULL) != 0) {
-							logd("Returning initial Enumeration for Bricklet %c: %lu (%d)\n\r", 'a' + i, ec.header.uid, system_timer_get_ms());
+							logd("Returning initial Enumeration for Bricklet %c: %lu (%lu)\n\r", 'a' + i, ec.header.uid, system_timer_get_ms());
 							brick_init_bricklet_new_enumerate &= ~(1 << i);
 						}
 					}
