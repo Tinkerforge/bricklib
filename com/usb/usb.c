@@ -228,6 +228,17 @@ void usb_detect_configure(void) {
 
 
 void usb_tick_task(const uint8_t tick_type) {
+	// We call usb_handle_send in calculation task and in message task.
+
+	// It is possible for the message task to be stack in a blocking send, 
+	// for example from comcu enumerate. In this case, if a message is already
+	// in the buffer, it may result in a deadlock. To come out of the deadlock
+	// usb_handle_send has to be called from somewhere else.
+
+	// Since usb_handle_send never blocks we can just call it from message and
+	// calculation task to be sure that this deadlock can't occur.
+	usb_handle_send();
+
 	if(tick_type == TICK_TASK_TYPE_CALCULATION) {
 		if(usb_wakeup_counter > 0) {
 			usb_wakeup_counter++;
@@ -237,8 +248,6 @@ void usb_tick_task(const uint8_t tick_type) {
 			}
 		}
 	} else if(tick_type == TICK_TASK_TYPE_MESSAGE) {
-		usb_handle_send();
-
 		// Periodically look if Bricklets need re-enumeration.
 		// We run this here, since the usb tick task runs on every brick.
 #ifndef BRICK_HAS_NO_BRICKLETS
