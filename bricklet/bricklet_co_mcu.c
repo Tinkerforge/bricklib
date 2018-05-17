@@ -27,6 +27,8 @@
 #include "bricklib/utility/pearson_hash.h"
 #include "bricklib/utility/system_timer.h"
 
+#include "bricklib/drivers/adc/adc.h"
+
 #include "bricklet_config.h"
 #include "config.h"
 
@@ -295,16 +297,18 @@ uint16_t bricklet_co_mcu_check_missing_length(const uint8_t bricklet_num) {
 	// Only call this before or after bricklet_co_mcu_check_recv.
 	Ringbuffer *rb = &CO_MCU_DATA(bricklet_num)->ringbuffer_recv;
 	while(rb->start != rb->end) {
-		if(rb->buffer[rb->start] == 0) {
+		uint8_t length = rb->buffer[rb->start];
+		if((length < MIN_TFP_MESSAGE_LENGTH || length > MAX_TFP_MESSAGE_LENGTH) && length != PROTOCOL_OVERHEAD) {
 			ringbuffer_remove(rb, 1);
 			continue;
 		}
 
-		// TODO: Sanity check length here already?
-		//       If we ignore it here, the data will be thrown away in state machine
-		//       if we handle it here, we don't know when the next packet begins and
-		//       there will be a error in the state machine anyway....
-		return rb->buffer[rb->start] - ringbuffer_get_used(rb);
+		int32_t ret = length - ringbuffer_get_used(rb);
+		if((ret < 0) || (ret > 80)) {
+			return 0;
+		}
+
+		return ret;
 	}
 
 	return 0;
