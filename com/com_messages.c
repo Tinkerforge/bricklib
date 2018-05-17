@@ -397,8 +397,15 @@ void stack_enumerate(const ComType com, const StackEnumerate *data) {
 
 		uint8_t i = 1;
 		for(uint8_t j = 0; j < BRICKLET_NUM; j++) {
+			// Search for Bricklet UIDs
 			if(bs[j].uid != 0) {
 				ser.uids[i]      = bs[j].uid;
+				i++;
+			}
+
+			// Search for Isolators that are between the Brick and the Bricklet
+			if(bs[j].uid_isolator != 0) {
+				ser.uids[i]      = bs[j].uid_isolator;
 				i++;
 			}
 		}

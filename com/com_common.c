@@ -212,7 +212,9 @@ bool com_route_message_brick(const char *data, const uint16_t length, const ComT
 	}
 
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		if(bs[i].uid == header->uid) {
+		// Check if UID belongs to Bricklet or to Isolator Bricklet connected
+		// between Brick and Bricklet
+		if((bs[i].uid == header->uid) || (bs[i].uid_isolator == header->uid)) {
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
 			if(bricklet_attached[i] == BRICKLET_INIT_CO_MCU) {
 				bricklet_co_mcu_send(i, (void*)data, length);

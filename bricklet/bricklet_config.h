@@ -110,6 +110,10 @@ typedef struct {
 	uint8_t firmware_version[3];
 	uint8_t hardware_version[3];
 	uint16_t device_identifier;
+
+	// Each Bricklet port can have a second UID if an Isolator Bricklet
+	// is connected between Bricklet and Brick
+	uint32_t uid_isolator; 
 } BrickletSettings;
 
 #define BRICKLET_MAGIC_NUMBER (23 | (42 << 8) | (17 << 16) | (99 << 24))

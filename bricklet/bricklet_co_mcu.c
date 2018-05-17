@@ -230,17 +230,33 @@ void bricklet_co_mcu_new_message(void *data, const uint16_t length, const ComTyp
 		case FID_ENUMERATE_CALLBACK:
 		case FID_GET_IDENTITY: {
 			GetIdentityReturn *gir = data;
-			memset(gir->connected_uid, '\0', UID_STR_MAX_LENGTH);
-			uid_to_serial_number(com_info.uid, gir->connected_uid);
-			gir->position = 'a' + bricklet_num;
+			// If the device is an Isolator Bricklet (ID 2122) we update
+			// the isolator uid and ignore the device indentifier.
+			if(gir->device_identifier == 2122) {
+				bs[bricklet_num].uid_isolator = ((MessageHeader*)data)->uid;
+			} else {
+				bs[bricklet_num].device_identifier = gir->device_identifier;
+			}
 
-			bs[bricklet_num].device_identifier = gir->device_identifier;
+			// If the Bricklet is connected to an isolator we don't have to
+			// update the position and the connected UID. this is already
+			// done by the isolator itself.
+			if(gir->position != 'I') {
+				memset(gir->connected_uid, '\0', UID_STR_MAX_LENGTH);
+				uid_to_serial_number(com_info.uid, gir->connected_uid);
+				gir->position = 'a' + bricklet_num;
+			}
+
 			break;
 		}
 	}
 
-	// Update UID for routing purposes
-	bs[bricklet_num].uid = ((MessageHeader*)data)->uid;
+	// Update UID for routing purposes, if the message is from an
+	// Isolator Bricklet we ignore it (isolator UID is only updated
+	// with enumerate/identity messages)
+	if(((MessageHeader*)data)->uid != bs[bricklet_num].uid_isolator) {
+		bs[bricklet_num].uid = ((MessageHeader*)data)->uid;
+	}
 
 	// There is a Bricklet connected to this port!
 	CO_MCU_DATA(bricklet_num)->availability.access.got_message = true;

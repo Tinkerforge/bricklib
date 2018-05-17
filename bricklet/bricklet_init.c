@@ -132,7 +132,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_A_PIN_SELECT,
 		  BRICKLET_A_ADC_CHANNEL,
 		  &baddr[0],
-		  0, {0, 0, 0}, {0, 0, 0}, 0}
+		  0, {0, 0, 0}, {0, 0, 0}, 0, 0}
 	#endif
 	#if BRICKLET_NUM > 1
 		,{'b',
@@ -144,7 +144,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_B_PIN_SELECT,
 		  BRICKLET_B_ADC_CHANNEL,
 		  &baddr[1],
-		  0, {0, 0, 0}, {0, 0, 0}, 0}
+		  0, {0, 0, 0}, {0, 0, 0}, 0, 0}
 	#endif
 	#if BRICKLET_NUM > 2
 		,{'c',
@@ -156,7 +156,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_C_PIN_SELECT,
 		  BRICKLET_C_ADC_CHANNEL,
 		  &baddr[2],
-		  0, {0, 0, 0}, {0, 0, 0}, 0}
+		  0, {0, 0, 0}, {0, 0, 0}, 0, 0}
 	#endif
 	#if BRICKLET_NUM > 3
 		,{'d',
@@ -168,7 +168,7 @@ BrickletSettings bs[BRICKLET_NUM] = {
 		  BRICKLET_D_PIN_SELECT,
 		  BRICKLET_D_ADC_CHANNEL,
 		  &baddr[3],
-		  0, {0, 0, 0}, {0, 0, 0}, 0}
+		  0, {0, 0, 0}, {0, 0, 0}, 0, 0}
 	#endif
 };
 
@@ -299,6 +299,7 @@ void bricklet_try_connection(const uint8_t bricklet) {
 		bricklet_co_mcu_init(bricklet);
 		bricklet_attached[bricklet] = BRICKLET_INIT_CO_MCU;
 		bs[bricklet].uid = 0;
+		bs[bricklet].uid_isolator = 0;
 		bs[bricklet].device_identifier = 0xFFFF; // Set unused device identifier that is not equal to 0 for CO MCU Bricklet
 #endif
 		return;
