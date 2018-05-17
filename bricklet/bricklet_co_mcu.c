@@ -224,6 +224,7 @@ void bricklet_co_mcu_send_ack(const uint8_t bricklet_num, const uint8_t sequence
 void bricklet_co_mcu_new_message(void *data, const uint16_t length, const ComType com, const uint8_t bricklet_num) {
 	// We have to inject connected UID to Enumerate and Identity messages
 	uint8_t fid = ((MessageHeader*)data)->fid;
+
 	switch(fid) {
 		// The relevant message content (uid and position) of Enumerate Callback
 		// and GetIdentitiy is the same, so we can handle it in one case.
@@ -274,6 +275,16 @@ void bricklet_co_mcu_new_message(void *data, const uint16_t length, const ComTyp
 }
 
 void bricklet_co_mcu_handle_error(const uint8_t bricklet_num) {
+	// Randomly remove a byte from slave buffer.
+	// If slave and master get out-of-sync and the out-of-sync
+	// data is completely uniform and by chance the emptying
+	// of a ringbuffer runs in a cycle, we may end up in a
+	// deadlock situation. By randomly removing one additional
+	// byte we get out of the deadlock.
+	if(adc_get_temperature() % 2) {
+		bricklet_co_mcu_entry_spibb_transceive_byte(bricklet_num, 0);
+	}
+
 	// In case of error we completely empty the ringbuffer
 	uint8_t data;
 	while(ringbuffer_get(&CO_MCU_DATA(bricklet_num)->ringbuffer_recv, &data));
