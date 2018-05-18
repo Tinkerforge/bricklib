@@ -299,6 +299,9 @@ uint16_t bricklet_co_mcu_check_missing_length(const uint8_t bricklet_num) {
 	while(rb->start != rb->end) {
 		uint8_t length = rb->buffer[rb->start];
 		if((length < MIN_TFP_MESSAGE_LENGTH || length > MAX_TFP_MESSAGE_LENGTH) && length != PROTOCOL_OVERHEAD) {
+			if(length != 0) {
+				CO_MCU_DATA(bricklet_num)->error_count.error_count_frame++;
+			}
 			ringbuffer_remove(rb, 1);
 			continue;
 		}
