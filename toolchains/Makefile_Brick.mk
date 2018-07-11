@@ -19,16 +19,16 @@ check:
 		echo "Could not find bricklib. Please symlink bricklib into src/ folder."; \
 		exit 1; \
 	fi
-# Then we check if docker is available and if the build_environenment_c container
+# Then we check if docker is available and if the build_environment_c container
 # is available. If both is the case, we start the docker container, call this
 # Makefile in the docker container and write a temporary file
 	@if command -v docker >/dev/null 2>&1 ; then \
-		if [ $$(/usr/bin/docker images -q build_environment_c) ]; then \
+		if [ $$(/usr/bin/docker images -q tinkerforge/build_environment_c) ]; then \
 			echo "Using docker image to build."; \
 			docker run \
 			-v $(ROOT_DIR)/../:/$(ROOT_DIR)/../ -u $$(id -u):$$(id -g) \
 			-v $(BRICKLIB_PATH)/:$(BRICKLIB_PATH)/: -u $$(id -u):$$(id -g) \
-			-ti build_environment_c /bin/bash \
+			-ti tinkerforge/build_environment_c /bin/bash \
 			-c "cd $(ROOT_DIR) ; make $(MAKECMDGOALS)"; \
 			touch $(DOCKER_LOCK_FILE); \
 		else \
