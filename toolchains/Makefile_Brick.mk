@@ -28,7 +28,7 @@ check:
 			docker run \
 			-v $(ROOT_DIR)/../:/$(ROOT_DIR)/../ -u $$(id -u):$$(id -g) \
 			-v $(BRICKLIB_PATH)/:$(BRICKLIB_PATH)/: -u $$(id -u):$$(id -g) \
-			-ti tinkerforge/build_environment_c /bin/bash \
+			tinkerforge/build_environment_c /bin/bash \
 			-c "cd $(ROOT_DIR) ; make $(MAKECMDGOALS)"; \
 			touch $(DOCKER_LOCK_FILE); \
 		else \
