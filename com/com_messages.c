@@ -245,7 +245,10 @@ void set_spitfp_baudrate(const ComType com, const SetSPITFPBaudrate *data) {
 		return;
 	}
 
-	bricklet_spitfp_baudrate[port] = BETWEEN(CO_MCU_MINIMUM_BAUDRATE, data->baudrate, CO_MCU_MAXIMUM_BAUDRATE);
+	if(bricklet_attached[port] == BRICKLET_INIT_CO_MCU) {
+		bricklet_spitfp_baudrate[port] = BETWEEN(CO_MCU_MINIMUM_BAUDRATE, data->baudrate, CO_MCU_MAXIMUM_BAUDRATE);
+	}
+
 	com_return_setter(com, data);
 }
 
@@ -261,7 +264,11 @@ void get_spitfp_baudrate(const ComType com, const GetSPITFPBaudrate *data) {
 
 	gsbr.header        = data->header;
 	gsbr.header.length = sizeof(GetSPITFPBaudrateReturn);
-	gsbr.baudrate      = bricklet_spitfp_baudrate[port];
+	if(bricklet_attached[port] == BRICKLET_INIT_CO_MCU) {
+		gsbr.baudrate  = bricklet_spitfp_baudrate[port];
+	} else {
+		gsbr.baudrate  = 0;
+	}
 
 	send_blocking_with_timeout(&gsbr, sizeof(GetSPITFPBaudrateReturn), com);
 }
@@ -276,15 +283,22 @@ void get_spitfp_error_count(const ComType com, const GetSPITFPErrorCount *data) 
 
 	GetSPITFPErrorCountReturn gsecr;
 
-	gsecr.header                       = data->header;
-	gsecr.header.length                = sizeof(GetSPITFPErrorCountReturn);
-	gsecr.error_count_ack_checksum     = CO_MCU_DATA(port)->error_count.error_count_ack_checksum;
-	gsecr.error_count_message_checksum = CO_MCU_DATA(port)->error_count.error_count_message_checksum;
-	gsecr.error_count_frame            = CO_MCU_DATA(port)->error_count.error_count_frame;
+	gsecr.header                           = data->header;
+	gsecr.header.length                    = sizeof(GetSPITFPErrorCountReturn);
+	if(bricklet_attached[port] == BRICKLET_INIT_CO_MCU) {
+		gsecr.error_count_ack_checksum     = CO_MCU_DATA(port)->error_count.error_count_ack_checksum;
+		gsecr.error_count_message_checksum = CO_MCU_DATA(port)->error_count.error_count_message_checksum;
+		gsecr.error_count_frame            = CO_MCU_DATA(port)->error_count.error_count_frame;
+
+	} else {
+		gsecr.error_count_ack_checksum     = 0;
+		gsecr.error_count_message_checksum = 0;
+		gsecr.error_count_frame            = 0;
+	}
 
 	// There is no overflow in SPITFP on master side possible
 	// We keep it to here to be able to use the same API between Co-MCU Bricklets and Bricks
-	gsecr.error_count_overflow         = 0;
+	gsecr.error_count_overflow             = 0;
 
 	send_blocking_with_timeout(&gsecr, sizeof(GetSPITFPErrorCountReturn), com);
 }
