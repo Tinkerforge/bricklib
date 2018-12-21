@@ -16,7 +16,7 @@ endif
 all $(MAKECMDGOALS): check cmake make
 
 check:
-# First we check if the BUILDING_IN_DOCKER temporary file is there and delete it.
+# First we check if the temporary file is there and delete it.
 # It might still be there if a PC crashed mid build or similar
 	@if [ -f "$(DOCKER_LOCK_FILE)" ]; then \
 		rm $(DOCKER_LOCK_FILE); \
@@ -51,7 +51,7 @@ cmake:
 # Because of a bug in cmake we have to call it two times... For the second
 # execution the toolchain files are already defined
 	@if [ ! -f $(DOCKER_LOCK_FILE) ]; then \
-		if [ ! -d "build/" ]; then \
+		if [ ! -f "build/Makefile" ]; then \
 			mkdir -p build; \
 			cmake -E chdir build/ cmake -DCMAKE_TOOLCHAIN_FILE=$(BRICKLIB_PATH)/toolchains/arm-none-eabi.cmake ../; \
 			cmake -E chdir build/ cmake ../; \
