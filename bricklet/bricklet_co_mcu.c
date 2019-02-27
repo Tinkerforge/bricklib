@@ -244,7 +244,7 @@ void bricklet_co_mcu_new_message(void *data, const uint16_t length, const ComTyp
 			// If the Bricklet is connected to an isolator we don't have to
 			// update the position and the connected UID. this is already
 			// done by the isolator itself.
-			if(gir->position != 'Z') {
+			if(gir->position != 'Z' || gir->connected_uid[0] == '\0') {
 				memset(gir->connected_uid, '\0', UID_STR_MAX_LENGTH);
 				uid_to_serial_number(com_info.uid, gir->connected_uid);
 				gir->position = 'a' + bricklet_num;
