@@ -34,7 +34,7 @@ check:
 # is available. If both is the case, we start the docker container, call this
 # Makefile in the docker container and write a temporary file
 	@if command -v docker >/dev/null 2>&1 ; then \
-		if [ $$(/usr/bin/docker images -q tinkerforge/build_environment_c:latest) ]; then \
+		if [ $$(docker images -q tinkerforge/build_environment_c:latest) ]; then \
 			echo "Using docker image to build."; \
 			docker run $(DOCKER_FLAGS) \
 			-v $(ROOT_DIR)/../:/$(ROOT_DIR)/../ -u $$(id -u):$$(id -g) \
