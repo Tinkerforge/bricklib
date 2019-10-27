@@ -26,7 +26,7 @@
 #define configGENERATE_RUN_TIME_STATS   1
 #endif
 
-#define configMAX_PRIORITIES		( ( unsigned portBASE_TYPE ) 2 )
+#define configMAX_PRIORITIES		( 8 )
 #define configMAX_CO_ROUTINE_PRIORITIES     0
 #define configQUEUE_REGISTRY_SIZE			0
 
