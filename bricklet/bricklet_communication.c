@@ -31,7 +31,14 @@
 
 #include "config.h"
 
+extern bool brick_only_supports_7p;
+
 void write_bricklet_plugin(const ComType com, const WriteBrickletPlugin *data) {
+	if(brick_only_supports_7p) {
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
+		return;
+	}
+
 	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
 		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
@@ -62,6 +69,11 @@ void write_bricklet_plugin(const ComType com, const WriteBrickletPlugin *data) {
 }
 
 void read_bricklet_plugin(const ComType com, const ReadBrickletPlugin *data) {
+	if(brick_only_supports_7p) {
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
+		return;
+	}
+
 	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
 		com_return_error(data, sizeof(ReadBrickletPluginReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
@@ -93,6 +105,11 @@ void read_bricklet_plugin(const ComType com, const ReadBrickletPlugin *data) {
 }
 
 void write_bricklet_uid(const ComType com, const WriteBrickletUID *data) {
+	if(brick_only_supports_7p) {
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
+		return;
+	}
+
 	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
 		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
@@ -109,6 +126,11 @@ void write_bricklet_uid(const ComType com, const WriteBrickletUID *data) {
 }
 
 void read_bricklet_uid(const ComType com, const ReadBrickletUID *data) {
+	if(brick_only_supports_7p) {
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
+		return;
+	}
+
 	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
 		com_return_error(data, sizeof(ReadBrickletUIDReturn), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);

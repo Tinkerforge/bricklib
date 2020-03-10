@@ -41,6 +41,7 @@
 #include "config.h"
 #include "bricklet_config.h"
 #ifdef BRICK_HAS_CO_MCU_SUPPORT
+bool brick_only_supports_7p = false;
 #include "bricklet_co_mcu.h"
 #endif
 
@@ -61,6 +62,7 @@ extern uint8_t bricklet_eeprom_address;
 extern Mutex mutex_twi_bricklet;
 
 extern Twid twid0;
+extern bool bricklet_xmc_do_comcu_tick;
 
 
 // Declare bricklet api (ba)
@@ -191,6 +193,10 @@ uint8_t bricklet_attached[BRICKLET_NUM] = {
 };
 
 void bricklet_select(const uint8_t bricklet) {
+	if(brick_only_supports_7p) {
+		return;
+	}
+
 	bricklet_eeprom_address = bs[bricklet].address;
 	if(bs[bricklet].pin_select.pio != NULL) {
 		PIO_Set(&(bs[bricklet].pin_select));
@@ -198,6 +204,10 @@ void bricklet_select(const uint8_t bricklet) {
 }
 
 void bricklet_deselect(const uint8_t bricklet) {
+	if(brick_only_supports_7p) {
+		return;
+	}
+
 	if(bs[bricklet].pin_select.pio != NULL) {
 		PIO_Clear(&(bs[bricklet].pin_select));
 	}
@@ -334,6 +344,10 @@ void bricklet_try_connection(const uint8_t bricklet) {
 }
 
 void bricklet_tick_task(const uint8_t tick_type) {
+	if(!bricklet_xmc_do_comcu_tick) {
+		return;
+	}
+
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		switch(bricklet_attached[i]) {
 			case BRICKLET_INIT_PROTOCOL_VERSION_2: {
@@ -372,46 +386,57 @@ void bricklet_clear_eeproms(void) {
 
 void bricklet_init(void) {
 	wdt_restart();
-	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		if(bs[i].pin_select.pio != NULL) {
-			PIO_Configure(&(bs[i].pin_select), 1);
+
+	if(brick_only_supports_7p) {
+		for(uint8_t bricklet = 0; bricklet < BRICKLET_NUM; bricklet++) {
+			bricklet_co_mcu_init(bricklet);
+			bricklet_attached[bricklet] = BRICKLET_INIT_CO_MCU;
+			bs[bricklet].uid = 0;
+			bs[bricklet].uid_isolator = 0;
+			bs[bricklet].device_identifier = 0xFFFF; // Set unused device identifier that is not equal to 0 for CO MCU Bricklet
 		}
-		bricklet_attached[i] = BRICKLET_INIT_NO_BRICKLET;
-	}
-
-	// Only change wait states on SAM4, because this makes a SAM3 hang for unknown reasons
-	if(!IS_SAM3()) {
-		EFC_SetWaitState(EFC, 6);
-	}
-
-	// Unlock flash region for all Bricklet plugins
-	FLASHD_Unlock(END_OF_MEMORY - BRICKLET_PLUGIN_MAX_SIZE*BRICKLET_NUM,
-	              END_OF_MEMORY,
-				  0,
-				  0);
-
-	// On SAM4 we have to erase the flash here, the EFC_FCMD_EWP command does not work...
-	if(!IS_SAM3()) {
-		// EFC_FCMD_EPA = 0x07
-		if(BRICKLET_NUM == 2) {
-			EFC_PerformCommand(EFC, 0x07, (((256-16)/16) << 4) | 2, 0);
-		} else if(BRICKLET_NUM == 4) {
-			EFC_PerformCommand(EFC, 0x07, (((512-32)/32) << 5) | 3, 0);
+	} else {
+		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
+			if(bs[i].pin_select.pio != NULL) {
+				PIO_Configure(&(bs[i].pin_select), 1);
+			}
+			bricklet_attached[i] = BRICKLET_INIT_NO_BRICKLET;
 		}
-	}
 
-	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
-		bricklet_try_connection(i);
-	}
+		// Only change wait states on SAM4, because this makes a SAM3 hang for unknown reasons
+		if(!IS_SAM3()) {
+			EFC_SetWaitState(EFC, 6);
+		}
 
-    // Lock flash again
-    FLASHD_Lock(END_OF_MEMORY - BRICKLET_PLUGIN_MAX_SIZE*BRICKLET_NUM,
-                END_OF_MEMORY,
-				0,
-				0);
+		// Unlock flash region for all Bricklet plugins
+		FLASHD_Unlock(END_OF_MEMORY - BRICKLET_PLUGIN_MAX_SIZE*BRICKLET_NUM,
+					END_OF_MEMORY,
+					0,
+					0);
 
-	// Only change wait states on SAM4, because this makes a SAM3 hang for unknown reasons
-	if(!IS_SAM3()) {
-		EFC_SetWaitState(EFC, 2);
+		// On SAM4 we have to erase the flash here, the EFC_FCMD_EWP command does not work...
+		if(!IS_SAM3()) {
+			// EFC_FCMD_EPA = 0x07
+			if(BRICKLET_NUM == 2) {
+				EFC_PerformCommand(EFC, 0x07, (((256-16)/16) << 4) | 2, 0);
+			} else if(BRICKLET_NUM == 4) {
+				EFC_PerformCommand(EFC, 0x07, (((512-32)/32) << 5) | 3, 0);
+			}
+		}
+
+		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
+			bricklet_try_connection(i);
+		}
+
+		// Lock flash again
+		FLASHD_Lock(END_OF_MEMORY - BRICKLET_PLUGIN_MAX_SIZE*BRICKLET_NUM,
+					END_OF_MEMORY,
+					0,
+					0);
+
+		// Only change wait states on SAM4, because this makes a SAM3 hang for unknown reasons
+		if(!IS_SAM3()) {
+			EFC_SetWaitState(EFC, 2);
+		}
 	}
 }

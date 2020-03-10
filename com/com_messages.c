@@ -44,6 +44,7 @@ extern uint32_t bricklet_spitfp_baudrate[BRICKLET_NUM];
 extern uint32_t bricklet_spitfp_minimum_dynamic_baudrate;
 extern bool bricklet_spitfp_dynamic_baudrate_enabled;
 extern uint32_t bricklet_spitfp_baudrate_current;
+extern bool brick_only_supports_7p;
 #endif
 
 #include "com_common.h"
@@ -344,6 +345,11 @@ void is_status_led_enabled(const ComType com, const IsStatusLEDEnabled *data) {
 }
 
 void get_protocol1_bricklet_name(const ComType com, const GetProtocol1BrickletName *data) {
+	if(brick_only_supports_7p) {
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
+		return;
+	}
+
 	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
 		com_return_error(data, sizeof(GetProtocol1BrickletName), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
@@ -377,6 +383,11 @@ void get_chip_temperature(const ComType com, const GetChipTemperature *data) {
 }
 
 void get_adc_calibration(const ComType com, const GetADCCalibration *data) {
+	if(brick_only_supports_7p) {
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
+		return;
+	}
+
 	GetADCCalibrationReturn gadccr;
 	gadccr.header        = data->header;
 	gadccr.header.length = sizeof(GetADCCalibrationReturn);
@@ -388,6 +399,11 @@ void get_adc_calibration(const ComType com, const GetADCCalibration *data) {
 }
 
 void com_adc_calibrate(const ComType com, const ADCCalibrate *data) {
+	if(brick_only_supports_7p) {
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
+		return;
+	}
+
 	uint8_t port = (uint8_t)(tolower((uint8_t)data->bricklet_port) - 'a');
 	if(port >= BRICKLET_NUM) {
 		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);

@@ -68,6 +68,7 @@ extern uint32_t bc[BRICKLET_NUM][BRICKLET_CONTEXT_MAX_SIZE/4];
 extern ComInfo com_info;
 extern uint8_t bricklet_attached[BRICKLET_NUM];
 extern const BrickletAddress baddr[BRICKLET_NUM];
+extern bool brick_only_supports_7p;
 
 #define SPI_SS(i)   (bs[i].pin1_ad)
 #define SPI_CLK(i)  (bs[i].pin2_da)
@@ -488,6 +489,10 @@ uint8_t bricklet_co_mcu_get_sequence_byte(const uint8_t bricklet_num, const bool
 }
 
 bool bricklet_co_mcu_check_led_strip(const uint8_t bricklet_num) {
+	if(brick_only_supports_7p) {
+		return false;
+	}
+
 	if(false
 #if BRICKLET_NUM > 0
 	   || (bs[0].device_identifier == BRICKLET_LED_STRIP_DEVICE_IDENTIFIER)

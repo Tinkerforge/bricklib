@@ -34,22 +34,23 @@
 //extern int32_t  _end ;
 extern int32_t  _start_heap;
 extern int32_t  _end_heap;
+	
+caddr_t syscalls_heap = NULL;
 
 // sbrk based on http://e2e.ti.com/support/microcontrollers/stellaris_arm_cortex-m3_microcontroller/f/473/t/44452.aspx
 // Uses 4 byte alignment
 caddr_t _sbrk (int incr) {
-	static caddr_t heap = NULL;
 	caddr_t prev_heap;
 	caddr_t next_heap;
 
-	if (heap == NULL) {
-		heap = (caddr_t)&_start_heap;
+	if (syscalls_heap == NULL) {
+		syscalls_heap = (caddr_t)&_start_heap;
 	}
 
-	prev_heap = heap;
+	prev_heap = syscalls_heap;
 
 	// Return data aligned to 4 bytes
-	next_heap = (caddr_t)(((unsigned int)(heap + incr) + 3) & ~3);
+	next_heap = (caddr_t)(((unsigned int)(syscalls_heap + incr) + 3) & ~3);
 
 	// current stack pointer
 	register caddr_t stack_pointer asm ("sp");
@@ -58,7 +59,7 @@ caddr_t _sbrk (int incr) {
 	if((next_heap > stack_pointer) || (next_heap > (caddr_t)&_end_heap)) {
 		return NULL;
 	} else {
-		heap = next_heap;
+		syscalls_heap = next_heap;
 		return (caddr_t)prev_heap;
 	}
 }
