@@ -62,8 +62,9 @@ extern uint8_t bricklet_eeprom_address;
 extern Mutex mutex_twi_bricklet;
 
 extern Twid twid0;
+#ifdef BRICK_CAN_FLASH_BOOTLOADER
 extern bool bricklet_xmc_do_comcu_tick;
-
+#endif
 
 // Declare bricklet api (ba)
 const BrickletAPI ba = {
@@ -344,9 +345,11 @@ void bricklet_try_connection(const uint8_t bricklet) {
 }
 
 void bricklet_tick_task(const uint8_t tick_type) {
+#ifdef BRICK_CAN_FLASH_BOOTLOADER
 	if(!bricklet_xmc_do_comcu_tick) {
 		return;
 	}
+#endif
 
 	for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 		switch(bricklet_attached[i]) {
