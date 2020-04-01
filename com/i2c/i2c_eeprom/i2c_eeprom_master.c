@@ -38,7 +38,7 @@
 
 #include "config.h"
 
-uint8_t bricklet_eeprom_address;
+uint8_t bricklet_eeprom_address = 84;
 
 extern Mutex mutex_twi_bricklet;
 Twid twid0 = {TWI0, NULL};
