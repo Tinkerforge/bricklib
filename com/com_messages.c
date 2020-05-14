@@ -458,7 +458,7 @@ void make_brick_enumerate(EnumerateCallback *ec) {
 
 	memset(ec->uid, '\0', UID_STR_MAX_LENGTH);
 	uid_to_serial_number(com_info.uid, ec->uid);
-	strncpy(ec->connected_uid, NO_CONNECTED_UID_STR, NO_CONNECTED_UID_STR_LENGTH);
+	memcpy(ec->connected_uid, NO_CONNECTED_UID_STR, NO_CONNECTED_UID_STR_LENGTH);
 	ec->position = '0';
 	ec->version_fw[0] = BRICK_FIRMWARE_VERSION_MAJOR;
 	ec->version_fw[1] = BRICK_FIRMWARE_VERSION_MINOR;
@@ -530,7 +530,7 @@ void get_identity(const ComType com, const GetIdentity *data) {
 	if(data->header.uid == com_info.uid) {
 		memset(gir.uid, '\0', UID_STR_MAX_LENGTH);
 		uid_to_serial_number(com_info.uid, gir.uid);
-		strncpy(gir.connected_uid, NO_CONNECTED_UID_STR, NO_CONNECTED_UID_STR_LENGTH);
+		memcpy(gir.connected_uid, NO_CONNECTED_UID_STR, NO_CONNECTED_UID_STR_LENGTH);
 		gir.position = '0';
 		gir.version_fw[0] = BRICK_FIRMWARE_VERSION_MAJOR;
 		gir.version_fw[1] = BRICK_FIRMWARE_VERSION_MINOR;
