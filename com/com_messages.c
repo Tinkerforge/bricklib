@@ -345,10 +345,12 @@ void is_status_led_enabled(const ComType com, const IsStatusLEDEnabled *data) {
 }
 
 void get_protocol1_bricklet_name(const ComType com, const GetProtocol1BrickletName *data) {
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 	if(brick_only_supports_7p) {
 		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
 		return;
 	}
+#endif
 
 	uint8_t port = tolower((uint8_t)data->port) - 'a';
 	if(port >= BRICKLET_NUM) {
@@ -383,10 +385,12 @@ void get_chip_temperature(const ComType com, const GetChipTemperature *data) {
 }
 
 void get_adc_calibration(const ComType com, const GetADCCalibration *data) {
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 	if(brick_only_supports_7p) {
 		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
 		return;
 	}
+#endif
 
 	GetADCCalibrationReturn gadccr;
 	gadccr.header        = data->header;
@@ -399,10 +403,12 @@ void get_adc_calibration(const ComType com, const GetADCCalibration *data) {
 }
 
 void com_adc_calibrate(const ComType com, const ADCCalibrate *data) {
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 	if(brick_only_supports_7p) {
 		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_NOT_SUPPORTED, com);
 		return;
 	}
+#endif
 
 	uint8_t port = (uint8_t)(tolower((uint8_t)data->bricklet_port) - 'a');
 	if(port >= BRICKLET_NUM) {

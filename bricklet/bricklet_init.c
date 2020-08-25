@@ -194,9 +194,11 @@ uint8_t bricklet_attached[BRICKLET_NUM] = {
 };
 
 void bricklet_select(const uint8_t bricklet) {
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 	if(brick_only_supports_7p) {
 		return;
 	}
+#endif
 
 	bricklet_eeprom_address = bs[bricklet].address;
 	if(bs[bricklet].pin_select.pio != NULL) {
@@ -205,9 +207,11 @@ void bricklet_select(const uint8_t bricklet) {
 }
 
 void bricklet_deselect(const uint8_t bricklet) {
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 	if(brick_only_supports_7p) {
 		return;
 	}
+#endif
 
 	if(bs[bricklet].pin_select.pio != NULL) {
 		PIO_Clear(&(bs[bricklet].pin_select));
@@ -390,6 +394,7 @@ void bricklet_clear_eeproms(void) {
 void bricklet_init(void) {
 	wdt_restart();
 
+#ifdef BRICK_HAS_CO_MCU_SUPPORT
 	if(brick_only_supports_7p) {
 		for(uint8_t bricklet = 0; bricklet < BRICKLET_NUM; bricklet++) {
 			bricklet_co_mcu_init(bricklet);
@@ -398,7 +403,9 @@ void bricklet_init(void) {
 			bs[bricklet].uid_isolator = 0;
 			bs[bricklet].device_identifier = 0xFFFF; // Set unused device identifier that is not equal to 0 for CO MCU Bricklet
 		}
-	} else {
+	} else
+#endif
+	{
 		for(uint8_t i = 0; i < BRICKLET_NUM; i++) {
 			if(bs[i].pin_select.pio != NULL) {
 				PIO_Configure(&(bs[i].pin_select), 1);
