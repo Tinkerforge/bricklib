@@ -36,7 +36,11 @@
 #define adc_channel_is_enabled(c) (ADC->ADC_CHSR & (1 << (c)))
 #define adc_channel_has_new_data(c) (ADC->ADC_ISR & (1 << (c)))
 #define adc_channel_get_data_unfiltered(c) (ADC->ADC_CDR[(c)])
-#define adc_get_temperature() (((((int32_t)adc_channel_get_data(ADC_CHANNEL_TEMPERATURE_SENSOR))*3300/4095)-800)*1000/265 + 270)
+#define adc_get_temperature() ( \
+    (IS_SAM3()) ? \
+    (((((int32_t)adc_channel_get_data(ADC_CHANNEL_TEMPERATURE_SENSOR))*3300/4095)-800)*1000/265 + 270) : \
+    (((((int32_t)adc_channel_get_data(ADC_CHANNEL_TEMPERATURE_SENSOR))*3300/4095)-1440)*1000/470 + 270) \
+)
 
 void adc_enable_temperature_sensor(void);
 void adc_init(void);
