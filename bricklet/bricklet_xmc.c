@@ -71,7 +71,7 @@ uint32_t bricklet_xmc_bootloader_address_recv   = 0;
 bool     bricklet_xmc_do_comcu_tick = true;
 
 uint32_t bricklet_xmc_current_boot_type = 0;
-Pin      bricklet_xmc_pin_out  = BRICKLET_D_PIN_2_DA_30;
+Pin      bricklet_xmc_pin_out  = BRICKLET_D_PIN_2_DA_31;
 Pin      bricklet_xmc_pin_in   = BRICKLET_D_PIN_3_PWM;
 
 extern caddr_t syscalls_heap;
@@ -405,8 +405,8 @@ uint32_t bricklet_xmc_write_bootloader(void) {
 }
 
 void bricklet_xmc_set_port_d_input(void) {
-	Pin pin1 = BRICKLET_D_PIN_1_AD_30;
-	Pin pin2 = BRICKLET_D_PIN_2_DA_30;
+	Pin pin1 = BRICKLET_D_PIN_1_AD_31;
+	Pin pin2 = BRICKLET_D_PIN_2_DA_31;
 	Pin pin3 = BRICKLET_D_PIN_3_PWM;
 	Pin pin4 = BRICKLET_D_PIN_4_IO;
 
