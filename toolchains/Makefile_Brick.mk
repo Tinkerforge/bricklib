@@ -34,7 +34,7 @@ check:
 			echo "Using docker image to build."; \
 			docker run $(DOCKER_FLAGS) \
 			-v $(ROOT_DIR)/../:/$(ROOT_DIR)/../ -u $$(id -u):$$(id -g) \
-			-v $(BRICKLIB_PATH)/:$(BRICKLIB_PATH)/: -u $$(id -u):$$(id -g) \
+			-v $(BRICKLIB_PATH)/:$(BRICKLIB_PATH)/ -u $$(id -u):$$(id -g) \
 			tinkerforge/build_environment_c:latest /bin/bash \
 			-c "cd $(ROOT_DIR) ; make $(MAKECMDGOALS)" && \
 			touch $(DOCKER_LOCK_FILE); \
